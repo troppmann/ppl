@@ -41,3 +41,14 @@ rpn (h : hs) [] = h : rpn hs []
 rpn (h : hs) (x : xs)
   | precedence x > precedence h = rpn (x : h : hs) xs
   | otherwise = h : rpn hs (x : xs)
+
+-- shift reduce parser
+-- init :: [String] -> Expr
+-- init input = srp ([], input)
+--
+-- type Stack = [String]
+--
+-- type Input = [String]
+--
+-- srp :: (Stack, Input) -> Expr
+-- srp (stack, input) = Const (VBool True)
