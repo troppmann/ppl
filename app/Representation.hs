@@ -1,6 +1,7 @@
 module Representation
   ( Expr (..),
     Value (..),
+    ControlFlow (..),
   )
 where
 
@@ -17,3 +18,5 @@ data Value
   = VFloat Float
   | VBool Bool
   deriving (Show, Read, Eq)
+
+data ControlFlow = OpenParenthesis deriving (Show, Read, Eq)
