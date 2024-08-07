@@ -1,11 +1,18 @@
 module Main where
 
 import Parser
+import Parser2 qualified as P2
+import Sample
 import Spn
 
 main :: IO ()
 main = do
   s <- readFile "test.ppl"
+  let tokenStream = P2.parseText s
+  print tokenStream
+  print "\n"
+  let tok2 = P2.rpn [] tokenStream
+  print tok2
   let expr = parseText s
   print expr
   print $ sample expr
