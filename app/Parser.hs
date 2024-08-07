@@ -10,7 +10,15 @@ parseText :: String -> Expr
 parseText = fst . parse Nothing Nothing . separate
 
 separate :: String -> [String]
-separate = words
+separate = words . concatMap escape
+
+escape :: Char -> String
+escape '(' = " ( "
+escape ')' = " ) "
+escape '*' = " * "
+escape '+' = " + "
+escape '-' = " - "
+escape c = [c]
 
 parse :: Maybe Expr -> Maybe ControlFlow -> [String] -> (Expr, [String])
 parse Nothing Nothing [] = error "Error: Expected Expr got ''"
