@@ -29,6 +29,7 @@ sampleIO (LessThan e1 e2) = apply (sampleCompare (<)) e1 e2
 sampleIO (LessEqualThan e1 e2) = apply (sampleCompare (<=)) e1 e2
 sampleIO (GreaterThan e1 e2) = apply (sampleCompare (>)) e1 e2
 sampleIO (GreaterEqualThan e1 e2) = apply (sampleCompare (>=)) e1 e2
+sampleIO (IfElseThen e1 e2 e3) = sampleIfElse e1 e2 e3
 
 apply :: (Value -> Value -> Value) -> Expr -> Expr -> IO Value
 apply f e1 e2 = do
@@ -51,3 +52,16 @@ sampleCompare _ (VBool _) (VFloat _) = error "Error: Can't compare Bool with Flo
 sampleCompare _ (VFloat _) (VBool _) = error "Error: Can't compare Float with Bool."
 sampleCompare f (VFloat x) (VFloat y) = VBool $ f x y
 sampleCompare f (VBool x) (VBool y) = VBool $ f x y
+
+sampleIfElse :: Expr -> Expr -> Expr -> IO Value
+sampleIfElse e1 e2 e3 = do
+  v1 <- sampleIO e1
+  if evaluateAsBool v1
+    then do
+      sampleIO e2
+    else do
+      sampleIO e3
+
+evaluateAsBool :: Value -> Bool
+evaluateAsBool (VFloat _) = error "Error: Expected Bool got Float."
+evaluateAsBool (VBool b) = b

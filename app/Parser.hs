@@ -31,6 +31,12 @@ parseUntil Nothing Nothing s (x : xs)
   | x == "(" = do
       let (e, rest) = parseUntil Nothing Nothing (Just ")") xs
       parseUntil (Just e) Nothing s rest
+  | x == "if" = do
+      let (boolExpression, rest1) = parseUntil Nothing Nothing (Just "then") xs
+      let (eIf1, rest2) = parseUntil Nothing Nothing (Just "else") rest1
+      let (eIf2, rest3) = parseUntil Nothing Nothing s rest2
+      let e = IfElseThen boolExpression eIf1 eIf2
+      parseUntil (Just e) Nothing s rest3
   | e@(Just _) <- tryConvertToLiteral x = parseUntil e Nothing s xs
   | otherwise = error ("Error: Unknown String '" <> x <> "'")
 parseUntil (Just e) Nothing s (x : xs)
@@ -44,6 +50,12 @@ parseUntil (Just e1) (Just f) s (x : xs)
   | x == "(" = do
       let (e2, rest) = parseUntil Nothing Nothing (Just ")") xs
       parseUntil (Just $ combineFunction e1 f e2) Nothing s rest
+  | x == "if" = do
+      let (boolExpression, rest1) = parseUntil Nothing Nothing (Just "then") xs
+      let (eIf1, rest2) = parseUntil Nothing Nothing (Just "else") rest1
+      let (eIf2, rest3) = parseUntil Nothing Nothing s rest2
+      let e2 = IfElseThen boolExpression eIf1 eIf2
+      parseUntil (Just $ combineFunction e1 f e2) Nothing s rest3
   | otherwise = error ("Error: Unexpected String'" <> x <> "'")
 parseUntil (Just e) Nothing _ [] = (e, [])
 

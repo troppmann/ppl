@@ -19,6 +19,7 @@ data Expr
   | LessEqualThan Expr Expr
   | GreaterThan Expr Expr
   | GreaterEqualThan Expr Expr
+  | IfElseThen Expr Expr Expr
   deriving (Show, Read, Eq)
 
 data Value
