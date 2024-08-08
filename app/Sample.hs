@@ -18,30 +18,36 @@ sampleIO Normal = do
   let normal = normalDistr 0.0 1.0
   let nValue = realToFrac (quantile normal rValue) :: Float
   return $ VFloat nValue
-sampleIO (Plus fExpr sExpr) = do
-  fValue <- sampleIO fExpr
-  sValue <- sampleIO sExpr
-  return $ samplePlus fValue sValue
-sampleIO (Multiply fExpr sExpr) = do
-  fValue <- sampleIO fExpr
-  sValue <- sampleIO sExpr
-  return $ sampleMultiply fValue sValue
-sampleIO (Subtract fExpr sExpr) = do
-  fValue <- sampleIO fExpr
-  sValue <- sampleIO sExpr
-  return $ sampleSubtract fValue sValue
+sampleIO (Plus e1 e2) = apply (sampleArithmetic (+)) e1 e2
+sampleIO (Multiply e1 e2) = apply (sampleArithmetic (*)) e1 e2
+sampleIO (Subtract e1 e2) = apply (sampleArithmetic (-)) e1 e2
+sampleIO (And e1 e2) = apply (sampleBooleanExpr (&&)) e1 e2
+sampleIO (Or e1 e2) = apply (sampleBooleanExpr (||)) e1 e2
+sampleIO (Equal e1 e2) = apply (sampleCompare (==)) e1 e2
+sampleIO (Unequal e1 e2) = apply (sampleCompare (/=)) e1 e2
+sampleIO (LessThan e1 e2) = apply (sampleCompare (<)) e1 e2
+sampleIO (LessEqualThan e1 e2) = apply (sampleCompare (<=)) e1 e2
+sampleIO (GreaterThan e1 e2) = apply (sampleCompare (>)) e1 e2
+sampleIO (GreaterEqualThan e1 e2) = apply (sampleCompare (>=)) e1 e2
 
-samplePlus :: Value -> Value -> Value
-samplePlus (VBool _) _ = error "Error: Can't add a Boolean Value."
-samplePlus _ (VBool _) = error "Error: Can't add a Boolean Value."
-samplePlus (VFloat x) (VFloat y) = VFloat $ x + y
+apply :: (Value -> Value -> Value) -> Expr -> Expr -> IO Value
+apply f e1 e2 = do
+  v1 <- sampleIO e1
+  v2 <- sampleIO e2
+  return $ f v1 v2
 
-sampleMultiply :: Value -> Value -> Value
-sampleMultiply (VBool _) _ = error "Error: Can't multiply a Boolean Value."
-sampleMultiply _ (VBool _) = error "Error: Can't multiply a Boolean Value."
-sampleMultiply (VFloat x) (VFloat y) = VFloat $ x * y
+sampleArithmetic :: (Float -> Float -> Float) -> Value -> Value -> Value
+sampleArithmetic _ (VBool _) _ = error "Error: Can't calculate a Boolean Value."
+sampleArithmetic _ _ (VBool _) = error "Error: Can't calculate a Boolean Value."
+sampleArithmetic f (VFloat x) (VFloat y) = VFloat $ f x y
 
-sampleSubtract :: Value -> Value -> Value
-sampleSubtract (VBool _) _ = error "Error: Can't subtract a Boolean Value."
-sampleSubtract _ (VBool _) = error "Error: Can't subtract a Boolean Value."
-sampleSubtract (VFloat x) (VFloat y) = VFloat $ x - y
+sampleBooleanExpr :: (Bool -> Bool -> Bool) -> Value -> Value -> Value
+sampleBooleanExpr _ (VFloat _) _ = error "Error: Float Value is no Boolean."
+sampleBooleanExpr _ _ (VFloat _) = error "Error: Float Value is no Boolean."
+sampleBooleanExpr f (VBool x) (VBool y) = VBool $ f x y
+
+sampleCompare :: (forall a. (Eq a, Ord a) => a -> a -> Bool) -> Value -> Value -> Value
+sampleCompare _ (VBool _) (VFloat _) = error "Error: Can't compare Bool with Float."
+sampleCompare _ (VFloat _) (VBool _) = error "Error: Can't compare Float with Bool."
+sampleCompare f (VFloat x) (VFloat y) = VBool $ f x y
+sampleCompare f (VBool x) (VBool y) = VBool $ f x y

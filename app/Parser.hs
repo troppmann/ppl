@@ -46,12 +46,20 @@ parseUntil (Just e1) (Just f) s (x : xs)
 parseUntil (Just e) Nothing _ [] = (e, [])
 
 isFunction :: String -> Bool
-isFunction = flip elem ["+", "-", "*"]
+isFunction = flip elem ["+", "-", "*", "==", "!=", "<", "<=", ">", ">=", "&&", "||"]
 
 combineFunction :: Expr -> Symbol -> Expr -> Expr
 combineFunction e1 "+" e2 = Plus e1 e2
 combineFunction e1 "*" e2 = Multiply e1 e2
 combineFunction e1 "-" e2 = Subtract e1 e2
+combineFunction e1 "==" e2 = Equal e1 e2
+combineFunction e1 "!=" e2 = Unequal e1 e2
+combineFunction e1 "<" e2 = LessThan e1 e2
+combineFunction e1 "<=" e2 = LessEqualThan e1 e2
+combineFunction e1 ">" e2 = GreaterThan e1 e2
+combineFunction e1 ">=" e2 = GreaterEqualThan e1 e2
+combineFunction e1 "&&" e2 = And e1 e2
+combineFunction e1 "||" e2 = Or e1 e2
 combineFunction _ _ _ = error "Unknown Function"
 
 isOpenExpression :: Symbol -> Bool

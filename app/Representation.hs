@@ -1,7 +1,6 @@
 module Representation
   ( Expr (..),
     Value (..),
-    ControlFlow (..),
   )
 where
 
@@ -12,11 +11,17 @@ data Expr
   | Subtract Expr Expr
   | Uniform
   | Normal
+  | And Expr Expr
+  | Or Expr Expr
+  | Equal Expr Expr
+  | Unequal Expr Expr
+  | LessThan Expr Expr
+  | LessEqualThan Expr Expr
+  | GreaterThan Expr Expr
+  | GreaterEqualThan Expr Expr
   deriving (Show, Read, Eq)
 
 data Value
   = VFloat Float
   | VBool Bool
   deriving (Show, Read, Eq)
-
-data ControlFlow = OpenParenthesis deriving (Show, Read, Eq)
