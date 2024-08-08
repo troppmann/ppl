@@ -28,7 +28,9 @@ parseUntil (Just e) Nothing (Just s) (x : xs)
 parseUntil Nothing _ _ [] = error "Error: Expected Value got ''"
 parseUntil Nothing Nothing s (x : xs)
   | isFunction x = error "Error: Expected Value got Operator '*'"
-  | x == "(" = parseUntil Nothing Nothing (Just ")") xs
+  | x == "(" = do
+      let (e, rest) = parseUntil Nothing Nothing (Just ")") xs
+      parseUntil (Just e) Nothing s rest
   | e@(Just _) <- tryConvertToLiteral x = parseUntil e Nothing s xs
   | otherwise = error ("Error: Unknown String '" <> x <> "'")
 parseUntil (Just e) Nothing s (x : xs)
