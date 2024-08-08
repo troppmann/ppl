@@ -28,7 +28,7 @@ parseUntil (Just e) Nothing (Just s) (x : xs)
 parseUntil Nothing _ _ [] = error "Error: Expected Value got ''"
 parseUntil Nothing Nothing s (x : xs)
   | isFunction x = error "Error: Expected Value got Operator '*'"
-  | isOpenExpression x = parseUntil Nothing Nothing (Just $ untilSymbol x) xs
+  | x == "(" = parseUntil Nothing Nothing (Just ")") xs
   | e@(Just _) <- tryConvertToLiteral x = parseUntil e Nothing s xs
   | otherwise = error ("Error: Unknown String '" <> x <> "'")
 parseUntil (Just e) Nothing s (x : xs)
@@ -39,8 +39,8 @@ parseUntil Nothing (Just _f) _ (_x : _xs) = error "Cannot Happen yet"
 parseUntil (Just e1) (Just f) s (x : xs)
   | isFunction x = error "Error: Expected Value got Operator '*'"
   | Just e2 <- tryConvertToLiteral x = parseUntil (Just $ combineFunction e1 f e2) Nothing s xs
-  | isOpenExpression x = do
-      let (e2, rest) = parseUntil Nothing Nothing (Just $ untilSymbol x) xs
+  | x == "(" = do
+      let (e2, rest) = parseUntil Nothing Nothing (Just ")") xs
       parseUntil (Just $ combineFunction e1 f e2) Nothing s rest
   | otherwise = error ("Error: Unexpected String'" <> x <> "'")
 parseUntil (Just e) Nothing _ [] = (e, [])
@@ -61,14 +61,6 @@ combineFunction e1 ">=" e2 = GreaterEqualThan e1 e2
 combineFunction e1 "&&" e2 = And e1 e2
 combineFunction e1 "||" e2 = Or e1 e2
 combineFunction _ _ _ = error "Unknown Function"
-
-isOpenExpression :: Symbol -> Bool
-isOpenExpression "(" = True
-isOpenExpression _ = False
-
-untilSymbol :: Symbol -> Symbol
-untilSymbol "(" = ")"
-untilSymbol _ = error "Unknown until Symbol"
 
 tryConvertToLiteral :: Symbol -> Maybe Expr
 tryConvertToLiteral "True" = Just $ Const $ VBool True
