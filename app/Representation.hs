@@ -9,6 +9,7 @@ data Expr
   | Plus Expr Expr
   | Multiply Expr Expr
   | Subtract Expr Expr
+  | Divide Expr Expr
   | Uniform
   | Normal
   | And Expr Expr

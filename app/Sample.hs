@@ -21,6 +21,7 @@ sampleIO Normal = do
 sampleIO (Plus e1 e2) = apply (evaluateArithmetic (+)) e1 e2
 sampleIO (Multiply e1 e2) = apply (evaluateArithmetic (*)) e1 e2
 sampleIO (Subtract e1 e2) = apply (evaluateArithmetic (-)) e1 e2
+sampleIO (Divide e1 e2) = apply (evaluateArithmetic (/)) e1 e2
 sampleIO (And e1 e2) = sampleAnd e1 e2
 sampleIO (Or e1 e2) = sampleOr e1 e2
 sampleIO (Equal e1 e2) = apply (evaluateCompare (==)) e1 e2
