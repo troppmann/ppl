@@ -29,6 +29,8 @@ sampleIO (LessThan e1 e2) = apply (sampleCompare (<)) e1 e2
 sampleIO (LessEqualThan e1 e2) = apply (sampleCompare (<=)) e1 e2
 sampleIO (GreaterThan e1 e2) = apply (sampleCompare (>)) e1 e2
 sampleIO (GreaterEqualThan e1 e2) = apply (sampleCompare (>=)) e1 e2
+sampleIO (And e1 e2) = sampleAnd e1 e2
+sampleIO (Or e1 e2) = sampleOr e1 e2
 sampleIO (IfElseThen e1 e2 e3) = sampleIfElse e1 e2 e3
 
 apply :: (Value -> Value -> Value) -> Expr -> Expr -> IO Value
@@ -61,6 +63,26 @@ sampleIfElse e1 e2 e3 = do
       sampleIO e2
     else do
       sampleIO e3
+
+sampleAnd :: Expr -> Expr -> IO Value
+sampleAnd e1 e2 = do
+  v1 <- sampleIO e1
+  if evaluateAsBool v1
+    then do
+      v2 <- sampleIO e2
+      return $ VBool $ evaluateAsBool v2
+    else
+      return $ VBool False
+
+sampleOr :: Expr -> Expr -> IO Value
+sampleOr e1 e2 = do
+  v1 <- sampleIO e1
+  if evaluateAsBool v1
+    then
+      return $ VBool True
+    else do
+      v2 <- sampleIO e2
+      return $ VBool $ evaluateAsBool v2
 
 evaluateAsBool :: Value -> Bool
 evaluateAsBool (VFloat _) = error "Error: Expected Bool got Float."
