@@ -1,1 +1,1 @@
-True && ! False && False
+if True && !(False!=False) || False then 3.0 else 2.0

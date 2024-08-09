@@ -10,12 +10,15 @@ parseText :: String -> Expr
 parseText = fst . parseUntil Nothing Nothing Nothing . separate
 
 separate :: String -> [String]
-separate = words . concatMap escape
+separate = words . escape
 
-escape :: Char -> String
-escape '(' = " ( "
-escape ')' = " ) "
-escape c = [c]
+escape :: String -> String
+escape ('(' : xs) = " ( " ++ escape xs
+escape (')' : xs) = " ) " ++ escape xs
+escape ('!' : '=' : xs) = " != " ++ escape xs
+escape ('!' : xs) = " ! " ++ escape xs
+escape (x : xs) = x : escape xs
+escape "" = ""
 
 -- parseUntil approach
 type Func = String
