@@ -13,6 +13,7 @@ data Expr
   | Uniform
   | Normal
   | And Expr Expr
+  | Not Expr
   | Or Expr Expr
   | Equal Expr Expr
   | Unequal Expr Expr

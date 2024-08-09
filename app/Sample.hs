@@ -24,6 +24,7 @@ sampleIO (Subtract e1 e2) = apply (evaluateArithmetic (-)) e1 e2
 sampleIO (Divide e1 e2) = apply (evaluateArithmetic (/)) e1 e2
 sampleIO (And e1 e2) = sampleAnd e1 e2
 sampleIO (Or e1 e2) = sampleOr e1 e2
+sampleIO (Not expr) = sampleNot expr
 sampleIO (Equal e1 e2) = apply (evaluateCompare (==)) e1 e2
 sampleIO (Unequal e1 e2) = apply (evaluateCompare (/=)) e1 e2
 sampleIO (LessThan e1 e2) = apply (evaluateCompare (<)) e1 e2
@@ -66,6 +67,11 @@ sampleOr e1 e2 = do
     else do
       v2 <- sampleIO e2
       return $ VBool $ evaluateAsBool v2
+
+sampleNot :: Expr -> IO Value
+sampleNot expr = do
+  value <- sampleIO expr
+  return $ VBool $ not $ evaluateAsBool value
 
 evaluateAsBool :: Value -> Bool
 evaluateAsBool (VFloat _) = error "Error: Expected Bool got Float."

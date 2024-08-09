@@ -27,7 +27,10 @@ parseUntil (Just e) Nothing (Just s) (x : xs)
   | s == x = (e, xs)
 parseUntil Nothing _ _ [] = error "Error: Expected Value got ''"
 parseUntil Nothing Nothing s (x : xs)
-  | isFunction x = error "Error: Expected Value got Operator '*'"
+  | isInfixFunction x = error ("Error: Expected Value got Operator '" <> x <> "'")
+  | isFunction x = do
+      let (expr, rest) = parseFirstExpression xs
+      parseUntil (Just $ applyFunction x expr) Nothing s rest
   | x == "(" = do
       let (e, rest) = parseUntil Nothing Nothing (Just ")") xs
       parseUntil (Just e) Nothing s rest
@@ -39,12 +42,15 @@ parseUntil Nothing Nothing s (x : xs)
   | e@(Just _) <- tryConvertToLiteral x = parseUntil e Nothing s xs
   | otherwise = error ("Error: Unknown String '" <> x <> "'")
 parseUntil (Just e) Nothing s (x : xs)
-  | isFunction x = parseUntil (Just e) (Just x) s xs
+  | isInfixFunction x = parseUntil (Just e) (Just x) s xs
   | otherwise = error ("Error: Unexpected String'" <> x <> "'")
 parseUntil (Just _e) (Just _f) _ [] = error "Expected Value got ''"
-parseUntil Nothing (Just _f) _ (_x : _xs) = error "Cannot Happen yet"
+parseUntil Nothing (Just _f) _ (_x : _xs) = error "Cannot happen yet"
 parseUntil (Just e1) (Just f) s (x : xs)
-  | isFunction x = error "Error: Expected Value got Operator '*'"
+  | isInfixFunction x = error ("Error: Expected Value got Operator '" <> x <> "'")
+  | isFunction x = do
+      let (e2, rest) = parseFirstExpression xs
+      parseUntil (Just $ combineFunction e1 f $ applyFunction x e2) Nothing s rest
   | Just e2 <- tryConvertToLiteral x = parseUntil (Just $ combineFunction e1 f e2) Nothing s xs
   | x == "(" = do
       let (e2, rest) = parseUntil Nothing Nothing (Just ")") xs
@@ -58,8 +64,22 @@ parseUntil (Just e1) (Just f) s (x : xs)
   | otherwise = error ("Error: Unexpected String'" <> x <> "'")
 parseUntil (Just e) Nothing _ [] = (e, [])
 
+parseFirstExpression :: [String] -> (Expr, [String])
+parseFirstExpression [] = error "Error: Expected Value got ''"
+parseFirstExpression (x : xs)
+  | isInfixFunction x = error ("Error: Expected Value got Operator '" <> x <> "'")
+  | isFunction x = error ("Error: Expected Value got Operator '" <> x <> "'")
+  | Just expr <- tryConvertToLiteral x = (expr, xs)
+  | x == "(" = do
+      let (expr, rest) = parseUntil Nothing Nothing (Just ")") xs
+      (expr, rest)
+  | otherwise = error ("Error: Unexpected String'" <> x <> "'")
+
+isInfixFunction :: String -> Bool
+isInfixFunction = flip elem ["+", "-", "*", "/", "==", "!=", "<", "<=", ">", ">=", "&&", "||"]
+
 isFunction :: String -> Bool
-isFunction = flip elem ["+", "-", "*", "/", "==", "!=", "<", "<=", ">", ">=", "&&", "||"]
+isFunction = flip elem ["!"]
 
 combineFunction :: Expr -> Symbol -> Expr -> Expr
 combineFunction e1 "+" e2 = Plus e1 e2
@@ -75,6 +95,10 @@ combineFunction e1 ">=" e2 = GreaterEqualThan e1 e2
 combineFunction e1 "&&" e2 = And e1 e2
 combineFunction e1 "||" e2 = Or e1 e2
 combineFunction _ _ _ = error "Unknown Function"
+
+applyFunction :: Symbol -> Expr -> Expr
+applyFunction "!" expr = Not expr
+applyFunction _ _ = error "Unknown Function"
 
 tryConvertToLiteral :: Symbol -> Maybe Expr
 tryConvertToLiteral "True" = Just $ Const $ VBool True
