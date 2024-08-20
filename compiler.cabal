@@ -61,7 +61,7 @@ executable compiler
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
-    other-modules: Spn, Parser, Sample, Representation
+    other-modules: Spn, Parser, Sample, Representation, Interpret
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -70,7 +70,7 @@ executable compiler
     build-depends:    base ^>=4.17.2.1, containers, random, statistics
 
     -- Directories containing source files.
-    hs-source-dirs:   app
+    hs-source-dirs:   app, src
 
     -- Base language which the package is written in.
     default-language: GHC2021

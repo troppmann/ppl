@@ -7,6 +7,7 @@ import Representation
 import Statistics.Distribution
 import Statistics.Distribution.Normal
 import System.Random
+import GHC.Float (double2Float)
 
 sampleIO :: Expr -> IO Value
 sampleIO (Const v) = return v
@@ -16,7 +17,7 @@ sampleIO Uniform = do
 sampleIO Normal = do
   rValue <- randomRIO (0, 1) :: IO Double
   let normal = normalDistr 0.0 1.0
-  let nValue = realToFrac (quantile normal rValue) :: Float
+  let nValue = double2Float $ quantile normal rValue
   return $ VFloat nValue
 sampleIO (Plus e1 e2) = apply (evaluateArithmetic (+)) e1 e2
 sampleIO (Multiply e1 e2) = apply (evaluateArithmetic (*)) e1 e2

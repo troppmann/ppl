@@ -3,6 +3,8 @@ module Main where
 import Parser
 import Sample
 import Spn
+import Interpret
+import Representation (Value(VFloat))
 
 main :: IO ()
 main = do
@@ -11,6 +13,8 @@ main = do
   print expr
   sample0 <- sampleIO expr
   print sample0
+  let prob = interpret expr (VFloat 1.5)
+  print prob
 
 calculateX0TrueGivenX1False :: Float
 calculateX0TrueGivenX1False = calculate ([1, 0], [0, 1]) spn / calculate ([1, 0], [1, 1]) spn

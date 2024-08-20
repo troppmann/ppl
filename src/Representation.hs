@@ -1,6 +1,7 @@
 module Representation
   ( Expr (..),
     Value (..),
+    Probability,
   )
 where
 
@@ -28,3 +29,5 @@ data Value
   = VFloat Float
   | VBool Bool
   deriving (Show, Read, Eq)
+
+type Probability = Float
