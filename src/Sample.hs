@@ -3,12 +3,12 @@ module Sample
   )
 where
 
-import Control.Monad.Random (Rand, RandomGen, getRandomR)
+import Control.Monad.Random (MonadRandom, getRandomR)
 import Representation
 import Statistics.Distribution
 import Statistics.Distribution.Normal
 
-sampleIO :: (RandomGen g) => Expr -> Rand g Value
+sampleIO :: (MonadRandom m) => Expr -> m Value
 sampleIO (Const v) = return v
 sampleIO Uniform = do
   rValue <- getRandomR (0.0, 1.0)
@@ -33,13 +33,13 @@ sampleIO (GreaterThan e1 e2) = apply (evaluateCompare (>)) e1 e2
 sampleIO (GreaterEqualThan e1 e2) = apply (evaluateCompare (>=)) e1 e2
 sampleIO (IfElseThen e1 e2 e3) = sampleIfElse e1 e2 e3
 
-apply :: (RandomGen g) => (Value -> Value -> Value) -> Expr -> Expr -> Rand g Value
+apply :: (MonadRandom m) => (Value -> Value -> Value) -> Expr -> Expr -> m Value
 apply f e1 e2 = do
   v1 <- sampleIO e1
   v2 <- sampleIO e2
   return $ f v1 v2
 
-sampleIfElse :: (RandomGen g) => Expr -> Expr -> Expr -> Rand g Value
+sampleIfElse :: (MonadRandom m) => Expr -> Expr -> Expr -> m Value
 sampleIfElse e1 e2 e3 = do
   v1 <- sampleIO e1
   if evaluateAsBool v1
@@ -48,7 +48,7 @@ sampleIfElse e1 e2 e3 = do
     else
       sampleIO e3
 
-sampleAnd :: (RandomGen g) => Expr -> Expr -> Rand g Value
+sampleAnd :: (MonadRandom m) => Expr -> Expr -> m Value
 sampleAnd e1 e2 = do
   v1 <- sampleIO e1
   if evaluateAsBool v1
@@ -58,7 +58,7 @@ sampleAnd e1 e2 = do
     else
       return $ VBool False
 
-sampleOr :: (RandomGen g) => Expr -> Expr -> Rand g Value
+sampleOr :: (MonadRandom m) => Expr -> Expr -> m Value
 sampleOr e1 e2 = do
   v1 <- sampleIO e1
   if evaluateAsBool v1
@@ -68,7 +68,7 @@ sampleOr e1 e2 = do
       v2 <- sampleIO e2
       return $ VBool $ evaluateAsBool v2
 
-sampleNot :: (RandomGen g) => Expr -> Rand g Value
+sampleNot :: (MonadRandom m) => Expr -> m Value
 sampleNot expr = do
   value <- sampleIO expr
   return $ VBool $ not $ evaluateAsBool value

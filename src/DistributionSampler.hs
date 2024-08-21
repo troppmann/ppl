@@ -24,7 +24,7 @@ data SampledDistribution = SampledDistribution
   }
   deriving (Show)
 
-sampleDistr :: (RandomGen g) => Expr -> SampleInfo -> Rand g (Map.Map Int Double)
+sampleDistr :: (MonadRandom m) => Expr -> SampleInfo -> m (Map.Map Int Double)
 sampleDistr expr info = do
   samples <- fmap (fmap convertToFloat) (replicateM (numberOfSamples info) $ sampleIO expr)
   let indices = map (toBucketIndex info) samples
