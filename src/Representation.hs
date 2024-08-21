@@ -26,8 +26,8 @@ data Expr
   deriving (Show, Read, Eq)
 
 data Value
-  = VFloat Float
+  = VFloat Double
   | VBool Bool
   deriving (Show, Read, Eq)
 
-type Probability = Float
+type Probability = Double

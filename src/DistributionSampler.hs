@@ -12,19 +12,19 @@ import Representation
 import Sample
 
 data SampleInfo = SampleInfo
-  { start :: Float,
-    stepWidth :: Float,
+  { start :: Double,
+    stepWidth :: Double,
     numberOfSamples :: Int
   }
   deriving (Show)
 
 data SampledDistribution = SampledDistribution
   { info :: SampleInfo,
-    buckets :: Map.Map Int Float
+    buckets :: Map.Map Int Double
   }
   deriving (Show)
 
-sampleDistr :: Expr -> SampleInfo -> IO (Map.Map Int Float)
+sampleDistr :: Expr -> SampleInfo -> IO (Map.Map Int Double)
 sampleDistr expr info = do
   samples <- fmap (fmap convertToFloat) (replicateM (numberOfSamples info) $ sampleIO expr)
   let indices = map (toBucketIndex info) samples
@@ -32,11 +32,11 @@ sampleDistr expr info = do
   let densities = map (toDensityEntry info) sorted
   return $ Map.fromList densities
 
-convertToFloat :: Value -> Float
+convertToFloat :: Value -> Double
 convertToFloat (VFloat f) = f
 convertToFloat (VBool _) = error "Expected Float got Bool."
 
-toDensityEntry :: SampleInfo -> [Int] -> (Int, Float)
+toDensityEntry :: SampleInfo -> [Int] -> (Int, Double)
 toDensityEntry _ [] = error "Empty List"
 toDensityEntry info sameIndexList@(x : _xs) = (x, density)
   where
@@ -47,7 +47,7 @@ toDensityEntry info sameIndexList@(x : _xs) = (x, density)
 
 type BucketIndex = Int
 
-toBucketIndex :: SampleInfo -> Float -> BucketIndex
+toBucketIndex :: SampleInfo -> Double -> BucketIndex
 toBucketIndex info sample = index
   where
     index = floor $ (sample - start info) / stepWidth info

@@ -7,17 +7,16 @@ import Representation
 import Statistics.Distribution
 import Statistics.Distribution.Normal
 import System.Random
-import GHC.Float (double2Float)
 
 sampleIO :: Expr -> IO Value
 sampleIO (Const v) = return v
 sampleIO Uniform = do
-  rValue <- randomRIO (0, 1) :: IO Float
+  rValue <- randomRIO (0, 1) :: IO Double
   return $ VFloat rValue
 sampleIO Normal = do
   rValue <- randomRIO (0, 1) :: IO Double
   let normal = normalDistr 0.0 1.0
-  let nValue = double2Float $ quantile normal rValue
+  let nValue = quantile normal rValue
   return $ VFloat nValue
 sampleIO (Plus e1 e2) = apply (evaluateArithmetic (+)) e1 e2
 sampleIO (Multiply e1 e2) = apply (evaluateArithmetic (*)) e1 e2
@@ -78,7 +77,7 @@ evaluateAsBool :: Value -> Bool
 evaluateAsBool (VFloat _) = error "Error: Expected Bool got Float."
 evaluateAsBool (VBool b) = b
 
-evaluateArithmetic :: (Float -> Float -> Float) -> Value -> Value -> Value
+evaluateArithmetic :: (Double -> Double -> Double) -> Value -> Value -> Value
 evaluateArithmetic _ (VBool _) _ = error "Error: Can't calculate a Boolean Value."
 evaluateArithmetic _ _ (VBool _) = error "Error: Can't calculate a Boolean Value."
 evaluateArithmetic f (VFloat x) (VFloat y) = VFloat $ f x y

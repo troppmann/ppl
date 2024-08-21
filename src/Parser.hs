@@ -109,5 +109,5 @@ tryConvertToLiteral "False" = Just $ Const $ VBool False
 tryConvertToLiteral "Normal" = Just Normal
 tryConvertToLiteral "Uniform" = Just Uniform
 tryConvertToLiteral x
-  | Just float <- readMaybe x :: Maybe Float = Just $ Const $ VFloat float
+  | Just float <- readMaybe x :: Maybe Double = Just $ Const $ VFloat float
   | otherwise = Nothing
