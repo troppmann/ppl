@@ -1,10 +1,11 @@
 module Main where
 
+import DistributionSampler
+import Interpret
 import Parser
+import Representation (Value (VFloat))
 import Sample
 import Spn
-import Interpret
-import Representation (Value(VFloat))
 
 main :: IO ()
 main = do
@@ -13,6 +14,8 @@ main = do
   print expr
   sample0 <- sampleIO expr
   print sample0
+  sampledDis <- sampleDistr expr SampleInfo {start = 0, stepWidth = 0.05, numberOfSamples = 100000}
+  print sampledDis
   let prob = interpret expr (VFloat 1.5)
   print prob
 
