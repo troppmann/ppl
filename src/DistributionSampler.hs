@@ -5,7 +5,7 @@ module DistributionSampler
   )
 where
 
-import Control.Monad (replicateM)
+import Control.Monad.Random
 import Data.List
 import Data.Map qualified as Map
 import Representation
@@ -24,7 +24,7 @@ data SampledDistribution = SampledDistribution
   }
   deriving (Show)
 
-sampleDistr :: Expr -> SampleInfo -> IO (Map.Map Int Double)
+sampleDistr :: (RandomGen g) => Expr -> SampleInfo -> Rand g (Map.Map Int Double)
 sampleDistr expr info = do
   samples <- fmap (fmap convertToFloat) (replicateM (numberOfSamples info) $ sampleIO expr)
   let indices = map (toBucketIndex info) samples

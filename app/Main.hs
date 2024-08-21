@@ -1,5 +1,6 @@
 module Main where
 
+import Control.Monad.Random (evalRandIO)
 import DistributionSampler
 import Interpret
 import Parser
@@ -12,9 +13,9 @@ main = do
   s <- readFile "test.ppl"
   let expr = parseText s
   print expr
-  sample0 <- sampleIO expr
+  sample0 <- evalRandIO (sampleIO expr)
   print sample0
-  sampledDis <- sampleDistr expr SampleInfo {start = 0, stepWidth = 0.05, numberOfSamples = 100000}
+  sampledDis <- evalRandIO (sampleDistr expr SampleInfo {start = 0, stepWidth = 0.05, numberOfSamples = 100000})
   print sampledDis
   let prob = interpret expr (VFloat 1.5)
   print prob

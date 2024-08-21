@@ -3,18 +3,18 @@ module Sample
   )
 where
 
+import Control.Monad.Random (Rand, RandomGen, getRandomR)
 import Representation
 import Statistics.Distribution
 import Statistics.Distribution.Normal
-import System.Random
 
-sampleIO :: Expr -> IO Value
+sampleIO :: (RandomGen g) => Expr -> Rand g Value
 sampleIO (Const v) = return v
 sampleIO Uniform = do
-  rValue <- randomRIO (0, 1) :: IO Double
+  rValue <- getRandomR (0.0, 1.0)
   return $ VFloat rValue
 sampleIO Normal = do
-  rValue <- randomRIO (0, 1) :: IO Double
+  rValue <- getRandomR (0, 1)
   let normal = normalDistr 0.0 1.0
   let nValue = quantile normal rValue
   return $ VFloat nValue
@@ -33,13 +33,13 @@ sampleIO (GreaterThan e1 e2) = apply (evaluateCompare (>)) e1 e2
 sampleIO (GreaterEqualThan e1 e2) = apply (evaluateCompare (>=)) e1 e2
 sampleIO (IfElseThen e1 e2 e3) = sampleIfElse e1 e2 e3
 
-apply :: (Value -> Value -> Value) -> Expr -> Expr -> IO Value
+apply :: (RandomGen g) => (Value -> Value -> Value) -> Expr -> Expr -> Rand g Value
 apply f e1 e2 = do
   v1 <- sampleIO e1
   v2 <- sampleIO e2
   return $ f v1 v2
 
-sampleIfElse :: Expr -> Expr -> Expr -> IO Value
+sampleIfElse :: (RandomGen g) => Expr -> Expr -> Expr -> Rand g Value
 sampleIfElse e1 e2 e3 = do
   v1 <- sampleIO e1
   if evaluateAsBool v1
@@ -48,7 +48,7 @@ sampleIfElse e1 e2 e3 = do
     else
       sampleIO e3
 
-sampleAnd :: Expr -> Expr -> IO Value
+sampleAnd :: (RandomGen g) => Expr -> Expr -> Rand g Value
 sampleAnd e1 e2 = do
   v1 <- sampleIO e1
   if evaluateAsBool v1
@@ -58,7 +58,7 @@ sampleAnd e1 e2 = do
     else
       return $ VBool False
 
-sampleOr :: Expr -> Expr -> IO Value
+sampleOr :: (RandomGen g) => Expr -> Expr -> Rand g Value
 sampleOr e1 e2 = do
   v1 <- sampleIO e1
   if evaluateAsBool v1
@@ -68,7 +68,7 @@ sampleOr e1 e2 = do
       v2 <- sampleIO e2
       return $ VBool $ evaluateAsBool v2
 
-sampleNot :: Expr -> IO Value
+sampleNot :: (RandomGen g) => Expr -> Rand g Value
 sampleNot expr = do
   value <- sampleIO expr
   return $ VBool $ not $ evaluateAsBool value
