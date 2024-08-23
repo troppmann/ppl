@@ -17,8 +17,9 @@ main = do
   print sample0
   sampledDis <- evalRandIO (sampleDistr expr SampleInfo {start = 0, stepWidth = 0.05, numberOfSamples = 100000})
   print sampledDis
-  let prob = interpret expr (VFloat 1.5)
-  print prob
+  let value = VFloat $ 2.0
+  let prob = interpret expr value
+  print ("Test: " <> show value <> " -> " <> show prob)
 
 calculateX0TrueGivenX1False :: Float
 calculateX0TrueGivenX1False = calculate ([1, 0], [0, 1]) spn / calculate ([1, 0], [1, 1]) spn

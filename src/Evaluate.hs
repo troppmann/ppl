@@ -1,5 +1,8 @@
 module Evaluate
   ( evalConstExpr,
+    evalArithmetic,
+    evalAsBool,
+    evalAsFloat,
   )
 where
 
@@ -79,6 +82,10 @@ evalIfElseThen e1 e2 e3 = do
 evalAsBool :: Value -> Either ErrorString Bool
 evalAsBool (VFloat _) = Left "Error: Expected Bool got Float."
 evalAsBool (VBool b) = Right b
+
+evalAsFloat :: Value -> Either ErrorString Double
+evalAsFloat (VBool _) = Left "Error: Expected Float got Bool."
+evalAsFloat (VFloat f) = Right f
 
 evalArithmetic :: (Double -> Double -> Double) -> Value -> Value -> ResultValue
 evalArithmetic _ (VBool _) _ = Left "Error: Can't calculate a Boolean Value."
