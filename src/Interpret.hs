@@ -29,7 +29,7 @@ interpret (Multiply (Const (VFloat c)) Uniform) (VFloat f) = density distr f
 interpret (Multiply Uniform (Const (VFloat c))) (VFloat f) = density distr f
   where
     distr = uniformDistr (0.0 * c) (1.0 * c)
-interpret _ _ = todo
+interpret _ _ = todo "Missing case."
 
-todo :: a
-todo = error "not yet implemented"
+todo :: String -> a
+todo msg = error ("not yet implemented: " ++ msg)
