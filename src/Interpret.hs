@@ -16,6 +16,7 @@ interpret Uniform (VFloat f) = Right $ density distr f
 interpret Normal (VFloat f) = Right $ density distr f
   where
     distr = normalDistr 0.0 1.0
+interpret (Const v1) value = if v1 == value then Right 1.0 else Right 0.0
 interpret (Plus e1 e2) value
   | Right constant <- evalConstExpr e1 = do
       newValue <- evalArithmetic (-) value constant
