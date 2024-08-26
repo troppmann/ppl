@@ -17,7 +17,7 @@ main = do
   print sample0
   sampledDis <- evalRandIO (sampleDistr expr SampleInfo {start = 0, stepWidth = 0.05, numberOfSamples = 100000})
   print sampledDis
-  let value = VFloat $ 0.0
+  let value = VFloat $ 2.0
   let prob = interpret expr value
   print ("Test: " <> show value <> " -> " <> show prob)
 

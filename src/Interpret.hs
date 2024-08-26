@@ -41,8 +41,12 @@ interpret (Multiply e1 e2) value
           interpret (Const $ VFloat 0.0) value
         else do
           v <- evalAsFloat value
-          (_dim, prob) <- interpret e2 (VFloat $ v / c)
-          return (1, prob / abs c)
+          (dim, prob) <- interpret e2 (VFloat $ v / c)
+          if dim == 0
+            then
+              return (dim, prob)
+            else
+              return (1, prob / abs c)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
       if c == 0.0
@@ -50,8 +54,12 @@ interpret (Multiply e1 e2) value
           interpret (Const $ VFloat 0.0) value
         else do
           v <- evalAsFloat value
-          (_dim, prob) <- interpret e1 (VFloat $ v / c)
-          return (1, prob / abs c)
+          (dim, prob) <- interpret e1 (VFloat $ v / c)
+          if dim == 0
+            then
+              return (dim, prob)
+            else
+              return (1, prob / abs c)
   | otherwise = Left "Can only interpret Multiply(+) with a one side Constant."
 interpret (Divide e1 e2) value
   | Right constant <- evalConstExpr e1 = do
