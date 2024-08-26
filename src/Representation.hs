@@ -1,7 +1,7 @@
 module Representation
   ( Expr (..),
     Value (..),
-    Probability,
+    DimensionalProbability,
   )
 where
 
@@ -31,3 +31,7 @@ data Value
   deriving (Show, Read, Eq)
 
 type Probability = Double
+
+type Dimension = Int
+
+type DimensionalProbability = (Dimension, Probability)
