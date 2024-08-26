@@ -1,1 +1,1 @@
-2 + (Normal * 0.0) - 0.0
+if Uniform > 0.5 then Uniform else 2.0
