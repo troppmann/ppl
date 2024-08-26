@@ -35,17 +35,23 @@ interpret (Subtract e1 e2) value
   | otherwise = Left "Can only interpret Subtract(+) with a one side Constant."
 interpret (Multiply e1 e2) value
   | Right constant <- evalConstExpr e1 = do
-      -- TODO check for c == 0
       c <- evalAsFloat constant
-      v <- evalAsFloat value
-      f <- interpret e2 (VFloat $ v / c)
-      return (f / abs c)
+      if c == 0.0
+        then
+          interpret (Const $ VFloat 0.0) value
+        else do
+          v <- evalAsFloat value
+          f <- interpret e2 (VFloat $ v / c)
+          return (f / abs c)
   | Right constant <- evalConstExpr e2 = do
-      -- TODO check for c == 0
       c <- evalAsFloat constant
-      v <- evalAsFloat value
-      f <- interpret e1 (VFloat $ v / c)
-      return (f / abs c)
+      if c == 0.0
+        then
+          interpret (Const $ VFloat 0.0) value
+        else do
+          v <- evalAsFloat value
+          f <- interpret e1 (VFloat $ v / c)
+          return (f / abs c)
   | otherwise = Left "Can only interpret Multiply(+) with a one side Constant."
 interpret (Divide e1 e2) value
   | Right constant <- evalConstExpr e1 = do
