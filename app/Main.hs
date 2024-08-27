@@ -1,3 +1,5 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+
 module Main where
 
 import Control.Monad.Random (evalRandIO)
@@ -7,6 +9,7 @@ import Parser
 import Representation (Value (VFloat))
 import Sample
 import Spn
+import Validate
 
 main :: IO ()
 main = do
@@ -18,9 +21,11 @@ main = do
   sampledDis <- evalRandIO (sampleDistr expr SampleInfo {start = 0, stepWidth = 0.05, numberOfSamples = 100000})
   print sampledDis
   print $ density sampledDis 0.0
-  let value = VFloat $ 0.0
+  let value = VFloat $ 1.0
   let prob = interpret expr value
   print ("Test: " <> show value <> " -> " <> show prob)
+  let integral = validateExpr ValidateInfo {start = -10, end = 10, stepWidth = 0.10} expr
+  print $ "Validate: " ++ show integral
 
 calculateX0TrueGivenX1False :: Float
 calculateX0TrueGivenX1False = calculate ([1, 0], [0, 1]) spn / calculate ([1, 0], [1, 1]) spn
