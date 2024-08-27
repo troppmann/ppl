@@ -6,6 +6,7 @@ module Validate
 where
 
 import Data.Either
+import Debug.Trace
 import Interpret
 import Representation
 
@@ -24,11 +25,12 @@ validateFunc :: ValidateInfo -> (Double -> Double) -> Double
 validateFunc info f = approxIntegral (start info) (end info) (stepWidth info) f
 
 convertExprToFunction :: Expr -> (Double -> Double)
-convertExprToFunction expr = convertOutput . interpret expr . convertInput
+convertExprToFunction expr a = trace ("f with " <> show a) . convertOutput . interpret expr . convertInput $ a
   where
     convertInput = VFloat
     convertOutput = fromRight 0.0 . fmap snd
 
+-- TODO: f gets executed twice per step value
 approxIntegral :: Double -> Double -> Double -> (Double -> Double) -> Double
 approxIntegral start end stepWidth f
   | start > end = 0.0
