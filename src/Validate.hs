@@ -1,7 +1,7 @@
 module Validate
   ( ValidateInfo (..),
     validateExpr,
-    validateFunction,
+    validateFunc,
   )
 where
 
@@ -18,7 +18,10 @@ data ValidateInfo = ValidateInfo
   deriving (Show)
 
 validateExpr :: ValidateInfo -> Expr -> Double
-validateExpr info expr = validateFunction (start info) (end info) (stepWidth info) (convertExprToFunction expr)
+validateExpr info expr = validateFunc info (convertExprToFunction expr)
+
+validateFunc :: ValidateInfo -> (Double -> Double) -> Double
+validateFunc info f = approxIntegral (start info) (end info) (stepWidth info) f
 
 convertExprToFunction :: Expr -> (Double -> Double)
 convertExprToFunction expr = convertOutput . interpret expr . convertInput
@@ -26,10 +29,10 @@ convertExprToFunction expr = convertOutput . interpret expr . convertInput
     convertInput = VFloat
     convertOutput = fromRight 0.0 . fmap snd
 
-validateFunction :: Double -> Double -> Double -> (Double -> Double) -> Double
-validateFunction start end stepWidth f
+approxIntegral :: Double -> Double -> Double -> (Double -> Double) -> Double
+approxIntegral start end stepWidth f
   | start > end = 0.0
-  | otherwise = (trapez f start b) + validateFunction b end stepWidth f
+  | otherwise = (trapez f start b) + approxIntegral b end stepWidth f
   where
     b = start + stepWidth
 
