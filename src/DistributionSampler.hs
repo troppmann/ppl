@@ -59,17 +59,3 @@ density :: SampledDistribution -> Double -> Double
 density d value = fromMaybe 0.0 $ Map.lookup index $ buckets d
   where
     index = toBucketIndex (info d) value
-
--- TODO: ppl like "if Uniform > 0.5 then Uniform else 2.0" are both 1 and 0
--- idk how to handle these
-type ProbabilityDimension = Int
-
-dimension :: Expr -> ProbabilityDimension
-dimension (Const _) = 0
-dimension (Plus e1 e2)
-  | c1 == c2 = c1
-  | c1 > c2 = c2
-  | c1 < c2 = c1
-  where
-    c1 = dimension e1
-    c2 = dimension e2

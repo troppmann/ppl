@@ -19,6 +19,7 @@ data ValidateInfo = ValidateInfo
   }
   deriving (Show)
 
+-- only works on pdf's not pmf's
 validateExpr :: ValidateInfo -> Expr -> Double
 validateExpr info expr = validateFunc info (convertExprToFunction expr)
 

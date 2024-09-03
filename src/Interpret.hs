@@ -1,5 +1,6 @@
 module Interpret
   ( interpret,
+    integral,
   )
 where
 
@@ -74,7 +75,43 @@ interpret (Divide e1 e2) value
       (_dim, prob) <- interpret e1 (VFloat $ v * c)
       return (1, prob * abs c)
   | otherwise = Left "Can only interpret Divide(/) with a one side Constant."
-interpret _ _ = todo "Missing case."
+interpret (IfElseThen e1 e2 e3) value = do
+  -- TODO handle dimension
+  (_dim1, probTrue) <- interpret e1 (VBool True)
+  let probFalse = 1 - probTrue
+  (_dim2, p2) <- interpret e2 value
+  (_dim3, p3) <- interpret e3 value
+  return (1, probTrue * p2 + probFalse * p3)
+interpret (LessThan e1 e2) (VBool bool)
+  | Right constant <- evalConstExpr e2 = do
+      c <- evalAsFloat constant
+      x <- integral e1 (SmallerThan c)
+      return (0, if bool then x else 1 - x)
+  | otherwise = Left "Can only interpret < with a one side Constant."
+interpret (GreaterThan e1 e2) (VBool bool)
+  | Right constant <- evalConstExpr e2 = do
+      c <- evalAsFloat constant
+      x <- integral e1 (BiggerThan c)
+      return (0, if bool then x else 1 - x)
+  | otherwise = Left "Can only interpret > with a one side Constant."
+interpret e _ = todo ("Missing interpret case: " <> show e)
 
 todo :: String -> a
 todo msg = error ("not yet implemented: " ++ msg)
+
+data IntegralQuery = SmallerThan Double | BiggerThan Double
+
+integral :: Expr -> IntegralQuery -> Either String Double
+integral Uniform (SmallerThan f) = Right $ cumulative distr f
+  where
+    distr = uniformDistr 0.0 1.0
+integral Uniform (BiggerThan f) = Right $ complCumulative distr f
+  where
+    distr = uniformDistr 0.0 1.0
+integral Normal (SmallerThan f) = Right $ cumulative distr f
+  where
+    distr = normalDistr 0.0 1.0
+integral Normal (BiggerThan f) = Right $ complCumulative distr f
+  where
+    distr = normalDistr 0.0 1.0
+integral expr _ = todo $ "Missing integral case: " <> show expr
