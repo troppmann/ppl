@@ -23,7 +23,7 @@ main = do
   -- sampledDis <- evalRandIO (sampleDistr expr SampleInfo {start = 0, stepWidth = 0.05, numberOfSamples = 100000})
   -- print sampledDis
   -- print $ density sampledDis 2.0
-  -- let integral = validateExpr ValidateInfo {start = -10, end = 10, stepWidth = 0.10} expr
+  -- let integral = validateExpr LinearSpacing {start = -10, end = 10, stepWidth = 0.10} expr
   -- print $ "Validate: " ++ show integral
   let value = VFloat 2.0
   let prob = interpret expr value

@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module Validate
-  ( ValidateInfo (..),
+  ( LinearSpacing (..),
     validateExpr,
     validateFunc,
   )
@@ -12,7 +12,7 @@ import Interpret
 import Representation
 
 -- TODO: find better name
-data ValidateInfo = ValidateInfo
+data LinearSpacing = LinearSpacing
   { start :: Double,
     end :: Double,
     stepWidth :: Double
@@ -20,10 +20,10 @@ data ValidateInfo = ValidateInfo
   deriving (Show)
 
 -- only works on pdf's not pmf's
-validateExpr :: ValidateInfo -> Expr -> Double
+validateExpr :: LinearSpacing -> Expr -> Double
 validateExpr info expr = validateFunc info (convertExprToFunction expr)
 
-validateFunc :: ValidateInfo -> (Double -> Double) -> Double
+validateFunc :: LinearSpacing -> (Double -> Double) -> Double
 validateFunc info f = approxIntegral2 (start info) (end info) (stepWidth info) f
 
 convertExprToFunction :: Expr -> (Double -> Double)
