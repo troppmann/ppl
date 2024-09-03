@@ -1,13 +1,13 @@
 module Parser
-  ( parseText,
+  ( parseExpr,
   )
 where
 
 import Representation
 import Text.Read (readMaybe)
 
-parseText :: String -> Expr
-parseText = fst . parseUntil Nothing Nothing Nothing . separate
+parseExpr :: String -> Expr
+parseExpr = fst . parseUntil Nothing Nothing Nothing . separate
 
 separate :: String -> [String]
 separate = words . escape

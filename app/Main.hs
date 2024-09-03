@@ -16,7 +16,7 @@ import Validate
 main :: IO ()
 main = do
   s <- readFile "test.ppl"
-  let expr = parseText s
+  let expr = parseExpr s
   print expr
   sample0 <- evalRandIO (sampleIO expr)
   print sample0
