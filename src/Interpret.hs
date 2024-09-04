@@ -113,16 +113,14 @@ todo msg = error ("not yet implemented: " ++ msg)
 data IntegralQuery = SmallerThan Double | BiggerThan Double
 
 integral :: Expr -> IntegralQuery -> Either String Double
-integral Uniform (SmallerThan f) = Right $ cumulative distr f
+integral Uniform query
+  | (SmallerThan f) <- query = return $ cumulative distr f
+  | (BiggerThan f) <- query = return $ complCumulative distr f
   where
     distr = uniformDistr 0.0 1.0
-integral Uniform (BiggerThan f) = Right $ complCumulative distr f
-  where
-    distr = uniformDistr 0.0 1.0
-integral Normal (SmallerThan f) = Right $ cumulative distr f
-  where
-    distr = normalDistr 0.0 1.0
-integral Normal (BiggerThan f) = Right $ complCumulative distr f
+integral Normal query
+  | (SmallerThan f) <- query = return $ cumulative distr f
+  | (BiggerThan f) <- query = return $ complCumulative distr f
   where
     distr = normalDistr 0.0 1.0
 integral expr _ = todo $ "Missing integral case: " <> show expr
