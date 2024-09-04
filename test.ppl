@@ -1,1 +1,1 @@
--1 / Normal < -2
+if -1 / Normal < 0.5 then 3 else (Uniform < 0.5)

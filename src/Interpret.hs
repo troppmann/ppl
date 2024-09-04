@@ -103,8 +103,8 @@ interpret (GreaterThan e1 e2) (VBool bool)
       x <- inequality e2 (ST, c)
       return (0, if bool then x else 1 - x)
   | otherwise = Left "Can only interpret > with a one side Constant."
-interpret (GreaterThan _ _) (VFloat f) = Left $ "GreaterThan (>) can't be evaluate to a Float " <> show f
-interpret (LessThan _ _) (VFloat f) = Left $ "GreaterThan (>) can't be evaluate to a Float " <> show f
+interpret (GreaterThan _ _) (VFloat _) = Right (0, 0.0)
+interpret (LessThan _ _) (VFloat _) = Right (0, 0.0)
 interpret e _ = todo ("Missing interpret case: " <> show e)
 
 todo :: String -> a
