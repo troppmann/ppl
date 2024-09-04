@@ -1,6 +1,5 @@
 module Interpret
   ( interpret,
-    integral,
   )
 where
 
@@ -86,21 +85,21 @@ interpret (IfElseThen e1 e2 e3) value = do
 interpret (LessThan e1 e2) (VBool bool)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
-      x <- integral e1 (ST, c)
+      x <- inequality e1 (ST, c)
       return (0, if bool then x else 1 - x)
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
-      x <- integral e2 (BT, c)
+      x <- inequality e2 (BT, c)
       return (0, if bool then x else 1 - x)
   | otherwise = Left "Can only interpret < with a one side Constant."
 interpret (GreaterThan e1 e2) (VBool bool)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
-      x <- integral e1 (BT, c)
+      x <- inequality e1 (BT, c)
       return (0, if bool then x else 1 - x)
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
-      x <- integral e2 (ST, c)
+      x <- inequality e2 (ST, c)
       return (0, if bool then x else 1 - x)
   | otherwise = Left "Can only interpret > with a one side Constant."
 interpret (GreaterThan _ _) (VFloat f) = Left $ "GreaterThan (>) can't be evaluate to a Float " <> show f
@@ -114,60 +113,63 @@ todo msg = error ("not yet implemented: " ++ msg)
 -- TODO 04.09.2024: Change to Prelude.Ordering
 data Inequality = ST | BT
 
-type IntegralQuery = (Inequality, Double)
+type InequalityQuery = (Inequality, Double)
 
 swap :: Inequality -> Inequality
 swap ST = BT
 swap BT = ST
 
-integral :: Expr -> IntegralQuery -> Either String Double
-integral Uniform query
+inequality :: Expr -> InequalityQuery -> Either String Double
+inequality (Const (VFloat constant)) query
+  | (ST, value) <- query = return $ if constant < value then 1.0 else 0.0
+  | (BT, value) <- query = return $ if constant > value then 1.0 else 0.0
+inequality Uniform query
   | (ST, value) <- query = return $ cumulative distr value
   | (BT, value) <- query = return $ complCumulative distr value
   where
     distr = uniformDistr 0.0 1.0
-integral Normal query
+inequality Normal query
   | (ST, value) <- query = return $ cumulative distr value
   | (BT, value) <- query = return $ complCumulative distr value
   where
     distr = normalDistr 0.0 1.0
-integral (Plus e1 e2) query
+inequality (Plus e1 e2) query
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
-      integral e2 (ie, value - c)
+      inequality e2 (ie, value - c)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
-      integral e1 (ie, value - c)
+      inequality e1 (ie, value - c)
   where
     (ie, value) = query
-integral (Subtract e1 e2) query
+inequality (Subtract e1 e2) query
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
-      integral e2 (swap ie, -value + c)
+      inequality e2 (swap ie, -value + c)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
-      integral e1 (ie, value + c)
+      inequality e1 (ie, value + c)
   where
     (ie, value) = query
-integral (Multiply e1 e2) query
+inequality (Multiply e1 e2) query
   -- TODO 04.09.24: handle c == 0.0
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
-      integral e2 (if c < 0 then swap ie else ie, value / c)
+      inequality e2 (if c < 0 then swap ie else ie, value / c)
   -- TODO 04.09.24: handle c == 0.0
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
-      integral e1 (if c < 0 then swap ie else ie, value / c)
+      inequality e1 (if c < 0 then swap ie else ie, value / c)
   where
     (ie, value) = query
-integral (Divide e1 e2) query
+inequality (Divide e1 e2) query
   -- TODO 04.09.24: handle c / e2
   | Right constant <- evalConstExpr e1 = do
       todo "Cant handle constant / expression"
   -- TODO 04.09.24: handle c == 0.0
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
-      integral e1 (if c < 0 then swap ie else ie, value * c)
+      inequality e1 (if c < 0 then swap ie else ie, value * c)
   where
     (ie, value) = query
-integral expr _ = todo $ "Missing integral case: " <> show expr
+inequality expr _ = todo $ "Missing integral case: " <> show expr
