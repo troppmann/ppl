@@ -3,6 +3,7 @@ module Interpret
   )
 where
 
+import Debug.Trace (trace)
 import Evaluate
 import Representation
 import Statistics.Distribution
@@ -109,9 +110,12 @@ interpret e _ = todo ("Missing interpret case: " <> show e)
 todo :: String -> a
 todo msg = error ("not yet implemented: " ++ msg)
 
+dbg :: (Show a) => a -> a
+dbg a = trace (show a) a
+
 -- | ST = SmallerThan, BT = BiggerThan
 -- TODO 04.09.2024: Change to Prelude.Ordering
-data Inequality = ST | BT
+data Inequality = ST | BT deriving (Show, Ord, Eq)
 
 type InequalityQuery = (Inequality, Double)
 
@@ -163,9 +167,20 @@ inequality (Multiply e1 e2) query
   where
     (ie, value) = query
 inequality (Divide e1 e2) query
-  -- TODO 04.09.24: handle c / e2
   | Right constant <- evalConstExpr e1 = do
-      todo "Cant handle constant / expression"
+      c <- evalAsFloat constant
+      let bound = c / value
+      if ie == ST
+        then do
+          -- Two Ranges either ([-∞, 0] and [bound, +∞]) or ([-∞, bound] and [0, +∞])
+          firstRange <- inequality e2 (if bound < 0 then ST else BT, bound)
+          secondRange <- inequality e2 (if bound < 0 then BT else ST, 0)
+          return $ firstRange + secondRange
+        else do
+          -- One Range between Bound and 0 could either been [0, Bound] or [Bound,0]
+          lower <- inequality e2 (ST, min bound 0)
+          higher <- inequality e2 (ST, max bound 0)
+          return $ higher - lower
   -- TODO 04.09.24: handle c == 0.0
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
