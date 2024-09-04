@@ -25,7 +25,7 @@ main = do
   -- print $ density sampledDis 2.0
   -- let integral = validateExpr LinearSpacing {start = -10, end = 10, stepWidth = 0.10} expr
   -- print $ "Validate: " ++ show integral
-  let value = VFloat 2.0
+  let value = VBool True
   let prob = interpret expr value
   print ("Test: " <> show value <> " -> " <> show prob)
 
