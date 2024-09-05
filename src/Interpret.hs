@@ -83,6 +83,8 @@ interpret (IfElseThen e1 e2 e3) value = do
   (_dim3, p3) <- interpret e3 value
   return (1, probTrue * p2 + probFalse * p3)
 -- TODO 03.09.2024: Add LessThanEqual and GreaterThanEqual
+-- TODO 05.09.2024: Equal case can also be solved if one side is a constant,
+--                  can maybe also be done in the inequality function
 interpret (LessThan e1 e2) (VBool bool)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
@@ -105,6 +107,7 @@ interpret (GreaterThan e1 e2) (VBool bool)
   | otherwise = Left "Can only interpret > with a one side Constant."
 interpret (GreaterThan _ _) (VFloat _) = Right (0, 0.0)
 interpret (LessThan _ _) (VFloat _) = Right (0, 0.0)
+interpret (Equal e1 e2) (VFloat _) = Right (0, 0.0)
 interpret e _ = todo ("Missing interpret case: " <> show e)
 
 -- | ST = SmallerThan, BT = BiggerThan
