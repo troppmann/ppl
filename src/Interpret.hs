@@ -3,7 +3,7 @@ module Interpret
   )
 where
 
-import Debug.Trace (trace)
+import Debug.Extended
 import Evaluate
 import Representation
 import Statistics.Distribution
@@ -106,12 +106,6 @@ interpret (GreaterThan e1 e2) (VBool bool)
 interpret (GreaterThan _ _) (VFloat _) = Right (0, 0.0)
 interpret (LessThan _ _) (VFloat _) = Right (0, 0.0)
 interpret e _ = todo ("Missing interpret case: " <> show e)
-
-todo :: String -> a
-todo msg = error ("not yet implemented: " ++ msg)
-
-dbg :: (Show a) => a -> a
-dbg a = trace (show a) a
 
 -- | ST = SmallerThan, BT = BiggerThan
 -- TODO 04.09.2024: Change to Prelude.Ordering

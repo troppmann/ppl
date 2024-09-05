@@ -68,6 +68,7 @@ executable compiler
                     Interpret, 
                     DistributionSampler,
                     Evaluate,
+                    Debug.Extended,
                     Validate
 
 
