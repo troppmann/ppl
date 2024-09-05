@@ -88,21 +88,21 @@ interpret (IfElseThen e1 e2 e3) value = do
 interpret (LessThan e1 e2) (VBool bool)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
-      x <- inequality e1 (LT, c)
+      x <- compareExpr e1 (LT, c)
       return (0, if bool then x else 1 - x)
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
-      x <- inequality e2 (GT, c)
+      x <- compareExpr e2 (GT, c)
       return (0, if bool then x else 1 - x)
   | otherwise = Left "Can only interpret < with a one side Constant."
 interpret (GreaterThan e1 e2) (VBool bool)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
-      x <- inequality e1 (GT, c)
+      x <- compareExpr e1 (GT, c)
       return (0, if bool then x else 1 - x)
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
-      x <- inequality e2 (LT, c)
+      x <- compareExpr e2 (LT, c)
       return (0, if bool then x else 1 - x)
   | otherwise = Left "Can only interpret > with a one side Constant."
 interpret (GreaterThan _ _) (VFloat _) = Right (0, 0.0)
@@ -110,78 +110,78 @@ interpret (LessThan _ _) (VFloat _) = Right (0, 0.0)
 interpret (Equal _ _) (VFloat _) = Right (0, 0.0)
 interpret e _ = todo ("Missing interpret case: " <> show e)
 
-type InequalityQuery = (Ordering, Double)
+type CompareQuery = (Ordering, Double)
 
 swap :: Ordering -> Ordering
 swap LT = GT
 swap GT = LT
 swap EQ = EQ
 
-inequality :: Expr -> InequalityQuery -> Either String Double
-inequality (Const (VFloat constant)) query
+compareExpr :: Expr -> CompareQuery -> Either String Double
+compareExpr (Const (VFloat constant)) query
   | (LT, value) <- query = return $ if constant < value then 1.0 else 0.0
   | (GT, value) <- query = return $ if constant > value then 1.0 else 0.0
   | (EQ, _value) <- query = todo ""
-inequality Uniform query
+compareExpr Uniform query
   | (LT, value) <- query = return $ cumulative distr value
   | (GT, value) <- query = return $ complCumulative distr value
   | (EQ, _value) <- query = todo ""
   where
     distr = uniformDistr 0.0 1.0
-inequality Normal query
+compareExpr Normal query
   | (LT, value) <- query = return $ cumulative distr value
   | (GT, value) <- query = return $ complCumulative distr value
   where
     distr = normalDistr 0.0 1.0
-inequality (Plus e1 e2) query
+compareExpr (Plus e1 e2) query
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
-      inequality e2 (ord, value - c)
+      compareExpr e2 (ord, value - c)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
-      inequality e1 (ord, value - c)
+      compareExpr e1 (ord, value - c)
   where
     (ord, value) = query
-inequality (Subtract e1 e2) query
+compareExpr (Subtract e1 e2) query
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
-      inequality e2 (swap ord, -value + c)
+      compareExpr e2 (swap ord, -value + c)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
-      inequality e1 (ord, value + c)
+      compareExpr e1 (ord, value + c)
   where
     (ord, value) = query
-inequality (Multiply e1 e2) query
+compareExpr (Multiply e1 e2) query
   -- TODO 04.09.24: handle c == 0.0
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
-      inequality e2 (if c < 0 then swap ord else ord, value / c)
+      compareExpr e2 (if c < 0 then swap ord else ord, value / c)
   -- TODO 04.09.24: handle c == 0.0
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
-      inequality e1 (if c < 0 then swap ord else ord, value / c)
+      compareExpr e1 (if c < 0 then swap ord else ord, value / c)
   where
     (ord, value) = query
-inequality (Divide e1 e2) query
+compareExpr (Divide e1 e2) query
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
       let bound = c / value
       case ord of
         LT -> do
           -- Two Ranges either ([-∞, 0] and [bound, +∞]) or ([-∞, bound] and [0, +∞])
-          firstRange <- inequality e2 (if bound < 0 then LT else GT, bound)
-          secondRange <- inequality e2 (if bound < 0 then GT else LT, 0)
+          firstRange <- compareExpr e2 (if bound < 0 then LT else GT, bound)
+          secondRange <- compareExpr e2 (if bound < 0 then GT else LT, 0)
           return $ firstRange + secondRange
         GT -> do
           -- One Range between Bound and 0 could either been [0, Bound] or [Bound,0]
-          lower <- inequality e2 (LT, min bound 0)
-          higher <- inequality e2 (LT, max bound 0)
+          lower <- compareExpr e2 (LT, min bound 0)
+          higher <- compareExpr e2 (LT, max bound 0)
           return $ higher - lower
         EQ -> todo "idk yet"
   -- TODO 04.09.24: handle c == 0.0
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
-      inequality e1 (if c < 0 then swap ord else ord, value * c)
+      compareExpr e1 (if c < 0 then swap ord else ord, value * c)
   where
     (ord, value) = query
-inequality expr _ = todo $ "Missing integral case: " <> show expr
+compareExpr expr _ = todo $ "Missing integral case: " <> show expr
