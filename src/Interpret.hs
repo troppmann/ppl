@@ -170,33 +170,43 @@ compareExpr (Subtract e1 e2) query
   where
     (ord, value) = query
 compareExpr (Multiply e1 e2) query
-  -- TODO 04.09.24: handle c == 0.0
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
-      compareExpr e2 (if c < 0 then swap ord else ord, value / c)
-  -- TODO 04.09.24: handle c == 0.0
+      if c == 0
+        then
+          compareExpr (Const (VFloat 0.0)) (ord, value)
+        else
+          compareExpr e2 (if c < 0 then swap ord else ord, value / c)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
-      compareExpr e1 (if c < 0 then swap ord else ord, value / c)
+      if c == 0
+        then
+          compareExpr (Const (VFloat 0.0)) (ord, value)
+        else
+          compareExpr e1 (if c < 0 then swap ord else ord, value / c)
   where
     (ord, value) = query
 compareExpr (Divide e1 e2) query
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
-      let bound = c / value
-      case ord of
-        LT -> do
-          -- Two Ranges either ([-∞, 0] and [bound, +∞]) or ([-∞, bound] and [0, +∞])
-          firstRange <- compareExpr e2 (if bound < 0 then LT else GT, bound)
-          secondRange <- compareExpr e2 (if bound < 0 then GT else LT, 0)
-          return $ firstRange + secondRange
-        GT -> do
-          -- One Range between Bound and 0 could either been [0, Bound] or [Bound,0]
-          lower <- compareExpr e2 (LT, min bound 0)
-          higher <- compareExpr e2 (LT, max bound 0)
-          return $ higher - lower
-        EQ -> compareExpr e2 (EQ, bound)
-  -- TODO 04.09.24: handle c == 0.0
+      if c == 0.0
+        then
+          compareExpr (Const $ VFloat 0.0) (EQ, value)
+        else do
+          let bound = c / value
+          case ord of
+            -- Two Ranges either ([-∞, 0] and [bound, +∞]) or ([-∞, bound] and [0, +∞])
+            LT -> do
+              firstRange <- compareExpr e2 (if bound < 0 then LT else GT, bound)
+              secondRange <- compareExpr e2 (if bound < 0 then GT else LT, 0)
+              return $ firstRange + secondRange
+            -- One Range between Bound and 0 could either been [0, Bound] or [Bound,0]
+            GT -> do
+              lower <- compareExpr e2 (LT, min bound 0)
+              higher <- compareExpr e2 (LT, max bound 0)
+              return $ higher - lower
+            -- c / e2 == value => e2 == c / value == bound
+            EQ -> compareExpr e2 (EQ, bound)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
       compareExpr e1 (if c < 0 then swap ord else ord, value * c)
