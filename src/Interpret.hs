@@ -94,6 +94,9 @@ interpret (Equal e1 e2) (VBool bool)
       x <- compareExpr e2 (EQ, c)
       return (0, if bool then x else 1 - x)
   | otherwise = Left "Can only interpret == with a one side Constant."
+interpret (Unequal e1 e2) (VBool bool) = do
+  (dim, prob) <- interpret (Equal e1 e2) (VBool bool)
+  return (dim, 1 - prob)
 interpret (LessThan e1 e2) (VBool bool)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
@@ -117,6 +120,7 @@ interpret (GreaterThan e1 e2) (VBool bool)
 interpret (GreaterThan _ _) (VFloat _) = Right (0, 0.0)
 interpret (LessThan _ _) (VFloat _) = Right (0, 0.0)
 interpret (Equal _ _) (VFloat _) = Right (0, 0.0)
+interpret (Unequal _ _) (VFloat _) = Right (0, 0.0)
 interpret e _ = todo ("Missing interpret case: " <> show e)
 
 type CompareQuery = (Ordering, Double)
