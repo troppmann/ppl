@@ -83,8 +83,17 @@ interpret (IfElseThen e1 e2 e3) value = do
   (_dim3, p3) <- interpret e3 value
   return (1, probTrue * p2 + probFalse * p3)
 -- TODO 03.09.2024: Add LessThanEqual and GreaterThanEqual
--- TODO 05.09.2024: Equal case can also be solved if one side is a constant,
---                  can maybe also be done in the inequality function
+interpret (Equal e1 e2) (VBool bool)
+  -- TODO 05.09.2024: VBool VBool can also be compared
+  | Right constant <- evalConstExpr e2 = do
+      c <- evalAsFloat constant
+      x <- compareExpr e1 (EQ, c)
+      return (0, if bool then x else 1 - x)
+  | Right constant <- evalConstExpr e1 = do
+      c <- evalAsFloat constant
+      x <- compareExpr e2 (EQ, c)
+      return (0, if bool then x else 1 - x)
+  | otherwise = Left "Can only interpret == with a one side Constant."
 interpret (LessThan e1 e2) (VBool bool)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
@@ -117,20 +126,29 @@ swap LT = GT
 swap GT = LT
 swap EQ = EQ
 
+-- | Epsilon with IEEE754 doubles \n
+-- The smallest positive value x such that 1 + x is representable.
+epsilon :: Double
+epsilon = 2.2204460492503131e-16
+
+inRange :: (Ord a) => (a, a) -> a -> Bool
+inRange (minA, maxB) value = minA <= value && value <= maxB
+
 compareExpr :: Expr -> CompareQuery -> Either String Double
 compareExpr (Const (VFloat constant)) query
   | (LT, value) <- query = return $ if constant < value then 1.0 else 0.0
   | (GT, value) <- query = return $ if constant > value then 1.0 else 0.0
-  | (EQ, _value) <- query = todo ""
+  | (EQ, value) <- query = return $ if constant == value then 1.0 else 0.0
 compareExpr Uniform query
   | (LT, value) <- query = return $ cumulative distr value
   | (GT, value) <- query = return $ complCumulative distr value
-  | (EQ, _value) <- query = todo ""
+  | (EQ, value) <- query = return $ if inRange (0.0, 1.0) value then epsilon else 0.0
   where
     distr = uniformDistr 0.0 1.0
 compareExpr Normal query
   | (LT, value) <- query = return $ cumulative distr value
   | (GT, value) <- query = return $ complCumulative distr value
+  | (EQ, _value) <- query = return epsilon
   where
     distr = normalDistr 0.0 1.0
 compareExpr (Plus e1 e2) query
@@ -177,11 +195,11 @@ compareExpr (Divide e1 e2) query
           lower <- compareExpr e2 (LT, min bound 0)
           higher <- compareExpr e2 (LT, max bound 0)
           return $ higher - lower
-        EQ -> todo "idk yet"
+        EQ -> compareExpr e2 (EQ, bound)
   -- TODO 04.09.24: handle c == 0.0
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
       compareExpr e1 (if c < 0 then swap ord else ord, value * c)
   where
     (ord, value) = query
-compareExpr expr _ = todo $ "Missing integral case: " <> show expr
+compareExpr expr _ = todo $ "Missing compareExpr case: " <> show expr
