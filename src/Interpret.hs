@@ -33,7 +33,7 @@ interpret (Subtract e1 e2) value
   | Right constant <- evalConstExpr e2 = do
       newValue <- evalArithmetic (+) value constant
       interpret e1 newValue
-  | otherwise = Left "Can only interpret Subtract(+) with a one side Constant."
+  | otherwise = Left "Can only interpret Subtract(-) with a one side Constant."
 interpret (Multiply e1 e2) value
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
@@ -61,7 +61,7 @@ interpret (Multiply e1 e2) value
               return (dim, prob)
             else
               return (1, prob / abs c)
-  | otherwise = Left "Can only interpret Multiply(+) with a one side Constant."
+  | otherwise = Left "Can only interpret Multiply(*) with a one side Constant."
 interpret (Divide e1 e2) value
   | Right constant <- evalConstExpr e1 = do
       -- TODO works only on monotone functions and c != 0.0 and v != 0.0
@@ -144,6 +144,7 @@ inRange :: (Ord a) => (a, a) -> a -> Bool
 inRange (minA, maxB) value = minA <= value && value <= maxB
 
 compareExpr :: Expr -> CompareQuery -> Either String Double
+compareExpr (Const (VBool _)) _ = Left "Expected Float got Bool."
 compareExpr (Const (VFloat constant)) query
   | (LT, value) <- query = return $ if constant < value then 1.0 else 0.0
   | (GT, value) <- query = return $ if constant > value then 1.0 else 0.0
@@ -216,5 +217,17 @@ compareExpr (Divide e1 e2) (ord, value)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
       compareExpr e1 (if c < 0 then swap ord else ord, value * c)
+  | otherwise = Left "Can only interpret Divide(/) with a one side Constant."
+compareExpr (IfElseThen e1 e2 e3) (ord, value) = todo ""
+compareExpr expr _ = case expr of
+  (And _ _) -> msg
+  (Or _ _) -> msg
+  (Not _) -> msg
+  (Equal _ _) -> msg
+  (Unequal _ _) -> msg
+  (LessThan _ _) -> msg
+  (LessEqualThan _ _) -> msg
+  (GreaterThan _ _) -> msg
+  (GreaterEqualThan _ _) -> msg
   where
-compareExpr expr _ = todo $ "Missing compareExpr case: " <> show expr
+    msg = Left $ "Expected Float got " <> show expr <> " that evaluates to a Bool."
