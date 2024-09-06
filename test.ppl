@@ -1,1 +1,1 @@
-(Uniform <= 0.2) || (Uniform <= 0.2)
+! (Uniform <= (1 / 6))

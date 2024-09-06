@@ -152,6 +152,7 @@ interpret (And e1 e2) (VBool bool) = do
   (_dim, p1) <- interpret e1 (VBool bool)
   (_dim, p2) <- interpret e2 (VBool bool)
   return (0, p1 * p2)
+interpret (Not e1) (VBool bool) = interpret e1 (VBool $ not bool)
 interpret (GreaterThan _ _) (VFloat _) = Right (0, 0.0)
 interpret (GreaterThanOrEqual _ _) (VFloat _) = Right (0, 0.0)
 interpret (LessThanOrEqual _ _) (VFloat _) = Right (0, 0.0)
