@@ -19,7 +19,7 @@ data Expr
   | Equal Expr Expr
   | Unequal Expr Expr
   | LessThan Expr Expr
-  | LessEqualThan Expr Expr
+  | LessThanOrEqual Expr Expr
   | GreaterThan Expr Expr
   | GreaterThanOrEqual Expr Expr
   | IfElseThen Expr Expr Expr

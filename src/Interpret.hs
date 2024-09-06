@@ -102,7 +102,7 @@ interpret (Equal e1 e2) (VBool bool)
 interpret (Unequal e1 e2) (VBool bool) = do
   (dim, prob) <- interpret (Equal e1 e2) (VBool bool)
   return (dim, 1 - prob)
-interpret (LessEqualThan e1 e2) (VBool bool)
+interpret (LessThanOrEqual e1 e2) (VBool bool)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
       x <- compareFloatExpr e1 (LE, c)
@@ -262,7 +262,7 @@ compareFloatExpr expr _ = case expr of
   (Equal _ _) -> msg
   (Unequal _ _) -> msg
   (LessThan _ _) -> msg
-  (LessEqualThan _ _) -> msg
+  (LessThanOrEqual _ _) -> msg
   (GreaterThan _ _) -> msg
   (GreaterThanOrEqual _ _) -> msg
   where

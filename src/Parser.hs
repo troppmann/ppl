@@ -92,7 +92,7 @@ combineFunction e1 "/" e2 = Divide e1 e2
 combineFunction e1 "==" e2 = Equal e1 e2
 combineFunction e1 "!=" e2 = Unequal e1 e2
 combineFunction e1 "<" e2 = LessThan e1 e2
-combineFunction e1 "<=" e2 = LessEqualThan e1 e2
+combineFunction e1 "<=" e2 = LessThanOrEqual e1 e2
 combineFunction e1 ">" e2 = GreaterThan e1 e2
 combineFunction e1 ">=" e2 = GreaterThanOrEqual e1 e2
 combineFunction e1 "&&" e2 = And e1 e2
