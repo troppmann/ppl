@@ -142,10 +142,24 @@ interpret (GreaterThanOrEqual e1 e2) (VBool bool)
       x <- compareFloatExpr e2 (LE, c)
       return (0, if bool then x else 1 - x)
   | otherwise = Left "Can only interpret > with a one side Constant."
+interpret (Or e1 e2) (VBool bool) = do
+  (_dim, p1) <- interpret e1 (VBool bool)
+  (_dim, p2) <- interpret e2 (VBool bool)
+  let p1False = 1 - p1
+  let p2False = 1 - p2
+  return (0, p1 * p2 + p1 * p2False + p1False * p2)
+interpret (And e1 e2) (VBool bool) = do
+  (_dim, p1) <- interpret e1 (VBool bool)
+  (_dim, p2) <- interpret e2 (VBool bool)
+  return (0, p1 * p2)
 interpret (GreaterThan _ _) (VFloat _) = Right (0, 0.0)
-interpret (LessThan _ _) (VFloat _) = Right (0, 0.0)
+interpret (GreaterThanOrEqual _ _) (VFloat _) = Right (0, 0.0)
+interpret (LessThanOrEqual _ _) (VFloat _) = Right (0, 0.0)
 interpret (Equal _ _) (VFloat _) = Right (0, 0.0)
 interpret (Unequal _ _) (VFloat _) = Right (0, 0.0)
+interpret (And _ _) (VFloat _) = Right (0, 0.0)
+interpret (Or _ _) (VFloat _) = Right (0, 0.0)
+interpret (Not _) (VFloat _) = Right (0, 0.0)
 interpret e _ = todo ("Missing interpret case: " <> show e)
 
 data CompareCase = LT | LE | EQ | GE | GT deriving (Ord, Enum, Show, Eq)
