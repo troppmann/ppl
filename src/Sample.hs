@@ -4,7 +4,7 @@ module Sample
 where
 
 import Control.Monad.Random (MonadRandom, getRandomR)
-import Representation
+import Representation (Expr (..), Value (..))
 import Statistics.Distribution
 import Statistics.Distribution.Normal
 

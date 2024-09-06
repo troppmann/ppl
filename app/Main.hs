@@ -7,6 +7,7 @@ import Control.Monad.Random (evalRandIO)
 
 import DistributionSampler
 import Interpret
+import Mean
 import Parser
 import Representation
 import Sample
@@ -28,6 +29,7 @@ main = do
   let value = VBool True
   let prob = interpret expr value
   print ("Test: " <> show value <> " -> " <> show prob)
+  print $ "Mean: " <> show (meanExpr expr)
 
 calculateX0TrueGivenX1False :: Float
 calculateX0TrueGivenX1False = calculate ([1, 0], [0, 1]) spn / calculate ([1, 0], [1, 1]) spn

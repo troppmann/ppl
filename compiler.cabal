@@ -61,14 +61,15 @@ executable compiler
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
-    other-modules: Spn, 
-                    Parser, 
-                    Sample, 
-                    Representation, 
-                    Interpret, 
+    other-modules:  Debug.Extended,
                     DistributionSampler,
                     Evaluate,
-                    Debug.Extended,
+                    Interpret, 
+                    Mean,
+                    Parser, 
+                    Representation, 
+                    Sample, 
+                    Spn, 
                     Validate
 
 
