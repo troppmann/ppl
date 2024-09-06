@@ -84,15 +84,20 @@ interpret (IfElseThen e1 e2 e3) value = do
   return (1, probTrue * p2 + probFalse * p3)
 -- TODO 03.09.2024: Add LessThanEqual and GreaterThanEqual
 interpret (Equal e1 e2) (VBool bool)
-  -- TODO 05.09.2024: VBool VBool can also be compared
-  | Right constant <- evalConstExpr e2 = do
-      c <- evalAsFloat constant
-      x <- compareExpr e1 (EQ, c)
-      return (0, if bool then x else 1 - x)
-  | Right constant <- evalConstExpr e1 = do
-      c <- evalAsFloat constant
-      x <- compareExpr e2 (EQ, c)
-      return (0, if bool then x else 1 - x)
+  | Right constant <- evalConstExpr e2 = case constant of
+      (VFloat c) -> do
+        prob <- compareExpr e1 (EQ, c)
+        return (0, if bool then prob else 1 - prob)
+      (VBool c) -> do
+        (dim, prob) <- interpret e1 (VBool c)
+        return (dim, if bool then prob else 1 - prob)
+  | Right constant <- evalConstExpr e1 = case constant of
+      (VFloat c) -> do
+        prob <- compareExpr e2 (EQ, c)
+        return (0, if bool then prob else 1 - prob)
+      (VBool c) -> do
+        (dim, prob) <- interpret e2 (VBool c)
+        return (dim, if bool then prob else 1 - prob)
   | otherwise = Left "Can only interpret == with a one side Constant."
 interpret (Unequal e1 e2) (VBool bool) = do
   (dim, prob) <- interpret (Equal e1 e2) (VBool bool)
@@ -155,25 +160,23 @@ compareExpr Normal query
   | (EQ, _value) <- query = return epsilon
   where
     distr = normalDistr 0.0 1.0
-compareExpr (Plus e1 e2) query
+compareExpr (Plus e1 e2) (ord, value)
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
       compareExpr e2 (ord, value - c)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
       compareExpr e1 (ord, value - c)
-  where
-    (ord, value) = query
-compareExpr (Subtract e1 e2) query
+  | otherwise = Left "Can only interpret Multiply(*) with a one side Constant."
+compareExpr (Subtract e1 e2) (ord, value)
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
       compareExpr e2 (swap ord, -value + c)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
       compareExpr e1 (ord, value + c)
-  where
-    (ord, value) = query
-compareExpr (Multiply e1 e2) query
+  | otherwise = Left "Can only interpret Subtract(-) with a one side Constant."
+compareExpr (Multiply e1 e2) (ord, value)
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
       if c == 0
@@ -188,9 +191,8 @@ compareExpr (Multiply e1 e2) query
           compareExpr (Const (VFloat 0.0)) (ord, value)
         else
           compareExpr e1 (if c < 0 then swap ord else ord, value / c)
-  where
-    (ord, value) = query
-compareExpr (Divide e1 e2) query
+  | otherwise = Left "Can only interpret Multiply(*) with a one side Constant."
+compareExpr (Divide e1 e2) (ord, value)
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
       if c == 0.0
@@ -215,5 +217,4 @@ compareExpr (Divide e1 e2) query
       c <- evalAsFloat constant
       compareExpr e1 (if c < 0 then swap ord else ord, value * c)
   where
-    (ord, value) = query
 compareExpr expr _ = todo $ "Missing compareExpr case: " <> show expr
