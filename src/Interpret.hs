@@ -86,14 +86,14 @@ interpret (IfElseThen e1 e2 e3) value = do
 interpret (Equal e1 e2) (VBool bool)
   | Right constant <- evalConstExpr e2 = case constant of
       (VFloat c) -> do
-        prob <- compareExpr e1 (EQ, c)
+        prob <- compareFloatExpr e1 (EQ, c)
         return (0, if bool then prob else 1 - prob)
       (VBool c) -> do
         (dim, prob) <- interpret e1 (VBool c)
         return (dim, if bool then prob else 1 - prob)
   | Right constant <- evalConstExpr e1 = case constant of
       (VFloat c) -> do
-        prob <- compareExpr e2 (EQ, c)
+        prob <- compareFloatExpr e2 (EQ, c)
         return (0, if bool then prob else 1 - prob)
       (VBool c) -> do
         (dim, prob) <- interpret e2 (VBool c)
@@ -105,21 +105,21 @@ interpret (Unequal e1 e2) (VBool bool) = do
 interpret (LessThan e1 e2) (VBool bool)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
-      x <- compareExpr e1 (LT, c)
+      x <- compareFloatExpr e1 (LT, c)
       return (0, if bool then x else 1 - x)
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
-      x <- compareExpr e2 (GT, c)
+      x <- compareFloatExpr e2 (GT, c)
       return (0, if bool then x else 1 - x)
   | otherwise = Left "Can only interpret < with a one side Constant."
 interpret (GreaterThan e1 e2) (VBool bool)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
-      x <- compareExpr e1 (GT, c)
+      x <- compareFloatExpr e1 (GT, c)
       return (0, if bool then x else 1 - x)
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
-      x <- compareExpr e2 (LT, c)
+      x <- compareFloatExpr e2 (LT, c)
       return (0, if bool then x else 1 - x)
   | otherwise = Left "Can only interpret > with a one side Constant."
 interpret (GreaterThan _ _) (VFloat _) = Right (0, 0.0)
@@ -143,83 +143,83 @@ epsilon = 2.2204460492503131e-16
 inRange :: (Ord a) => (a, a) -> a -> Bool
 inRange (minA, maxB) value = minA <= value && value <= maxB
 
-compareExpr :: Expr -> CompareQuery -> Either String Double
-compareExpr (Const (VBool _)) _ = Left "Expected Float got Bool."
-compareExpr (Const (VFloat constant)) query
+compareFloatExpr :: Expr -> CompareQuery -> Either String Double
+compareFloatExpr (Const (VBool _)) _ = Left "Expected Float got Bool."
+compareFloatExpr (Const (VFloat constant)) query
   | (LT, value) <- query = return $ if constant < value then 1.0 else 0.0
   | (GT, value) <- query = return $ if constant > value then 1.0 else 0.0
   | (EQ, value) <- query = return $ if constant == value then 1.0 else 0.0
-compareExpr Uniform query
+compareFloatExpr Uniform query
   | (LT, value) <- query = return $ cumulative distr value
   | (GT, value) <- query = return $ complCumulative distr value
   | (EQ, value) <- query = return $ if inRange (0.0, 1.0) value then epsilon else 0.0
   where
     distr = uniformDistr 0.0 1.0
-compareExpr Normal query
+compareFloatExpr Normal query
   | (LT, value) <- query = return $ cumulative distr value
   | (GT, value) <- query = return $ complCumulative distr value
   | (EQ, _value) <- query = return epsilon
   where
     distr = normalDistr 0.0 1.0
-compareExpr (Plus e1 e2) (ord, value)
+compareFloatExpr (Plus e1 e2) (ord, value)
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
-      compareExpr e2 (ord, value - c)
+      compareFloatExpr e2 (ord, value - c)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
-      compareExpr e1 (ord, value - c)
+      compareFloatExpr e1 (ord, value - c)
   | otherwise = Left "Can only interpret Multiply(*) with a one side Constant."
-compareExpr (Subtract e1 e2) (ord, value)
+compareFloatExpr (Subtract e1 e2) (ord, value)
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
-      compareExpr e2 (swap ord, -value + c)
+      compareFloatExpr e2 (swap ord, -value + c)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
-      compareExpr e1 (ord, value + c)
+      compareFloatExpr e1 (ord, value + c)
   | otherwise = Left "Can only interpret Subtract(-) with a one side Constant."
-compareExpr (Multiply e1 e2) (ord, value)
+compareFloatExpr (Multiply e1 e2) (ord, value)
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
       if c == 0
         then
-          compareExpr (Const (VFloat 0.0)) (ord, value)
+          compareFloatExpr (Const (VFloat 0.0)) (ord, value)
         else
-          compareExpr e2 (if c < 0 then swap ord else ord, value / c)
+          compareFloatExpr e2 (if c < 0 then swap ord else ord, value / c)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
       if c == 0
         then
-          compareExpr (Const (VFloat 0.0)) (ord, value)
+          compareFloatExpr (Const (VFloat 0.0)) (ord, value)
         else
-          compareExpr e1 (if c < 0 then swap ord else ord, value / c)
+          compareFloatExpr e1 (if c < 0 then swap ord else ord, value / c)
   | otherwise = Left "Can only interpret Multiply(*) with a one side Constant."
-compareExpr (Divide e1 e2) (ord, value)
+compareFloatExpr (Divide e1 e2) (ord, value)
   | Right constant <- evalConstExpr e1 = do
       c <- evalAsFloat constant
       if c == 0.0
         then
-          compareExpr (Const $ VFloat 0.0) (EQ, value)
+          compareFloatExpr (Const $ VFloat 0.0) (EQ, value)
         else do
           let bound = c / value
           case ord of
             -- Two Ranges either ([-∞, 0] and [bound, +∞]) or ([-∞, bound] and [0, +∞])
             LT -> do
-              firstRange <- compareExpr e2 (if bound < 0 then LT else GT, bound)
-              secondRange <- compareExpr e2 (if bound < 0 then GT else LT, 0)
+              firstRange <- compareFloatExpr e2 (if bound < 0 then LT else GT, bound)
+              secondRange <- compareFloatExpr e2 (if bound < 0 then GT else LT, 0)
               return $ firstRange + secondRange
             -- One Range between Bound and 0 could either been [0, Bound] or [Bound,0]
             GT -> do
-              lower <- compareExpr e2 (LT, min bound 0)
-              higher <- compareExpr e2 (LT, max bound 0)
+              lower <- compareFloatExpr e2 (LT, min bound 0)
+              higher <- compareFloatExpr e2 (LT, max bound 0)
               return $ higher - lower
             -- c / e2 == value => e2 == c / value == bound
-            EQ -> compareExpr e2 (EQ, bound)
+            EQ -> compareFloatExpr e2 (EQ, bound)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
-      compareExpr e1 (if c < 0 then swap ord else ord, value * c)
+      compareFloatExpr e1 (if c < 0 then swap ord else ord, value * c)
   | otherwise = Left "Can only interpret Divide(/) with a one side Constant."
-compareExpr (IfElseThen e1 e2 e3) (ord, value) = todo ""
-compareExpr expr _ = case expr of
+compareFloatExpr (IfElseThen e1 e2 e3) (ord, value) = todo ""
+compareFloatExpr expr _ = case expr of
   (And _ _) -> msg
   (Or _ _) -> msg
   (Not _) -> msg
