@@ -30,7 +30,7 @@ evalConstExpr (Unequal e1 e2) = apply (evalCompare (/=)) e1 e2
 evalConstExpr (LessThan e1 e2) = apply (evalCompare (<)) e1 e2
 evalConstExpr (LessEqualThan e1 e2) = apply (evalCompare (<=)) e1 e2
 evalConstExpr (GreaterThan e1 e2) = apply (evalCompare (>)) e1 e2
-evalConstExpr (GreaterEqualThan e1 e2) = apply (evalCompare (>=)) e1 e2
+evalConstExpr (GreaterThanOrEqual e1 e2) = apply (evalCompare (>=)) e1 e2
 evalConstExpr (IfElseThen e1 e2 e3) = evalIfElseThen e1 e2 e3
 
 apply :: (Value -> Value -> ResultValue) -> Expr -> Expr -> ResultValue

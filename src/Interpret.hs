@@ -132,7 +132,7 @@ interpret (GreaterThan e1 e2) (VBool bool)
       x <- compareFloatExpr e2 (LT, c)
       return (0, if bool then x else 1 - x)
   | otherwise = Left "Can only interpret > with a one side Constant."
-interpret (GreaterEqualThan e1 e2) (VBool bool)
+interpret (GreaterThanOrEqual e1 e2) (VBool bool)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
       x <- compareFloatExpr e1 (GE, c)
@@ -264,6 +264,6 @@ compareFloatExpr expr _ = case expr of
   (LessThan _ _) -> msg
   (LessEqualThan _ _) -> msg
   (GreaterThan _ _) -> msg
-  (GreaterEqualThan _ _) -> msg
+  (GreaterThanOrEqual _ _) -> msg
   where
     msg = Left $ "Expected Float got " <> show expr <> " that evaluates to a Bool."

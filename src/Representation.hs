@@ -21,7 +21,7 @@ data Expr
   | LessThan Expr Expr
   | LessEqualThan Expr Expr
   | GreaterThan Expr Expr
-  | GreaterEqualThan Expr Expr
+  | GreaterThanOrEqual Expr Expr
   | IfElseThen Expr Expr Expr
   deriving (Show, Read, Eq)
 

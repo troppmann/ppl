@@ -30,7 +30,7 @@ sampleIO (Unequal e1 e2) = apply (evaluateCompare (/=)) e1 e2
 sampleIO (LessThan e1 e2) = apply (evaluateCompare (<)) e1 e2
 sampleIO (LessEqualThan e1 e2) = apply (evaluateCompare (<=)) e1 e2
 sampleIO (GreaterThan e1 e2) = apply (evaluateCompare (>)) e1 e2
-sampleIO (GreaterEqualThan e1 e2) = apply (evaluateCompare (>=)) e1 e2
+sampleIO (GreaterThanOrEqual e1 e2) = apply (evaluateCompare (>=)) e1 e2
 sampleIO (IfElseThen e1 e2 e3) = sampleIfElse e1 e2 e3
 
 apply :: (MonadRandom m) => (Value -> Value -> Value) -> Expr -> Expr -> m Value
