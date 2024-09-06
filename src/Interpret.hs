@@ -145,20 +145,20 @@ inRange (minA, maxB) value = minA <= value && value <= maxB
 
 compareFloatExpr :: Expr -> CompareQuery -> Either String Double
 compareFloatExpr (Const (VBool _)) _ = Left "Expected Float got Bool."
-compareFloatExpr (Const (VFloat constant)) query
-  | (LT, value) <- query = return $ if constant < value then 1.0 else 0.0
-  | (GT, value) <- query = return $ if constant > value then 1.0 else 0.0
-  | (EQ, value) <- query = return $ if constant == value then 1.0 else 0.0
-compareFloatExpr Uniform query
-  | (LT, value) <- query = return $ cumulative distr value
-  | (GT, value) <- query = return $ complCumulative distr value
-  | (EQ, value) <- query = return $ if inRange (0.0, 1.0) value then epsilon else 0.0
+compareFloatExpr (Const (VFloat constant)) query = case query of
+  (LT, value) -> return $ if constant < value then 1.0 else 0.0
+  (GT, value) -> return $ if constant > value then 1.0 else 0.0
+  (EQ, value) -> return $ if constant == value then 1.0 else 0.0
+compareFloatExpr Uniform query = case query of
+  (LT, value) -> return $ cumulative distr value
+  (GT, value) -> return $ complCumulative distr value
+  (EQ, value) -> return $ if inRange (0.0, 1.0) value then epsilon else 0.0
   where
     distr = uniformDistr 0.0 1.0
-compareFloatExpr Normal query
-  | (LT, value) <- query = return $ cumulative distr value
-  | (GT, value) <- query = return $ complCumulative distr value
-  | (EQ, _value) <- query = return epsilon
+compareFloatExpr Normal query = case query of
+  (LT, value) -> return $ cumulative distr value
+  (GT, value) -> return $ complCumulative distr value
+  (EQ, _value) -> return epsilon
   where
     distr = normalDistr 0.0 1.0
 compareFloatExpr (Plus e1 e2) (ord, value)
