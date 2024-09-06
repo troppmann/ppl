@@ -143,6 +143,7 @@ epsilon = 2.2204460492503131e-16
 inRange :: (Ord a) => (a, a) -> a -> Bool
 inRange (minA, maxB) value = minA <= value && value <= maxB
 
+-- TODO 06.09.2024: Should i add a dimension differentiation?
 compareFloatExpr :: Expr -> CompareQuery -> Either String Double
 compareFloatExpr (Const (VBool _)) _ = Left "Expected Float got Bool."
 compareFloatExpr (Const (VFloat constant)) query = case query of
@@ -218,7 +219,12 @@ compareFloatExpr (Divide e1 e2) (ord, value)
       c <- evalAsFloat constant
       compareFloatExpr e1 (if c < 0 then swap ord else ord, value * c)
   | otherwise = Left "Can only interpret Divide(/) with a one side Constant."
-compareFloatExpr (IfElseThen e1 e2 e3) (ord, value) = todo ""
+compareFloatExpr (IfElseThen e1 e2 e3) (ord, value) = do
+  (_dim, probTrue) <- interpret e1 (VBool True)
+  let probFalse = 1 - probTrue
+  p2 <- compareFloatExpr e2 (ord, value)
+  p3 <- compareFloatExpr e3 (ord, value)
+  return $ probTrue * p2 + probFalse * p3
 compareFloatExpr expr _ = case expr of
   (And _ _) -> msg
   (Or _ _) -> msg

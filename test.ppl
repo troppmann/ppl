@@ -1,1 +1,1 @@
-Uniform < 0.5 == False 
+(if Uniform > 0.5 then 3 else Normal) > 0
