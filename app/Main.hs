@@ -2,9 +2,10 @@
 
 module Main where
 
-import Control.Monad.Random (evalRandIO)
 -- import DistributionSampler
 
+import ApproximateIntegration
+import Control.Monad.Random (evalRandIO)
 import DistributionSampler
 import Interpret
 import Mean
@@ -12,7 +13,6 @@ import Parser
 import Representation
 import Sample
 import Spn
-import Validate
 
 main :: IO ()
 main = do

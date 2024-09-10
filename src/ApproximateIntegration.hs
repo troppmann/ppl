@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
-module Validate
+module ApproximateIntegration
   ( LinearSpacing (..),
-    validateExpr,
-    validateFunc,
+    approxExpr,
+    approxFunc,
   )
 where
 
@@ -11,7 +11,6 @@ import Data.Either
 import Interpret
 import Representation
 
--- TODO: find better name
 data LinearSpacing = LinearSpacing
   { start :: Double,
     end :: Double,
@@ -20,11 +19,11 @@ data LinearSpacing = LinearSpacing
   deriving (Show)
 
 -- only works on pdf's not pmf's
-validateExpr :: LinearSpacing -> Expr -> Double
-validateExpr info expr = validateFunc info (convertExprToFunction expr)
+approxExpr :: LinearSpacing -> Expr -> Double
+approxExpr info expr = approxFunc info (convertExprToFunction expr)
 
-validateFunc :: LinearSpacing -> (Double -> Double) -> Double
-validateFunc info f = approxIntegral2 (start info) (end info) (stepWidth info) f
+approxFunc :: LinearSpacing -> (Double -> Double) -> Double
+approxFunc info f = approxIntegral2 (start info) (end info) (stepWidth info) f
 
 convertExprToFunction :: Expr -> (Double -> Double)
 convertExprToFunction expr = convertOutput . interpret expr . convertInput
