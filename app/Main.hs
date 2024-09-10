@@ -5,7 +5,6 @@ module Main where
 -- import DistributionSampler
 
 import ApproximateIntegration
-import Control.Monad.Random (evalRandIO)
 import DistributionSampler
 import Interpret
 import Mean
@@ -19,7 +18,7 @@ main = do
   s <- readFile "test.ppl"
   let expr = parseExpr s
   print expr
-  sample0 <- evalRandIO (sampleIO expr)
+  sample0 <- sampleExpr expr
   print sample0
   -- sampledDis <- evalRandIO (sampleDistr expr SampleInfo {start = 0, stepWidth = 0.05, numberOfSamples = 100000})
   -- print sampledDis

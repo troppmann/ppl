@@ -28,7 +28,7 @@ data SampledDistribution = SampledDistribution
 
 sampleDistr :: (MonadRandom m) => Expr -> SampleInfo -> m SampledDistribution
 sampleDistr expr info = do
-  samples <- fmap (fmap convertToFloat) (replicateM (numberOfSamples info) $ sampleIO expr)
+  samples <- fmap (fmap convertToFloat) (replicateM (numberOfSamples info) $ sampleRand expr)
   let indices = map (toBucketIndex info) samples
   let sorted = group . sort $ indices
   let densities = map (toDensityEntry info) sorted
