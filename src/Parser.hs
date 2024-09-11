@@ -25,6 +25,7 @@ type Func = String
 
 type Symbol = String
 
+-- TODO 11.09.24: Replace Error with Either
 parseUntil :: Maybe Expr -> Maybe Func -> Maybe Symbol -> [Symbol] -> (Expr, [Symbol])
 parseUntil (Just e) Nothing (Just s) (x : xs)
   | s == x = (e, xs)
