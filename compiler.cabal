@@ -55,11 +55,13 @@ test-suite tests
     type:             exitcode-stdio-1.0
     hs-source-dirs:   test
     other-modules:    SampleTest,
-                      ParserTest
+                      ParserTest,
+                      InterpretTest
     main-is:          Main.hs
     build-depends:    base ^>=4.17.2.1, 
                       tasty,
                       tasty-hunit,
+                      HUnit-approx,
                       tasty-expected-failure,
                       compiler:lib
     default-language: GHC2021
