@@ -1,29 +1,23 @@
 cabal-version:      3.4
 -- The name of the package.
 name:               compiler
-
 -- The package version.
 -- See the Haskell package versioning policy (PVP) for standards
 -- PVP summary:     +-+------- breaking API changes
 --                  | | +----- non-breaking API additions
 --                  | | | +--- code changes with no API change
 version:            0.1.0.0
-
 -- A short (one-line) description of the package.
 -- synopsis:
-
 -- A longer description of the package.
 -- description:
-
 license:            MIT
 license-file:       LICENSE
 author:             TomTroppmann
 maintainer:         troppmann.tom@gmail.com
-
 -- A copyright notice.
 -- copyright:
 build-type:         Simple
-
 extra-doc-files:    CHANGELOG.md
 
 common warnings
@@ -48,18 +42,24 @@ library lib
 executable compiler
     import:           warnings
     main-is:          Main.hs
-    build-depends:    base ^>=4.17.2.1, containers, random, statistics, MonadRandom, compiler:lib
+    build-depends:    base ^>=4.17.2.1, 
+                      containers, 
+                      random, 
+                      statistics, 
+                      MonadRandom, 
+                      compiler:lib
     hs-source-dirs:   app
     default-language: GHC2021
 
 test-suite tests
-    type: exitcode-stdio-1.0
-    hs-source-dirs: test
-    other-modules: SampleTest
-    main-is: Main.hs
-    build-depends:  base ^>=4.17.2.1, 
-                    tasty,
-                    compiler:lib,
-                    tasty-hunit
-                    
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    other-modules:    SampleTest,
+                      ParserTest
+    main-is:          Main.hs
+    build-depends:    base ^>=4.17.2.1, 
+                      tasty,
+                      tasty-hunit,
+                      tasty-expected-failure,
+                      compiler:lib
     default-language: GHC2021
