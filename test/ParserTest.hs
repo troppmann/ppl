@@ -38,7 +38,8 @@ tests =
           testCaseParseExpr "True != False" $ Unequal (Const (VBool True)) (Const (VBool False)),
           testCaseParseExpr "True && False" $ And (Const (VBool True)) (Const (VBool False)),
           testCaseParseExpr "True || False" $ Or (Const (VBool True)) (Const (VBool False)),
-          testCaseParseExpr "! False" $ Not (Const (VBool False))
+          testCaseParseExpr "! False" $ Not (Const (VBool False)),
+          testCaseParseExpr "True && !False && False" $ And (And (Const (VBool True)) (Not (Const (VBool False)))) (Const (VBool False))
         ],
       testGroup
         "Padding"

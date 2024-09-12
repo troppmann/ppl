@@ -40,9 +40,14 @@ tests =
       assertExprEq "3 * (4 + 12)" $ VFloat 48.0,
       assertExprEq "if True then 3.0 else 2.0" $ VFloat 3.0,
       assertExprEq "if False then 3.0 else 2.0" $ VFloat 2.0,
+      assertExprEq "True && ! False && False" $ VBool False,
+      assertExprEq "if True && !(False!=False) || False then 3.0 else 2.0" $ VFloat 3.0,
       assertExprInRange "Uniform" (0.0, 1.0),
       assertExprInRange "Uniform * 4" (0.0, 4.0),
       assertExprInRange "Uniform * 4 + 10" (10.0, 14.0),
       assertExprInRange "Uniform * (4 + 10)" (0.0, 14.0),
-      assertExprInRange "Normal" (-infinity, infinity)
+      assertExprInRange "Normal" (-infinity, infinity),
+      assertExprEq "(3 + Normal * 2)* 0.0" (VFloat 0.0),
+      assertExprEq "(Normal * 0)* 3.0" (VFloat 0.0),
+      assertExprEq "2 + (Normal * 0.0) - 0.0" (VFloat 2.0)
     ]
