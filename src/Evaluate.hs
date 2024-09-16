@@ -32,6 +32,7 @@ evalConstExpr (LessThanOrEqual e1 e2) = apply (evalCompare (<=)) e1 e2
 evalConstExpr (GreaterThan e1 e2) = apply (evalCompare (>)) e1 e2
 evalConstExpr (GreaterThanOrEqual e1 e2) = apply (evalCompare (>=)) e1 e2
 evalConstExpr (IfElseThen e1 e2 e3) = evalIfElseThen e1 e2 e3
+evalConstExpr (CreateTuple e1 e2) = evalCreateTuple e1 e2
 
 apply :: (Value -> Value -> ResultValue) -> Expr -> Expr -> ResultValue
 apply f e1 e2 = do
@@ -80,20 +81,24 @@ evalIfElseThen e1 e2 e3 = do
       evalConstExpr e3
 
 evalAsBool :: Value -> Either ErrorString Bool
-evalAsBool (VFloat _) = Left "Error: Expected Bool got Float."
 evalAsBool (VBool b) = Right b
+evalAsBool v1 = Left $ "Error: Expected Float got " <> show v1 <> "."
 
 evalAsFloat :: Value -> Either ErrorString Double
-evalAsFloat (VBool _) = Left "Error: Expected Float got Bool."
 evalAsFloat (VFloat f) = Right f
+evalAsFloat v1 = Left $ "Error: Expected Float got " <> show v1 <> "."
 
 evalArithmetic :: (Double -> Double -> Double) -> Value -> Value -> ResultValue
-evalArithmetic _ (VBool _) _ = Left "Error: Can't calculate a Boolean Value."
-evalArithmetic _ _ (VBool _) = Left "Error: Can't calculate a Boolean Value."
 evalArithmetic f (VFloat x) (VFloat y) = Right (VFloat $ f x y)
+evalArithmetic _ v1 v2 = Left $ "Error: Can't calculate a " <> show v1 <> " with " <> show v2 <> "."
 
 evalCompare :: (forall a. (Eq a, Ord a) => a -> a -> Bool) -> Value -> Value -> ResultValue
-evalCompare _ (VBool _) (VFloat _) = Left "Error: Can't compare Bool with Float."
-evalCompare _ (VFloat _) (VBool _) = Left "Error: Can't compare Float with Bool."
 evalCompare f (VFloat x) (VFloat y) = Right (VBool $ f x y)
 evalCompare f (VBool x) (VBool y) = Right (VBool $ f x y)
+evalCompare _ v1 v2 = Left $ "Error: Can't compare " <> show v1 <> " with " <> show v2 <> "."
+
+evalCreateTuple :: Expr -> Expr -> ResultValue
+evalCreateTuple e1 e2 = do
+  v1 <- evalConstExpr e1
+  v2 <- evalConstExpr e2
+  return $ VTuple v1 v2

@@ -7,7 +7,7 @@ import Representation
 import Text.Read (readMaybe)
 
 parseExpr :: String -> Expr
-parseExpr = fst . parseUntil Nothing Nothing Nothing . separate
+parseExpr = fst . parseUntil Nothing Nothing (Nothing, Nothing) . separate
 
 separate :: String -> [String]
 separate = words . escape
@@ -15,6 +15,7 @@ separate = words . escape
 escape :: String -> String
 escape ('(' : xs) = " ( " ++ escape xs
 escape (')' : xs) = " ) " ++ escape xs
+escape (',' : xs) = " , " ++ escape xs
 escape ('!' : '=' : xs) = " != " ++ escape xs
 escape ('!' : xs) = " ! " ++ escape xs
 escape (x : xs) = x : escape xs
@@ -26,23 +27,29 @@ type Func = String
 type Symbol = String
 
 -- TODO 11.09.24: Replace Error with Either
-parseUntil :: Maybe Expr -> Maybe Func -> Maybe Symbol -> [Symbol] -> (Expr, [Symbol])
-parseUntil (Just e) Nothing (Just s) (x : xs)
+parseUntil :: Maybe Expr -> Maybe Func -> (Maybe Symbol, Maybe Symbol) -> [Symbol] -> (Expr, [Symbol])
+parseUntil (Just e) Nothing (Just opening, Just ")") ("," : xs)
+  | opening `elem` ["(", ","] = do
+      let (expr, rest) = parseUntil Nothing Nothing (Just ",", Just ")") xs
+      (CreateTuple e expr, rest)
+  | opening == "else" = (e, "," : xs)
+parseUntil (Just e) Nothing (_, Just s) (x : xs)
   | s == x = (e, xs)
 parseUntil Nothing _ _ [] = error "Error: Expected Value got ''"
-parseUntil Nothing Nothing s (x : xs)
+parseUntil Nothing Nothing s@(_, c) (x : xs)
   | isInfixFunction x = error ("Error: Expected Value got Operator '" <> x <> "'")
   | isFunction x = do
       let (expr, rest) = parseFirstExpression xs
       parseUntil (Just $ applyFunction x expr) Nothing s rest
   | x == "(" = do
-      let (e, rest) = parseUntil Nothing Nothing (Just ")") xs
+      let (e, rest) = parseUntil Nothing Nothing (Just "(", Just ")") xs
       parseUntil (Just e) Nothing s rest
   | x == "if" = do
-      let (boolExpression, rest1) = parseUntil Nothing Nothing (Just "then") xs
-      let (eIf1, rest2) = parseUntil Nothing Nothing (Just "else") rest1
-      let (eIf2, rest3) = parseUntil Nothing Nothing s rest2
-      (IfElseThen boolExpression eIf1 eIf2, rest3)
+      let (boolExpression, rest1) = parseUntil Nothing Nothing (Just "if", Just "then") xs
+      let (eIf1, rest2) = parseUntil Nothing Nothing (Just "then", Just "else") rest1
+      let (eIf2, rest3) = parseUntil Nothing Nothing (Just "else", c) rest2
+      let ifExpr = IfElseThen boolExpression eIf1 eIf2
+      parseUntil (Just ifExpr) Nothing s rest3
   | e@(Just _) <- tryConvertToLiteral x = parseUntil e Nothing s xs
   | otherwise = error ("Error: Unknown String '" <> x <> "'")
 parseUntil (Just e) Nothing s (x : xs)
@@ -50,21 +57,22 @@ parseUntil (Just e) Nothing s (x : xs)
   | otherwise = error ("Error: Unexpected String'" <> x <> "'")
 parseUntil (Just _e) (Just _f) _ [] = error "Expected Value got ''"
 parseUntil Nothing (Just _f) _ (_x : _xs) = error "Cannot happen yet"
-parseUntil (Just e1) (Just f) s (x : xs)
+parseUntil (Just e1) (Just f) s@(_, c) (x : xs)
   | isInfixFunction x = error ("Error: Expected Value got Operator '" <> x <> "'")
   | isFunction x = do
       let (e2, rest) = parseFirstExpression xs
       parseUntil (Just $ combineFunction e1 f $ applyFunction x e2) Nothing s rest
   | Just e2 <- tryConvertToLiteral x = parseUntil (Just $ combineFunction e1 f e2) Nothing s xs
   | x == "(" = do
-      let (e2, rest) = parseUntil Nothing Nothing (Just ")") xs
+      let (e2, rest) = parseUntil Nothing Nothing (Just "(", Just ")") xs
       parseUntil (Just $ combineFunction e1 f e2) Nothing s rest
   | x == "if" = do
-      let (boolExpression, rest1) = parseUntil Nothing Nothing (Just "then") xs
-      let (eIf1, rest2) = parseUntil Nothing Nothing (Just "else") rest1
-      let (eIf2, rest3) = parseUntil Nothing Nothing s rest2
+      let (boolExpression, rest1) = parseUntil Nothing Nothing (Just "if", Just "then") xs
+      let (eIf1, rest2) = parseUntil Nothing Nothing (Just "then", Just "else") rest1
+      let (eIf2, rest3) = parseUntil Nothing Nothing (Just "else", c) rest2
       let e2 = IfElseThen boolExpression eIf1 eIf2
-      (combineFunction e1 f e2, rest3)
+      let combinedIfExpr = combineFunction e1 f e2
+      parseUntil (Just combinedIfExpr) Nothing s rest3
   | otherwise = error ("Error: Unexpected String'" <> x <> "'")
 parseUntil (Just e) Nothing _ [] = (e, [])
 
@@ -75,7 +83,7 @@ parseFirstExpression (x : xs)
   | isFunction x = error ("Error: Expected Value got Operator '" <> x <> "'")
   | Just expr <- tryConvertToLiteral x = (expr, xs)
   | x == "(" = do
-      let (expr, rest) = parseUntil Nothing Nothing (Just ")") xs
+      let (expr, rest) = parseUntil Nothing Nothing (Just "(", Just ")") xs
       (expr, rest)
   | otherwise = error ("Error: Unexpected String'" <> x <> "'")
 

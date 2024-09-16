@@ -88,15 +88,15 @@ interpret (Equal e1 e2) (VBool bool)
       (VFloat c) -> do
         prob <- compareFloatExpr e1 (EQ, c)
         return (0, if bool then prob else 1 - prob)
-      (VBool c) -> do
-        (dim, prob) <- interpret e1 (VBool c)
+      c -> do
+        (dim, prob) <- interpret e1 c
         return (dim, if bool then prob else 1 - prob)
   | Right constant <- evalConstExpr e1 = case constant of
       (VFloat c) -> do
         prob <- compareFloatExpr e2 (EQ, c)
         return (0, if bool then prob else 1 - prob)
-      (VBool c) -> do
-        (dim, prob) <- interpret e2 (VBool c)
+      c -> do
+        (dim, prob) <- interpret e2 c
         return (dim, if bool then prob else 1 - prob)
   | otherwise = Left "Can only interpret == with a one side Constant."
 interpret (Unequal e1 e2) (VBool bool) = do
@@ -165,8 +165,11 @@ interpret (Unequal _ _) (VFloat _) = Right (0, 0.0)
 interpret (And _ _) (VFloat _) = Right (0, 0.0)
 interpret (Or _ _) (VFloat _) = Right (0, 0.0)
 interpret (Not _) (VFloat _) = Right (0, 0.0)
-
--- interpret e _ = todo ("Missing interpret case: " <> show e)
+interpret (CreateTuple e1 e2) (VTuple v1 v2) = do
+  (dim1, prob1) <- interpret e1 v1
+  (dim2, prob2) <- interpret e2 v2
+  return (dim1 + dim2, prob1 * prob2)
+interpret e _ = todo ("Missing interpret case: " <> show e)
 
 data CompareCase = LT | LE | EQ | GE | GT deriving (Ord, Enum, Show, Eq)
 
@@ -276,14 +279,18 @@ compareFloatExpr (IfElseThen e1 e2 e3) (ord, value) = do
   p3 <- compareFloatExpr e3 (ord, value)
   return $ probTrue * p2 + probFalse * p3
 compareFloatExpr expr _ = case expr of
-  (And _ _) -> msg
-  (Or _ _) -> msg
-  (Not _) -> msg
-  (Equal _ _) -> msg
-  (Unequal _ _) -> msg
-  (LessThan _ _) -> msg
-  (LessThanOrEqual _ _) -> msg
-  (GreaterThan _ _) -> msg
-  (GreaterThanOrEqual _ _) -> msg
+  (CreateTuple _ _) -> msgTuple
+  (Const (VTuple _ _)) -> msgTuple
+  (And _ _) -> msgBool
+  (Or _ _) -> msgBool
+  (Not _) -> msgBool
+  (Equal _ _) -> msgBool
+  (Unequal _ _) -> msgBool
+  (LessThan _ _) -> msgBool
+  (LessThanOrEqual _ _) -> msgBool
+  (GreaterThan _ _) -> msgBool
+  (GreaterThanOrEqual _ _) -> msgBool
   where
-    msg = Left $ "Expected Float got " <> show expr <> " that evaluates to a Bool."
+    msg = "Expected Float got " <> show expr <> " that evaluates to a"
+    msgBool = Left $ msg <> "Bool."
+    msgTuple = Left $ msg <> "Tuple."

@@ -23,11 +23,13 @@ data Expr
   | GreaterThan Expr Expr
   | GreaterThanOrEqual Expr Expr
   | IfElseThen Expr Expr Expr
+  | CreateTuple Expr Expr
   deriving (Show, Read, Eq)
 
 data Value
   = VFloat Double
   | VBool Bool
+  | VTuple Value Value
   deriving (Show, Read, Eq)
 
 type Probability = Double

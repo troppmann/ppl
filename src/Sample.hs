@@ -7,8 +7,9 @@ where
 import Control.Monad.Random (MonadRandom, evalRandIO, getRandomR)
 import Representation (Expr (..), Value (..))
 import Statistics.Distribution
-import Statistics.Distribution.Normal
+import Statistics.Distribution.Normal (normalDistr)
 
+-- TODO 11.09.24: Make sampleExpr/sampleRand a IO Either String Value return type
 sampleExpr :: Expr -> IO Value
 sampleExpr expr = evalRandIO (sampleRand expr)
 
@@ -36,6 +37,7 @@ sampleRand (LessThanOrEqual e1 e2) = apply (evaluateCompare (<=)) e1 e2
 sampleRand (GreaterThan e1 e2) = apply (evaluateCompare (>)) e1 e2
 sampleRand (GreaterThanOrEqual e1 e2) = apply (evaluateCompare (>=)) e1 e2
 sampleRand (IfElseThen e1 e2 e3) = sampleIfElse e1 e2 e3
+sampleRand (CreateTuple e1 e2) = sampleTuple e1 e2
 
 apply :: (MonadRandom m) => (Value -> Value -> Value) -> Expr -> Expr -> m Value
 apply f e1 e2 = do
@@ -77,17 +79,21 @@ sampleNot expr = do
   value <- sampleRand expr
   return $ VBool $ not $ evaluateAsBool value
 
+sampleTuple :: (MonadRandom m) => Expr -> Expr -> m Value
+sampleTuple e1 e2 = do
+  v1 <- sampleRand e1
+  v2 <- sampleRand e2
+  return $ VTuple v1 v2
+
 evaluateAsBool :: Value -> Bool
-evaluateAsBool (VFloat _) = error "Error: Expected Bool got Float."
 evaluateAsBool (VBool b) = b
+evaluateAsBool v1 = error $ "Error: Expected Bool got " <> show v1 <> " ."
 
 evaluateArithmetic :: (Double -> Double -> Double) -> Value -> Value -> Value
-evaluateArithmetic _ (VBool _) _ = error "Error: Can't calculate a Boolean Value."
-evaluateArithmetic _ _ (VBool _) = error "Error: Can't calculate a Boolean Value."
 evaluateArithmetic f (VFloat x) (VFloat y) = VFloat $ f x y
+evaluateArithmetic _ v1 v2 = error $ "Error: Can't calculate " <> show v1 <> " with " <> show v2 <> "."
 
 evaluateCompare :: (forall a. (Eq a, Ord a) => a -> a -> Bool) -> Value -> Value -> Value
-evaluateCompare _ (VBool _) (VFloat _) = error "Error: Can't compare Bool with Float."
-evaluateCompare _ (VFloat _) (VBool _) = error "Error: Can't compare Float with Bool."
 evaluateCompare f (VFloat x) (VFloat y) = VBool $ f x y
 evaluateCompare f (VBool x) (VBool y) = VBool $ f x y
+evaluateCompare _ v1 v2 = error $ "Error: Can't compare " <> show v1 <> " with " <> show v2 <> "."

@@ -1,1 +1,1 @@
-if (Uniform <= 0.2) || (Uniform <= 0.2) then 250 else 100
+(Uniform, if True then 2 else 1, Normal)
