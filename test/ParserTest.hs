@@ -3,6 +3,7 @@ module ParserTest
   )
 where
 
+import Assert
 import Parser
 import Representation
 import Test.Tasty
@@ -10,9 +11,17 @@ import Test.Tasty.ExpectedFailure
 import Test.Tasty.HUnit
 
 -- testCaseParseExpr :: String -> Expr -> Assertion
+testCaseParseExpr :: TestName -> Expr -> TestTree
 testCaseParseExpr exprString expectedExpr = testCase exprString $ do
-  let expr = parseExpr exprString
+  expr <- assertRight $ parseExpr exprString
   expr @?= expectedExpr
+
+testCaseParseExprError :: TestName -> String -> TestTree
+testCaseParseExprError exprString errorString = testCase msg $ do
+  error <- assertLeft $ parseExpr exprString
+  error @?= errorString
+  where
+    msg = exprString <> ":Expected Error"
 
 tests =
   testGroup
@@ -54,7 +63,7 @@ tests =
         ],
       testGroup
         "Padding"
-        [ expectFail $ testCaseParseExpr "- 3.4" $ Const (VFloat (-3.4)),
+        [ testCaseParseExprError "- 3.4" "Error: Expected Value got Operator '-'",
           testCaseParseExpr "!False" $ Not (Const (VBool False)),
           testCaseParseExpr "(False)" $ Const (VBool False),
           testCaseParseExpr "!(3.4)" $ Not (Const (VFloat 3.4))

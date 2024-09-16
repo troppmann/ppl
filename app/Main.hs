@@ -5,6 +5,8 @@ module Main where
 -- import DistributionSampler
 
 import ApproximateIntegration
+import Data.Either (fromRight)
+import Debug.Extended
 import DistributionSampler
 import Interpret
 import Mean
@@ -16,7 +18,7 @@ import Spn
 main :: IO ()
 main = do
   s <- readFile "test.ppl"
-  let expr = parseExpr s
+  let expr = unwrap $ parseExpr s
   print expr
   sample0 <- sampleExpr expr
   print sample0

@@ -1,6 +1,7 @@
 module Debug.Extended
   ( todo,
     dbg,
+    unwrap,
   )
 where
 
@@ -17,3 +18,7 @@ dbg a = trace ("[" <> filename <> ":" <> lineNumber <> ":" <> col <> "] " <> sho
     filename = srcLocFile info
     lineNumber = show $ srcLocStartLine info
     col = show $ srcLocStartCol info
+
+unwrap :: (Show a) => Either a b -> b
+unwrap (Left e) = error $ show e
+unwrap (Right value) = value

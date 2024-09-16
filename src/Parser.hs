@@ -6,8 +6,8 @@ where
 import Representation
 import Text.Read (readMaybe)
 
-parseExpr :: String -> Expr
-parseExpr = fst . parseUntil Nothing Nothing (Nothing, Nothing) . separate
+parseExpr :: String -> Either String Expr
+parseExpr = fmap fst . parseUntil Nothing Nothing (Nothing, Nothing) . separate
 
 separate :: String -> [String]
 separate = words . escape
@@ -21,71 +21,73 @@ escape ('!' : xs) = " ! " ++ escape xs
 escape (x : xs) = x : escape xs
 escape "" = ""
 
--- parseUntil approach
 type Func = String
 
 type Symbol = String
 
--- TODO 11.09.24: Replace Error with Either
-parseUntil :: Maybe Expr -> Maybe Func -> (Maybe Symbol, Maybe Symbol) -> [Symbol] -> (Expr, [Symbol])
+parseUntil :: Maybe Expr -> Maybe Func -> (Maybe Symbol, Maybe Symbol) -> [Symbol] -> Either String (Expr, [Symbol])
 parseUntil (Just e) Nothing (Just opening, Just ")") ("," : xs)
   | opening `elem` ["(", ","] = do
-      let (expr, rest) = parseUntil Nothing Nothing (Just ",", Just ")") xs
-      (CreateTuple e expr, rest)
-  | opening == "else" = (e, "," : xs)
+      (expr, rest) <- parseUntil Nothing Nothing (Just ",", Just ")") xs
+      return (CreateTuple e expr, rest)
+  | opening == "else" = return (e, "," : xs)
 parseUntil (Just e) Nothing (_, Just s) (x : xs)
-  | s == x = (e, xs)
-parseUntil Nothing _ _ [] = error "Error: Expected Value got ''"
+  | s == x = return (e, xs)
+parseUntil Nothing _ _ [] = Left "Error: Expected Value got ''"
 parseUntil Nothing Nothing s@(_, c) (x : xs)
-  | isInfixFunction x = error ("Error: Expected Value got Operator '" <> x <> "'")
+  | isInfixFunction x = Left $ "Error: Expected Value got Operator '" <> x <> "'"
   | isFunction x = do
-      let (expr, rest) = parseFirstExpression xs
-      parseUntil (Just $ applyFunction x expr) Nothing s rest
+      (expr, rest) <- parseFirstExpression xs
+      func <- applyFunction x expr
+      parseUntil (Just func) Nothing s rest
   | x == "(" = do
-      let (e, rest) = parseUntil Nothing Nothing (Just "(", Just ")") xs
+      (e, rest) <- parseUntil Nothing Nothing (Just "(", Just ")") xs
       parseUntil (Just e) Nothing s rest
   | x == "if" = do
-      let (boolExpression, rest1) = parseUntil Nothing Nothing (Just "if", Just "then") xs
-      let (eIf1, rest2) = parseUntil Nothing Nothing (Just "then", Just "else") rest1
-      let (eIf2, rest3) = parseUntil Nothing Nothing (Just "else", c) rest2
+      (boolExpression, rest1) <- parseUntil Nothing Nothing (Just "if", Just "then") xs
+      (eIf1, rest2) <- parseUntil Nothing Nothing (Just "then", Just "else") rest1
+      (eIf2, rest3) <- parseUntil Nothing Nothing (Just "else", c) rest2
       let ifExpr = IfElseThen boolExpression eIf1 eIf2
       parseUntil (Just ifExpr) Nothing s rest3
   | e@(Just _) <- tryConvertToLiteral x = parseUntil e Nothing s xs
-  | otherwise = error ("Error: Unknown String '" <> x <> "'")
+  | otherwise = Left $ "Error: Unknown String '" <> x <> "'"
 parseUntil (Just e) Nothing s (x : xs)
   | isInfixFunction x = parseUntil (Just e) (Just x) s xs
-  | otherwise = error ("Error: Unexpected String'" <> x <> "'")
-parseUntil (Just _e) (Just _f) _ [] = error "Expected Value got ''"
-parseUntil Nothing (Just _f) _ (_x : _xs) = error "Cannot happen yet"
+  | otherwise = Left $ "Error: Unexpected String'" <> x <> "'"
+parseUntil (Just _e) (Just _f) _ [] = Left "Expected Value got ''"
+parseUntil Nothing (Just _f) _ (_x : _xs) = Left "Cannot happen yet"
 parseUntil (Just e1) (Just f) s@(_, c) (x : xs)
-  | isInfixFunction x = error ("Error: Expected Value got Operator '" <> x <> "'")
+  | isInfixFunction x = Left $ "Error: Expected Value got Operator '" <> x <> "'"
   | isFunction x = do
-      let (e2, rest) = parseFirstExpression xs
-      parseUntil (Just $ combineFunction e1 f $ applyFunction x e2) Nothing s rest
-  | Just e2 <- tryConvertToLiteral x = parseUntil (Just $ combineFunction e1 f e2) Nothing s xs
+      (e2, rest) <- parseFirstExpression xs
+      func <- applyFunction x e2
+      combinedFunc <- combineFunction e1 f func
+      parseUntil (Just combinedFunc) Nothing s rest
+  | Just e2 <- tryConvertToLiteral x = do
+      combinedFunc <- combineFunction e1 f e2
+      parseUntil (Just combinedFunc) Nothing s xs
   | x == "(" = do
-      let (e2, rest) = parseUntil Nothing Nothing (Just "(", Just ")") xs
-      parseUntil (Just $ combineFunction e1 f e2) Nothing s rest
+      (e2, rest) <- parseUntil Nothing Nothing (Just "(", Just ")") xs
+      combinedFunc <- combineFunction e1 f e2
+      parseUntil (Just combinedFunc) Nothing s rest
   | x == "if" = do
-      let (boolExpression, rest1) = parseUntil Nothing Nothing (Just "if", Just "then") xs
-      let (eIf1, rest2) = parseUntil Nothing Nothing (Just "then", Just "else") rest1
-      let (eIf2, rest3) = parseUntil Nothing Nothing (Just "else", c) rest2
+      (boolExpression, rest1) <- parseUntil Nothing Nothing (Just "if", Just "then") xs
+      (eIf1, rest2) <- parseUntil Nothing Nothing (Just "then", Just "else") rest1
+      (eIf2, rest3) <- parseUntil Nothing Nothing (Just "else", c) rest2
       let e2 = IfElseThen boolExpression eIf1 eIf2
-      let combinedIfExpr = combineFunction e1 f e2
+      combinedIfExpr <- combineFunction e1 f e2
       parseUntil (Just combinedIfExpr) Nothing s rest3
-  | otherwise = error ("Error: Unexpected String'" <> x <> "'")
-parseUntil (Just e) Nothing _ [] = (e, [])
+  | otherwise = Left $ "Error: Unexpected String'" <> x <> "'"
+parseUntil (Just e) Nothing _ [] = return (e, [])
 
-parseFirstExpression :: [String] -> (Expr, [String])
+parseFirstExpression :: [String] -> Either String (Expr, [String])
 parseFirstExpression [] = error "Error: Expected Value got ''"
 parseFirstExpression (x : xs)
-  | isInfixFunction x = error ("Error: Expected Value got Operator '" <> x <> "'")
-  | isFunction x = error ("Error: Expected Value got Operator '" <> x <> "'")
-  | Just expr <- tryConvertToLiteral x = (expr, xs)
-  | x == "(" = do
-      let (expr, rest) = parseUntil Nothing Nothing (Just "(", Just ")") xs
-      (expr, rest)
-  | otherwise = error ("Error: Unexpected String'" <> x <> "'")
+  | isInfixFunction x = Left $ "Error: Expected Value got Operator '" <> x <> "'"
+  | isFunction x = Left $ "Error: Expected Value got Operator '" <> x <> "'"
+  | Just expr <- tryConvertToLiteral x = return (expr, xs)
+  | x == "(" = parseUntil Nothing Nothing (Just "(", Just ")") xs
+  | otherwise = Left ("Error: Unexpected String'" <> x <> "'")
 
 isInfixFunction :: String -> Bool
 isInfixFunction = flip elem ["+", "-", "*", "/", "==", "!=", "<", "<=", ">", ">=", "&&", "||"]
@@ -93,24 +95,24 @@ isInfixFunction = flip elem ["+", "-", "*", "/", "==", "!=", "<", "<=", ">", ">=
 isFunction :: String -> Bool
 isFunction = flip elem ["!"]
 
-combineFunction :: Expr -> Symbol -> Expr -> Expr
-combineFunction e1 "+" e2 = Plus e1 e2
-combineFunction e1 "*" e2 = Multiply e1 e2
-combineFunction e1 "-" e2 = Subtract e1 e2
-combineFunction e1 "/" e2 = Divide e1 e2
-combineFunction e1 "==" e2 = Equal e1 e2
-combineFunction e1 "!=" e2 = Unequal e1 e2
-combineFunction e1 "<" e2 = LessThan e1 e2
-combineFunction e1 "<=" e2 = LessThanOrEqual e1 e2
-combineFunction e1 ">" e2 = GreaterThan e1 e2
-combineFunction e1 ">=" e2 = GreaterThanOrEqual e1 e2
-combineFunction e1 "&&" e2 = And e1 e2
-combineFunction e1 "||" e2 = Or e1 e2
-combineFunction _ _ _ = error "Unknown Function"
+combineFunction :: Expr -> Symbol -> Expr -> Either String Expr
+combineFunction e1 "+" e2 = return $ Plus e1 e2
+combineFunction e1 "*" e2 = return $ Multiply e1 e2
+combineFunction e1 "-" e2 = return $ Subtract e1 e2
+combineFunction e1 "/" e2 = return $ Divide e1 e2
+combineFunction e1 "==" e2 = return $ Equal e1 e2
+combineFunction e1 "!=" e2 = return $ Unequal e1 e2
+combineFunction e1 "<" e2 = return $ LessThan e1 e2
+combineFunction e1 "<=" e2 = return $ LessThanOrEqual e1 e2
+combineFunction e1 ">" e2 = return $ GreaterThan e1 e2
+combineFunction e1 ">=" e2 = return $ GreaterThanOrEqual e1 e2
+combineFunction e1 "&&" e2 = return $ And e1 e2
+combineFunction e1 "||" e2 = return $ Or e1 e2
+combineFunction _ f _ = Left $ "Unknown Function '" <> f <> "'"
 
-applyFunction :: Symbol -> Expr -> Expr
-applyFunction "!" expr = Not expr
-applyFunction _ _ = error "Unknown Function"
+applyFunction :: Symbol -> Expr -> Either String Expr
+applyFunction "!" expr = return $ Not expr
+applyFunction f _ = Left $ "Unknown Function '" <> f <> "'"
 
 tryConvertToLiteral :: Symbol -> Maybe Expr
 tryConvertToLiteral "True" = Just $ Const $ VBool True

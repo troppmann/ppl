@@ -3,6 +3,7 @@ module InterpretTest
   )
 where
 
+import Assert
 import Interpret
 import Parser
 import Representation
@@ -12,27 +13,18 @@ import Test.Tasty.HUnit
 
 errorMargin = 0.001
 
-assertEither :: (Show a, Show b) => Either a b -> Either a b -> Assertion
-assertEither (Left _) (Left _) = return ()
-assertEither (Right _) (Right _) = return ()
-assertEither either1 either2 = assertFailure msg
-  where
-    msg = "expected: " <> show either1 <> "\n but got: " <> show either2
-
 assertExprInterpret :: TestName -> Value -> DimensionalProbability -> TestTree
 assertExprInterpret exprString inputValue (expectedDim, expectedProb) = testCase testString $ do
-  let expr = parseExpr exprString
-  let dimProb = interpret expr inputValue
-  assertEither dimProb (Right (expectedDim, expectedProb))
-  let Right (dim, prob) = dimProb
-  assertApproxEqual "" errorMargin prob expectedProb
+  expr <- assertRight $ parseExpr exprString
+  (dim, prob) <- assertRight $ interpret expr inputValue
   dim @?= expectedDim
+  assertApproxEqual "" errorMargin prob expectedProb
   where
     testString = exprString <> ":Value " <> showShorter inputValue
 
 assertExprInterpretFail :: TestName -> Value -> String -> TestTree
 assertExprInterpretFail exprString inputValue expectedError = testCase testString $ do
-  let expr = parseExpr exprString
+  expr <- assertRight $ parseExpr exprString
   interpret expr inputValue @?= Left expectedError
   where
     testString = exprString <> ":" <> show inputValue <> ":Expected Left"

@@ -3,6 +3,7 @@ module SampleTest
   )
 where
 
+import Assert
 import Parser
 import Representation
 import Sample
@@ -11,14 +12,14 @@ import Test.Tasty.HUnit
 
 assertExprEq :: TestName -> Value -> TestTree
 assertExprEq exprString expectedValue = testCase exprString $ do
-  let expr = parseExpr exprString
+  expr <- assertRight $ parseExpr exprString
   sample <- sampleExpr expr
   sample @?= expectedValue
 
 -- TODO 11.09.24: swap with QuickCheck test
 assertExprInRange :: TestName -> (Double, Double) -> TestTree
 assertExprInRange exprString (low, high) = testCase testString $ do
-  let expr = parseExpr exprString
+  expr <- assertRight $ parseExpr exprString
   VFloat sample <- sampleExpr expr
   assertBool "" $ sample >= low
   assertBool "" $ sample <= high

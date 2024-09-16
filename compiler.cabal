@@ -54,7 +54,8 @@ executable compiler
 test-suite tests
     type:             exitcode-stdio-1.0
     hs-source-dirs:   test
-    other-modules:    SampleTest,
+    other-modules:    Assert,
+                      SampleTest,
                       ParserTest,
                       InterpretTest
     main-is:          Main.hs
