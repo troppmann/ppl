@@ -19,6 +19,6 @@ dbg a = trace ("[" <> filename <> ":" <> lineNumber <> ":" <> col <> "] " <> sho
     lineNumber = show $ srcLocStartLine info
     col = show $ srcLocStartCol info
 
-unwrap :: (Show a) => Either a b -> b
+unwrap :: (Show a, HasCallStack) => Either a b -> b
 unwrap (Left e) = error $ show e
 unwrap (Right value) = value
