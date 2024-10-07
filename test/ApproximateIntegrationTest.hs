@@ -1,0 +1,35 @@
+module ApproximateIntegrationTest
+  ( tests,
+  )
+where
+
+import ApproximateIntegration
+import Assert
+import Parser
+import Representation
+import Test.HUnit.Approx
+import Test.Tasty
+import Test.Tasty.HUnit
+
+approxFloatPdf :: TestName -> LinearSpacing -> TestTree
+approxFloatPdf exprString linSpace = testCase testString $ do
+  expr <- assertRight $ parseExpr exprString
+  let area = approxExpr linSpace expr
+  assertApproxEqual "" defaultErrorMargin 1 area
+  where
+    testString = exprString
+
+tests =
+  testGroup
+    "ApproximateIntegration"
+    [ approxFloatPdf "Uniform" linSpace,
+      approxFloatPdf "Uniform * 5" linSpace,
+      approxFloatPdf "Uniform * 5 - 2" linSpace,
+      approxFloatPdf "Normal" linSpace,
+      approxFloatPdf "Normal * 5" linSpace,
+      approxFloatPdf "Normal * 30 - 2" linSpace,
+      approxFloatPdf "if Uniform > 0.5 then Uniform else Normal" linSpace,
+      approxFloatPdf "if Uniform > 0.1 then Uniform + 50 else Uniform - 50" linSpace
+    ]
+  where
+    linSpace = LinearSpacing {start = -100, end = 100, stepWidth = 0.01}
