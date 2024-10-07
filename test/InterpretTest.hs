@@ -11,14 +11,12 @@ import Test.HUnit.Approx
 import Test.Tasty
 import Test.Tasty.HUnit
 
-errorMargin = 0.001
-
 assertExprInterpret :: TestName -> Value -> DimensionalProbability -> TestTree
 assertExprInterpret exprString inputValue (expectedDim, expectedProb) = testCase testString $ do
   expr <- assertRight $ parseExpr exprString
   (dim, prob) <- assertRight $ interpret expr inputValue
   dim @?= expectedDim
-  assertApproxEqual "" errorMargin prob expectedProb
+  assertApproxEqual "" defaultErrorMargin prob expectedProb
   where
     testString = exprString <> ":Value " <> showShorter inputValue
 

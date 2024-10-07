@@ -2,6 +2,7 @@ module Assert
   ( assertEither,
     assertLeft,
     assertRight,
+    defaultErrorMargin,
   )
 where
 
@@ -22,3 +23,5 @@ assertRight (Right value) = return value
 assertLeft :: (Show b) => Either a b -> IO a
 assertLeft (Left error) = return error
 assertLeft (Right value) = assertFailure $ show value
+
+defaultErrorMargin = 0.001
