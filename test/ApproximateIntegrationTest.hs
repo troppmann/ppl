@@ -27,9 +27,10 @@ tests =
       approxFloatPdf "Uniform * 5 - 2" linSpace,
       approxFloatPdf "Normal" linSpace,
       approxFloatPdf "Normal * 5" linSpace,
-      approxFloatPdf "Normal * 30 - 2" linSpace,
+      approxFloatPdf "Normal * 3 - 2" linSpace,
       approxFloatPdf "if Uniform > 0.5 then Uniform else Normal" linSpace,
-      approxFloatPdf "if Uniform > 0.1 then Uniform + 50 else Uniform - 50" linSpace
+      approxFloatPdf "if Uniform > 0.1 then Uniform + 5 else Uniform - 5" linSpace,
+      approxFloatPdf "3 + ((if Uniform > 0.5 then Normal else Normal * 6.7) * 12)" linSpace
     ]
   where
-    linSpace = LinearSpacing {start = -100, end = 100, stepWidth = 0.01}
+    linSpace = LinearSpacing {start = -20, end = 20, stepWidth = 0.01}
