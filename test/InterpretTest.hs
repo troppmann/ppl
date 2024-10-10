@@ -16,7 +16,7 @@ assertExprInterpret exprString inputValue (expectedDim, expectedProb) = testCase
   expr <- assertRight $ parseExpr exprString
   (dim, prob) <- assertRight $ interpret expr inputValue
   dim @?= expectedDim
-  assertApproxEqual "" defaultErrorMargin prob expectedProb
+  assertApproxEqual "" defaultErrorMargin expectedProb prob
   where
     testString = exprString <> ":Value " <> showShorter inputValue
 
