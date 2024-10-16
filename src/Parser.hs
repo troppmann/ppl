@@ -6,7 +6,7 @@ where
 import Representation
 import Text.Read (readMaybe)
 
-parseExpr :: String -> Either String Expr
+parseExpr :: String -> Either ErrorString Expr
 parseExpr = fmap fst . parseUntil Nothing Nothing (Nothing, Nothing) . separate
 
 separate :: String -> [String]
@@ -23,9 +23,11 @@ escape "" = ""
 
 type Func = String
 
+type ErrorString = String
+
 type Symbol = String
 
-parseUntil :: Maybe Expr -> Maybe Func -> (Maybe Symbol, Maybe Symbol) -> [Symbol] -> Either String (Expr, [Symbol])
+parseUntil :: Maybe Expr -> Maybe Func -> (Maybe Symbol, Maybe Symbol) -> [Symbol] -> Either ErrorString (Expr, [Symbol])
 parseUntil (Just e) Nothing (Just opening, Just ")") ("," : xs)
   | opening `elem` ["(", ","] = do
       (expr, rest) <- parseUntil Nothing Nothing (Just ",", Just ")") xs
@@ -80,7 +82,7 @@ parseUntil (Just e1) (Just f) s@(_, c) (x : xs)
   | otherwise = Left $ "Error: Unexpected String'" <> x <> "'"
 parseUntil (Just e) Nothing _ [] = return (e, [])
 
-parseFirstExpression :: [String] -> Either String (Expr, [String])
+parseFirstExpression :: [Symbol] -> Either ErrorString (Expr, [Symbol])
 parseFirstExpression [] = error "Error: Expected Value got ''"
 parseFirstExpression (x : xs)
   | isInfixFunction x = Left $ "Error: Expected Value got Operator '" <> x <> "'"
@@ -89,13 +91,13 @@ parseFirstExpression (x : xs)
   | x == "(" = parseUntil Nothing Nothing (Just "(", Just ")") xs
   | otherwise = Left ("Error: Unexpected String'" <> x <> "'")
 
-isInfixFunction :: String -> Bool
+isInfixFunction :: Symbol -> Bool
 isInfixFunction = flip elem ["+", "-", "*", "/", "==", "!=", "<", "<=", ">", ">=", "&&", "||"]
 
-isFunction :: String -> Bool
+isFunction :: Symbol -> Bool
 isFunction = flip elem ["!"]
 
-combineFunction :: Expr -> Symbol -> Expr -> Either String Expr
+combineFunction :: Expr -> Symbol -> Expr -> Either ErrorString Expr
 combineFunction e1 "+" e2 = return $ Plus e1 e2
 combineFunction e1 "*" e2 = return $ Multiply e1 e2
 combineFunction e1 "-" e2 = return $ Subtract e1 e2
@@ -110,7 +112,7 @@ combineFunction e1 "&&" e2 = return $ And e1 e2
 combineFunction e1 "||" e2 = return $ Or e1 e2
 combineFunction _ f _ = Left $ "Unknown Function '" <> f <> "'"
 
-applyFunction :: Symbol -> Expr -> Either String Expr
+applyFunction :: Symbol -> Expr -> Either ErrorString Expr
 applyFunction "!" expr = return $ Not expr
 applyFunction f _ = Left $ "Unknown Function '" <> f <> "'"
 
