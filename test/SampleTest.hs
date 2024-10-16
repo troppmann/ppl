@@ -5,6 +5,7 @@ where
 
 import Assert
 import Parser
+import Problems
 import Representation
 import Sample
 import Test.Tasty
@@ -25,6 +26,15 @@ testSampleExprInRange exprString (low, high) = testCase testString $ do
   assertBool "" $ sample <= high
   where
     testString = exprString <> ":InRange[" <> show low <> "," <> show high <> "]"
+
+testSampleExpr :: String -> TestTree
+testSampleExpr exprString = testSampleExprWithName exprString exprString
+
+testSampleExprWithName :: String -> TestName -> TestTree
+testSampleExprWithName exprString testName = testCase testName $ do
+  expr <- assertRight $ parseExpr exprString
+  _sample <- sampleExpr expr
+  return ()
 
 infinity = 1 / 0
 
@@ -47,8 +57,9 @@ tests =
       testSampleExprInRange "Uniform * 4" (0.0, 4.0),
       testSampleExprInRange "Uniform * 4 + 10" (10.0, 14.0),
       testSampleExprInRange "Uniform * (4 + 10)" (0.0, 14.0),
-      testSampleExprInRange "Normal" (-infinity, infinity),
+      testSampleExpr "Normal",
       testSampleExprEq "(3 + Normal * 2)* 0.0" (VFloat 0.0),
       testSampleExprEq "(Normal * 0)* 3.0" (VFloat 0.0),
-      testSampleExprEq "2 + (Normal * 0.0) - 0.0" (VFloat 2.0)
+      testSampleExprEq "2 + (Normal * 0.0) - 0.0" (VFloat 2.0),
+      testSampleExprWithName indiaGpaProblem "IndiaGpaProblem(..)"
     ]
