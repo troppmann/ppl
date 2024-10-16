@@ -28,11 +28,12 @@ type ErrorString = String
 type Symbol = String
 
 parseUntil :: Maybe Expr -> Maybe Func -> (Maybe Symbol, Maybe Symbol) -> [Symbol] -> Either ErrorString (Expr, [Symbol])
+parseUntil (Just e) Nothing (Just "else", Just s) (x : xs)
+  | s == x || x == "," = return (e, x : xs)
 parseUntil (Just e) Nothing (Just opening, Just ")") ("," : xs)
   | opening `elem` ["(", ","] = do
       (expr, rest) <- parseUntil Nothing Nothing (Just ",", Just ")") xs
       return (CreateTuple e expr, rest)
-  | opening == "else" = return (e, "," : xs)
 parseUntil (Just e) Nothing (_, Just s) (x : xs)
   | s == x = return (e, xs)
 parseUntil Nothing _ _ [] = Left "Error: Expected Value got ''"

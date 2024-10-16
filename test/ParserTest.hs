@@ -79,7 +79,9 @@ tests =
           testCaseParseExpr "3 + (4 * 12)" (Plus (Const (VFloat 3)) (Multiply (Const (VFloat 4)) (Const (VFloat 12)))),
           testCaseParseExpr "3 + ((if Uniform > 0.5 then Normal else Normal * 6.7) * 12)" (Plus (Const (VFloat 3)) (Multiply (IfElseThen (GreaterThan Uniform (Const (VFloat 0.5))) Normal (Multiply Normal (Const (VFloat 6.7)))) (Const (VFloat 12)))),
           testCaseParseExpr "if Uniform < 0.5 then (0, 4) else (1, 10)" (IfElseThen (LessThan Uniform (Const $ VFloat 0.5)) (CreateTuple (Const $ VFloat 0) (Const $ VFloat 4)) (CreateTuple (Const $ VFloat 1) (Const $ VFloat 10))),
+          testCaseParseExpr "(if Uniform then Uniform else Uniform) * Uniform" (Multiply (IfElseThen Uniform Uniform Uniform) Uniform),
           testCaseParseExpr "if Uniform then (if Uniform then Uniform else Uniform) else Uniform" (IfElseThen Uniform (IfElseThen Uniform Uniform Uniform) Uniform),
+          testCaseParseExpr "if Uniform then (3 * if Uniform then Uniform else Uniform) else Uniform" (IfElseThen Uniform (Multiply (Const $ VFloat 3) (IfElseThen Uniform Uniform Uniform)) Uniform),
           testCaseParseExprWithName indiaGpaProblem "IndiaGpaProblem(..)" (IfElseThen (LessThan Uniform (Const $ VFloat 0.5)) (CreateTuple (Const $ VFloat 0) (IfElseThen (LessThan Uniform (Const $ VFloat 0.01)) (Const $ VFloat 4) (Multiply Uniform (Const $ VFloat 4)))) (CreateTuple (Const $ VFloat 1) (IfElseThen (LessThan Uniform (Const $ VFloat 0.01)) (Const $ VFloat 10) (Multiply Uniform (Const $ VFloat 10)))))
         ]
     ]
