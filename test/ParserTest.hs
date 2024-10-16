@@ -5,6 +5,7 @@ where
 
 import Assert
 import Parser
+import Problems
 import Representation
 import Test.Tasty
 import Test.Tasty.ExpectedFailure
@@ -84,5 +85,3 @@ tests =
           testParseExprWithName indiaGpaProblem "IndiaGpaProblem(..)" (IfElseThen (LessThan Uniform (Const $ VFloat 0.5)) (CreateTuple (Const $ VFloat 0) (IfElseThen (LessThan Uniform (Const $ VFloat 0.01)) (Const $ VFloat 4) (Multiply Uniform (Const $ VFloat 4)))) (CreateTuple (Const $ VFloat 1) (IfElseThen (LessThan Uniform (Const $ VFloat 0.01)) (Const $ VFloat 10) (Multiply Uniform (Const $ VFloat 10)))))
         ]
     ]
-
-indiaGpaProblem = "if Uniform < 0.5 then (0, if Uniform < 0.01 then 4 else Uniform * 4) else (1, if Uniform < 0.01 then 10 else Uniform * 10)"
