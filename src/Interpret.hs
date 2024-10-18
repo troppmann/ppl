@@ -77,12 +77,11 @@ interpret (Divide e1 e2) value
       return (1, prob * abs c)
   | otherwise = Left "Can only interpret Divide(/) with a one side Constant."
 interpret (IfElseThen e1 e2 e3) value = do
-  -- TODO handle dimension
-  (_dim1, probTrue) <- interpret e1 (VBool True)
-  let probFalse = 1 - probTrue
-  (_dim2, p2) <- interpret e2 value
-  (_dim3, p3) <- interpret e3 value
-  return (1, probTrue * p2 + probFalse * p3)
+  dimProbTrue@(dim, probTrue) <- interpret e1 (VBool True)
+  let dimProbFalse = (dim, 1.0 - probTrue)
+  dimProbBranchTrue <- interpret e2 value
+  dimProbBranchFalse <- interpret e3 value
+  return $ (dimProbTrue ⊙ dimProbBranchTrue) ⊕ (dimProbFalse ⊙ dimProbBranchFalse)
 interpret (Equal e1 e2) (VBool bool)
   | Right constant <- evalConstExpr e2 = case constant of
       (VFloat c) -> do
