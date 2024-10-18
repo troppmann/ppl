@@ -49,9 +49,7 @@ tests =
       testInterpretExprEq "(Normal * 0)* 3.0" (VFloat 0.0) (0, 1.0),
       testInterpretExprEq "Normal * 3 + 2" (VFloat 2.0) (1, 0.1329),
       testInterpretExprEq "2 + (Normal * 0.0) - 0.0" (VFloat 2.0) (0, 1.0),
-      -- TODO 12.09.24: > dim
-      -- TODO 12.09.24: if dimension
-      testInterpretExprEq "if Uniform > 0.5 then 3 else (Uniform < 0.5)" (VBool True) (1, 0.25),
+      testInterpretExprEq "if Uniform > 0.5 then 3 else (Uniform < 0.5)" (VBool True) (0, 0.25),
       testInterpretExprEq "1 / Uniform == 4" (VBool True) (0, 0.00001),
       testInterpretExprEq "1 / Uniform == -4" (VBool False) (0, 1.0),
       testInterpretExprEq "(Uniform * -1) / 0.0 < -20.0" (VBool True) (0, 1.0),
@@ -61,8 +59,8 @@ tests =
       testInterpretExprEq "-1 / Normal < -2" (VBool True) (0, 0.80853),
       testInterpretExprEq "3 * Uniform >  0.2" (VBool True) (0, 0.93333),
       testInterpretExprEq "Uniform > 0.5" (VBool True) (0, 0.5),
-      testInterpretExprEq "if Uniform > 0.5 then Uniform else 2.0" (VFloat 2.0) (1, 0.5),
-      testInterpretExprEq "if Uniform < 0.5 then Normal else 2.0" (VFloat 2.0) (1, 0.5270),
+      testInterpretExprEq "if Uniform > 0.5 then Uniform else 2.0" (VFloat 2.0) (0, 0.5),
+      testInterpretExprEq "if Uniform < 0.5 then Normal else 2.0" (VFloat 2.0) (0, 0.5),
       testInterpretExprEq "(if Uniform > 0.5 then 3 else Normal) > 0" (VBool True) (0, 0.75),
       testInterpretExprEq "Normal * -0.000 <= 0.0" (VBool True) (0, 1.0),
       testInterpretExprEq "(Uniform <= 0.2) || (Uniform <= 0.2)" (VBool True) (0, 0.36),
