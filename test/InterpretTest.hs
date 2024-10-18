@@ -6,19 +6,23 @@ where
 import Assert
 import Interpret
 import Parser
+import Problems
 import Representation
 import Test.HUnit.Approx
 import Test.Tasty
 import Test.Tasty.HUnit
 
-testInterpretExprEq :: TestName -> Value -> DimensionalProbability -> TestTree
-testInterpretExprEq exprString inputValue (expectedDim, expectedProb) = testCase testString $ do
+testInterpretExprEq :: String -> Value -> DimensionalProbability -> TestTree
+testInterpretExprEq exprString = testInterpretExprEqWithName exprString exprString
+
+testInterpretExprEqWithName :: String -> TestName -> Value -> DimensionalProbability -> TestTree
+testInterpretExprEqWithName exprString testName inputValue (expectedDim, expectedProb) = testCase testString $ do
   expr <- assertRight $ parseExpr exprString
   (dim, prob) <- assertRight $ interpret expr inputValue
   dim @?= expectedDim
   assertApproxEqual "" defaultErrorMargin expectedProb prob
   where
-    testString = exprString <> ":Value " <> showShorter inputValue
+    testString = testName <> ":Value " <> showShorter inputValue
 
 testInterpretExprFail :: TestName -> Value -> String -> TestTree
 testInterpretExprFail exprString inputValue expectedError = testCase testString $ do
@@ -74,5 +78,15 @@ tests =
       testInterpretExprEq "(Uniform, Normal, Uniform < 0.5)" (VTuple (VFloat 1.0) (VTuple (VFloat 0.0) (VBool True))) (2, 0.3989 * 0.5),
       testInterpretExprEq "((Uniform, Normal), Uniform < 0.5)" (VTuple (VTuple (VFloat 1.0) (VFloat 0.0)) (VBool True)) (2, 0.3989 * 0.5),
       testInterpretExprEq "(Uniform, Normal) == (0.5, 0.4)" (VBool True) (2, 1.0 * 0.3684),
-      testInterpretExprEq "if Uniform < 0.5 then (Uniform, 2.0) else (Normal, 3.0)" (VTuple (VFloat 1.0) (VFloat 2.0)) (1, 0.5)
+      testInterpretExprEq "if Uniform < 0.5 then (Uniform, 2.0) else (Normal, 3.0)" (VTuple (VFloat 1.0) (VFloat 2.0)) (1, 0.5),
+      testInterpretExprEqWithName indiaGpaProblem "IndiaGpaProblem(..)" (VTuple (VFloat 0.0) (VFloat 0.5)) (1, 0.5 * 0.99 * 0.25),
+      testInterpretExprEqWithName indiaGpaProblem "IndiaGpaProblem(..)" (VTuple (VFloat 0.0) (VFloat 4.0)) (0, 0.5 * 0.01),
+      testInterpretExprEqWithName indiaGpaProblem "IndiaGpaProblem(..)" (VTuple (VFloat 0.0) (VFloat 9.5)) (0, 0.0),
+      testInterpretExprEqWithName indiaGpaProblem "IndiaGpaProblem(..)" (VTuple (VFloat 0.0) (VFloat 10.0)) (0, 0.0),
+      testInterpretExprEqWithName indiaGpaProblem "IndiaGpaProblem(..)" (VTuple (VFloat 0.0) (VFloat 12.0)) (0, 0.0),
+      testInterpretExprEqWithName indiaGpaProblem "IndiaGpaProblem(..)" (VTuple (VFloat 1.0) (VFloat 3.5)) (1, 0.5 * 0.99 * 0.1),
+      testInterpretExprEqWithName indiaGpaProblem "IndiaGpaProblem(..)" (VTuple (VFloat 1.0) (VFloat 4.0)) (1, 0.5 * 0.99 * 0.1),
+      testInterpretExprEqWithName indiaGpaProblem "IndiaGpaProblem(..)" (VTuple (VFloat 1.0) (VFloat 9.5)) (1, 0.5 * 0.99 * 0.1),
+      testInterpretExprEqWithName indiaGpaProblem "IndiaGpaProblem(..)" (VTuple (VFloat 1.0) (VFloat 10.0)) (0, 0.5 * 0.01),
+      testInterpretExprEqWithName indiaGpaProblem "IndiaGpaProblem(..)" (VTuple (VFloat 1.0) (VFloat 12.0)) (0, 0.0)
     ]
