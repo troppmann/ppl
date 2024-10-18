@@ -1,6 +1,7 @@
 module Debug.Extended
   ( todo,
     dbg,
+    dbg',
     unwrap,
   )
 where
@@ -13,6 +14,14 @@ todo msg = error ("not yet implemented: " ++ msg)
 
 dbg :: (Show a, HasCallStack) => a -> a
 dbg a = trace ("[" <> filename <> ":" <> lineNumber <> ":" <> col <> "] " <> show a) a
+  where
+    (_funcName, info) = last $ getCallStack callStack
+    filename = srcLocFile info
+    lineNumber = show $ srcLocStartLine info
+    col = show $ srcLocStartCol info
+
+dbg' :: (Show a, HasCallStack) => String -> a -> a
+dbg' string a = trace ("[" <> filename <> ":" <> lineNumber <> ":" <> col <> "] " <> string <> " " <> show a) a
   where
     (_funcName, info) = last $ getCallStack callStack
     filename = srcLocFile info
