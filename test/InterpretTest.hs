@@ -22,14 +22,22 @@ testInterpretExprEqWithName exprString testName inputValue (expectedDim, expecte
   dim @?= expectedDim
   assertApproxEqual "" defaultErrorMargin expectedProb prob
   where
-    testString = testName <> ":Value " <> showShorter inputValue
+    testString = shortenString testName <> ":Value " <> showShorter inputValue
+
+shortenString :: String -> String
+shortenString = shortenStringWithCount 50
+
+shortenStringWithCount :: Int -> String -> String
+shortenStringWithCount _ [] = []
+shortenStringWithCount 0 (x : xs) = ".. "
+shortenStringWithCount count (x : xs) = x : shortenStringWithCount (count - 1) xs
 
 testInterpretExprFail :: TestName -> Value -> String -> TestTree
 testInterpretExprFail exprString inputValue expectedError = testCase testString $ do
   expr <- assertRight $ parseExpr exprString
   interpret expr inputValue @?= Left expectedError
   where
-    testString = exprString <> ":" <> show inputValue <> ":Expected Left"
+    testString = exprString <> ":" <> showShorter inputValue <> ":Expected Fail"
 
 showShorter :: Value -> String
 showShorter (VFloat float) = show float
