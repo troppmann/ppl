@@ -72,6 +72,8 @@ tests =
         [ testParseExprFail "- 3.4" "Error: Expected Value got Operator '-'",
           testParseExpr "!False" $ Not (Const (VBool False)),
           testParseExpr "(False)" $ Const (VBool False),
+          testParseExpr "(False" $ Const (VBool False),
+          testParseExpr "(True,(False, False" $ CreateTuple (Const (VBool True)) (CreateTuple (Const (VBool False)) (Const (VBool False))),
           testParseExpr "!(3.4)" $ Not (Const (VFloat 3.4))
         ],
       testGroup

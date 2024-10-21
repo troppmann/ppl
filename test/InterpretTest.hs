@@ -80,7 +80,8 @@ tests =
           testInterpretExprEq "(Uniform, Normal, Uniform < 0.5)" (VTuple (VFloat 1.0) (VTuple (VFloat 0.0) (VBool True))) (2, 0.3989 * 0.5),
           testInterpretExprEq "((Uniform, Normal), Uniform < 0.5)" (VTuple (VTuple (VFloat 1.0) (VFloat 0.0)) (VBool True)) (2, 0.3989 * 0.5),
           testInterpretExprEq "(Uniform, Normal + 1, Uniform * 2)" (VTuple (VFloat 0.5) (VTuple (VFloat 1.0) (VFloat 1.0))) (3, 1.0 * 0.3989 * 0.5),
-          testInterpretExprEq "(Uniform, Normal) == (0.5, 0.4)" (VBool True) (2, 1.0 * 0.3684)
+          testInterpretExprEq "(Uniform, Normal) == (0.5, 0.4)" (VBool True) (2, 1.0 * 0.3684),
+          testInterpretExprEq "if Uniform < 0.5 then (Uniform > 0.5, Uniform * 2) else (Uniform * 3 > 0.5, Uniform * 2 + 1)" (VTuple (VBool True) (VFloat 1.5)) (1, 1 / 3)
         ],
       testGroup
         "Problem"
