@@ -144,9 +144,7 @@ interpret (GreaterThanOrEqual e1 e2) (VBool bool)
 interpret (Or e1 e2) (VBool bool) = do
   (_dim, p1) <- interpret e1 (VBool bool)
   (_dim, p2) <- interpret e2 (VBool bool)
-  let p1False = 1 - p1
-  let p2False = 1 - p2
-  return (0, p1 * p2 + p1 * p2False + p1False * p2)
+  return (0, 1 - (1 - p1) * (1 - p2))
 interpret (And e1 e2) (VBool bool) = do
   (_dim, p1) <- interpret e1 (VBool bool)
   (_dim, p2) <- interpret e2 (VBool bool)
@@ -165,9 +163,9 @@ interpret (And _ _) (VFloat _) = Right (0, 0.0)
 interpret (Or _ _) (VFloat _) = Right (0, 0.0)
 interpret (Not _) (VFloat _) = Right (0, 0.0)
 interpret (CreateTuple e1 e2) (VTuple v1 v2) = do
-  (dim1, prob1) <- interpret e1 v1
-  (dim2, prob2) <- interpret e2 v2
-  return (dim1 + dim2, prob1 * prob2)
+  dimProbA <- interpret e1 v1
+  dimProbB <- interpret e2 v2
+  return $ dimProbA ⊙ dimProbB
 interpret e _ = todo ("Missing interpret case: " <> show e)
 
 data CompareCase = LT | LE | EQ | GE | GT deriving (Ord, Enum, Show, Eq)
