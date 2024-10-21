@@ -7,6 +7,7 @@ import Assert
 import Parser
 import Problems
 import Representation
+import Shorter
 import Test.Tasty
 import Test.Tasty.ExpectedFailure
 import Test.Tasty.HUnit
@@ -15,16 +16,18 @@ testParseExpr :: String -> Expr -> TestTree
 testParseExpr exprString = testParseExprWithName exprString exprString
 
 testParseExprWithName :: String -> TestName -> Expr -> TestTree
-testParseExprWithName exprString testName expectedExpr = testCase testName $ do
+testParseExprWithName exprString testName expectedExpr = testCase msg $ do
   expr <- assertRight $ parseExpr exprString
   expr @?= expectedExpr
+  where
+    msg = shorter testName
 
 testParseExprFail :: TestName -> String -> TestTree
 testParseExprFail exprString errorString = testCase msg $ do
   error <- assertLeft $ parseExpr exprString
   error @?= errorString
   where
-    msg = exprString <> ":Expected Error"
+    msg = shorter exprString <> ":Expected Error"
 
 tests =
   testGroup

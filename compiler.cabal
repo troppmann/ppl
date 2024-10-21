@@ -57,6 +57,7 @@ test-suite tests
     other-modules:    ApproximateIntegrationTest,
                       Assert,
                       Problems,
+                      Shorter,
                       SampleTest,
                       ParserTest,
                       InterpretTest

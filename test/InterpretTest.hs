@@ -8,6 +8,7 @@ import Interpret
 import Parser
 import Problems
 import Representation
+import Shorter
 import Test.HUnit.Approx
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -22,27 +23,14 @@ testInterpretExprEqWithName exprString testName inputValue (expectedDim, expecte
   dim @?= expectedDim
   assertApproxEqual "" defaultErrorMargin expectedProb prob
   where
-    testString = shortenString testName <> ":Value " <> showShorter inputValue
-
-shortenString :: String -> String
-shortenString = shortenStringWithCount 50
-
-shortenStringWithCount :: Int -> String -> String
-shortenStringWithCount _ [] = []
-shortenStringWithCount 0 (x : xs) = ".. "
-shortenStringWithCount count (x : xs) = x : shortenStringWithCount (count - 1) xs
+    testString = shorter testName <> ":Value " <> shorter inputValue
 
 testInterpretExprFail :: TestName -> Value -> String -> TestTree
 testInterpretExprFail exprString inputValue expectedError = testCase testString $ do
   expr <- assertRight $ parseExpr exprString
   interpret expr inputValue @?= Left expectedError
   where
-    testString = exprString <> ":" <> showShorter inputValue <> ":Expected Fail"
-
-showShorter :: Value -> String
-showShorter (VFloat float) = show float
-showShorter (VBool bool) = show bool
-showShorter (VTuple v1 v2) = "(" <> showShorter v1 <> "," <> showShorter v2 <> ")"
+    testString = exprString <> ":" <> shorter inputValue <> ":Expected Fail"
 
 tests =
   testGroup
