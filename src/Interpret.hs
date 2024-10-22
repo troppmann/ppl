@@ -3,7 +3,6 @@ module Interpret
   )
 where
 
-import Debug.Extended
 import Evaluate
 import Representation
 import Statistics.Distribution
@@ -166,7 +165,8 @@ interpret (CreateTuple e1 e2) (VTuple v1 v2) = do
   dimProbA <- interpret e1 v1
   dimProbB <- interpret e2 v2
   return $ dimProbA ⊙ dimProbB
-interpret e _ = todo ("Missing interpret case: " <> show e)
+interpret _ (VTuple _ _) = Left "Can't interpret singular value expression with a tuple."
+interpret (CreateTuple _ _) _ = Left "Can't interpret a tuple expression with a singular expression."
 
 data CompareCase = LT | LE | EQ | GE | GT deriving (Ord, Enum, Show, Eq)
 
