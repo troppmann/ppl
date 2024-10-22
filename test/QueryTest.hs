@@ -15,8 +15,11 @@ import Test.Tasty.ExpectedFailure
 import Test.Tasty.HUnit
 
 testQueryExpr :: TestName -> QueryType -> DimensionalProbability -> TestTree
-testQueryExpr testName query (expectedDim, expectedProb) = testCase testString $ do
-  expr <- assertRight $ parseExpr testName
+testQueryExpr testName = testQueryExprWithName testName testName
+
+testQueryExprWithName :: String -> TestName -> QueryType -> DimensionalProbability -> TestTree
+testQueryExprWithName exprString testName query (expectedDim, expectedProb) = testCase testString $ do
+  expr <- assertRight $ parseExpr exprString
   (dim, prob) <- assertRight $ qInterpret expr query
   dim @?= expectedDim
   assertApproxEqual "" defaultErrorMargin expectedProb prob
@@ -45,5 +48,15 @@ tests =
         "ControlFlow"
         [ testQueryExpr "if Uniform < 0.5 then (0, Uniform * 2) else (1, Uniform * 2 + 1)" (QTuple QAny (QAt 1.5)) (1, 0.5),
           testQueryExpr "if Uniform < 0.5 then (Uniform, Uniform * 2) else (Uniform * 3, Uniform * 2 + 1)" (QTuple (QGt 0.5) (QAt 1.5)) (1, 1 / 3)
+        ],
+      testGroup
+        "Problems"
+        [ testQueryExprWithName indiaGpaProblem "IndiaGpaProblem(..)" (QTuple QAny (QAt 0.5)) (1, 0.5 * 0.99 * 0.25 + 0.5 * 0.99 * 0.1),
+          testQueryExprWithName indiaGpaProblem "IndiaGpaProblem(..)" (QTuple QAny (QAt 4.0)) (0, 0.5 * 0.01),
+          testQueryExprWithName indiaGpaProblem "IndiaGpaProblem(..)" (QTuple QAny (QAt 9.5)) (1, 0.5 * 0.99 * 0.1),
+          testQueryExprWithName indiaGpaProblem "IndiaGpaProblem(..)" (QTuple QAny (QAt 10.0)) (0, 0.5 * 0.01),
+          testQueryExprWithName indiaGpaProblem "IndiaGpaProblem(..)" (QTuple QAny (QAt 12.0)) (0, 0.0),
+          testQueryExprWithName indiaGpaProblem "IndiaGpaProblem(..)" (QTuple QAny (QGt 2.0)) (0, 0.5 * 0.99 * 0.5 + 0.5 * 0.01 + 0.5 * 0.99 * 0.8 + 0.5 * 0.01),
+          testQueryExprWithName indiaGpaProblem "IndiaGpaProblem(..)" (QTuple QAny (QGt 6.0)) (0, 0.5 * 0.99 * 0.4 + 0.5 * 0.01)
         ]
     ]
