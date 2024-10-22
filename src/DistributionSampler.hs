@@ -37,6 +37,7 @@ sampleDistr expr info = do
 convertToFloat :: Value -> Double
 convertToFloat (VFloat f) = f
 convertToFloat (VBool _) = error "Expected Float got Bool."
+convertToFloat (VTuple _ _) = error "Expected Float got Tuple."
 
 toDensityEntry :: SampleInfo -> [Int] -> (Int, Double)
 toDensityEntry _ [] = error "Empty List"
