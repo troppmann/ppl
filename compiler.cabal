@@ -32,6 +32,7 @@ library lib
                       Interpret, 
                       Mean,
                       Parser, 
+                      Query,
                       Representation, 
                       Sample, 
                       Spn
@@ -60,7 +61,8 @@ test-suite tests
                       Shorter,
                       SampleTest,
                       ParserTest,
-                      InterpretTest
+                      InterpretTest,
+                      QueryTest
     main-is:          Main.hs
     build-depends:    base ^>=4.17.2.1, 
                       tasty,
