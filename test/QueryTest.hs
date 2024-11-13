@@ -26,6 +26,14 @@ testQueryExprWithName exprString testName query (expectedDim, expectedProb) = te
   where
     testString = shorter testName <> ":Query " <> shorter query
 
+testQueryExprFail :: TestName -> QueryType -> String -> TestTree
+testQueryExprFail exprString query errorString = testCase msg $ do
+  expr <- assertRight $ parseExpr exprString
+  error <- assertLeft $ qInterpret expr query
+  error @?= errorString
+  where
+    msg = shorter exprString <> ":Expected Error"
+
 tests =
   testGroup
     "Query"
@@ -36,11 +44,13 @@ tests =
           testQueryExpr "Uniform" QAny (0, 1.0),
           testQueryExpr "Uniform" (QGe 0.3) (0, 0.7),
           testQueryExpr "Uniform" (QGe 2.0) (0, 0.0),
+          testQueryExprFail "Uniform" (QTuple QAny $ QGe 2.0) "Can't interpret singular value expression with a tuple query.",
           testQueryExpr "Uniform * 3" (QGe 2.0) (0, 1 / 3),
           testQueryExpr "if Uniform < 0.5 then Uniform * 3 else Uniform" (QGe 2.0) (0, 0.5 * (1 / 3)),
           testQueryExpr "(Uniform * 3, 2.0 - 20)" (QTuple (QGe 2.0) QAny) (0, 1 / 3),
           testQueryExpr "(Uniform, Uniform)" (QTuple (QLt 0.2) (QLt 0.2)) (0, 0.2 * 0.2),
           testQueryExpr "(4 * Uniform, Uniform)" (QTuple (QAt 2.1) QAny) (1, 0.25),
+          testQueryExprFail "(4 * Uniform, Uniform)" (QAt 2.1) "Can't interpret a tuple expression with a singular expression.",
           testQueryExpr "(4 * Uniform, 8 * Uniform)" (QTuple (QAt 2.1) (QGt 4.0)) (1, 0.25 * 0.5),
           testQueryExpr "(4 * Uniform, 8 * Uniform, Normal)" (QTuple (QAt 2.1) (QTuple (QGt 4.0) (QAt 0.0))) (2, 0.25 * 0.5 * 0.3989)
         ],

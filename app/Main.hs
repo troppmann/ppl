@@ -5,12 +5,12 @@ module Main where
 -- import DistributionSampler
 
 import ApproximateIntegration
-import Data.Either (fromRight)
 import Debug.Extended
 import DistributionSampler
 import Interpret
 import Mean
 import Parser
+import Query
 import Representation
 import Sample
 import Spn
@@ -27,8 +27,8 @@ main = do
   -- print $ density sampledDis 2.0
   -- let integral = validateExpr LinearSpacing {start = -10, end = 10, stepWidth = 0.10} expr
   -- print $ "Validate: " ++ show integral
-  let value = VBool True
-  let prob = interpret expr value
+  let value = VTuple (VFloat 0) (VFloat 3.5)
+  let prob = qInterpret expr (QTuple QAny (QAt 3.5))
   print ("Test: " <> show value <> " -> " <> show prob)
   print $ "Mean: " <> show (meanExpr expr)
 
