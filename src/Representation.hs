@@ -62,7 +62,9 @@ infixl 6 #-#
 (#-#) :: DimensionalProbability -> DimensionalProbability -> DimensionalProbability
 (#-#) (_, 0.0) (_, 0.0) = (0, 0.0)
 (#-#) dimProb (_, 0.0) = dimProb
+-- TODO 16.11.24 is this clamping sound
+(#-#) (_, 0.0) (dim, _) = (dim, 0.0)
 (#-#) (dimA, probA) (dimB, probB)
   | dimA < dimB = (dimA, probA)
   | dimA > dimB = (dimB, -probB)
-  | otherwise = (dimA, probA - probB)
+  | otherwise = (dimA, max (probA - probB) 0)
