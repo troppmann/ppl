@@ -12,29 +12,33 @@ parseQuery :: String -> Either ErrorString QueryType
 parseQuery = fmap fst . parseUntil Nothing Nothing Nothing . separate
 
 parseUntil :: Maybe QueryType -> Maybe Func -> Maybe Symbol -> [Symbol] -> Either ErrorString (QueryType, [Symbol])
-parseUntil (Just q) Nothing Nothing ("," : xs) = do
-  (nextQuery, rest) <- parseUntil Nothing Nothing Nothing xs
-  parseUntil (Just $ QTuple q nextQuery) Nothing Nothing rest
-parseUntil Nothing Nothing Nothing (x : xs)
-  | x == "_" = parseUntil (Just QAny) Nothing Nothing xs
-  | x == "True" = parseUntil (Just $ QIs True) Nothing Nothing xs
-  | x == "False" = parseUntil (Just $ QIs False) Nothing Nothing xs
-  | Just float <- readMaybe x :: Maybe Double = parseUntil (Just $ QAt float) Nothing Nothing xs
-parseUntil q@(Just QAny) Nothing Nothing (x : xs)
-  | isInfixComp x = parseUntil q (Just x) Nothing xs
-parseUntil q@(Just (QAt _)) Nothing Nothing (x : xs)
-  | isInfixComp x = parseUntil q (Just x) Nothing xs
-parseUntil (Just (QAt float)) (Just func) Nothing ("_" : xs)
-  | func == "<" = parseUntil (Just $ QGt float) Nothing Nothing xs
-  | func == "<=" = parseUntil (Just $ QGe float) Nothing Nothing xs
-  | func == ">" = parseUntil (Just $ QLt float) Nothing Nothing xs
-  | func == ">=" = parseUntil (Just $ QLe float) Nothing Nothing xs
-parseUntil (Just QAny) (Just func) Nothing (x : xs)
+parseUntil (Just q) Nothing s ("," : xs) = do
+  (nextQuery, rest) <- parseUntil Nothing Nothing s xs
+  parseUntil (Just $ QTuple q nextQuery) Nothing s rest
+parseUntil (Just q) Nothing (Just ")") (")" : xs) = return $ dbg (q, xs)
+parseUntil Nothing Nothing s (x : xs)
+  | x == "(" = do
+      (q, rest) <- parseUntil Nothing Nothing (Just ")") xs
+      parseUntil (Just q) Nothing s (dbg rest)
+  | x == "_" = parseUntil (Just QAny) Nothing s xs
+  | x == "True" = parseUntil (Just $ QIs True) Nothing s xs
+  | x == "False" = parseUntil (Just $ QIs False) Nothing s xs
+  | Just float <- readMaybe x :: Maybe Double = parseUntil (Just $ QAt float) Nothing s xs
+parseUntil q@(Just QAny) Nothing s (x : xs)
+  | isInfixComp x = parseUntil q (Just x) s xs
+parseUntil q@(Just (QAt _)) Nothing s (x : xs)
+  | isInfixComp x = parseUntil q (Just x) s xs
+parseUntil (Just (QAt float)) (Just func) s ("_" : xs)
+  | func == "<" = parseUntil (Just $ QGt float) Nothing s xs
+  | func == "<=" = parseUntil (Just $ QGe float) Nothing s xs
+  | func == ">" = parseUntil (Just $ QLt float) Nothing s xs
+  | func == ">=" = parseUntil (Just $ QLe float) Nothing s xs
+parseUntil (Just QAny) (Just func) s (x : xs)
   | Just float <- readMaybe x :: Maybe Double = do
       query <- toQueryWithAny func float
-      parseUntil (Just query) Nothing Nothing xs
-parseUntil (Just q) Nothing Nothing [] = return (q, [])
-parseUntil _ _ _ _ = todo "Missing case"
+      parseUntil (Just query) Nothing s xs
+parseUntil (Just q) Nothing _ [] = return (q, [])
+parseUntil q f s xs = todo $ "Case not handled: " <> show q <> " " <> show f <> " " <> show s <> " " <> show xs
 
 isInfixComp :: Symbol -> Bool
 isInfixComp = flip elem ["<", "<=", ">", ">="]

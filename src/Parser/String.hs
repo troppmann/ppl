@@ -11,6 +11,7 @@ separate :: String -> [String]
 separate = words . escape
 
 escape :: String -> String
+escape ('_' : xs) = " _ " ++ escape xs
 escape ('(' : xs) = " ( " ++ escape xs
 escape (')' : xs) = " ) " ++ escape xs
 escape (',' : xs) = " , " ++ escape xs

@@ -114,6 +114,12 @@ tests =
           testParseQuery "_, _" (QTuple QAny QAny),
           testParseQuery "_, 3.2" (QTuple QAny (QAt 3.2)),
           testParseQuery "_ > 3, _ <= 2" (QTuple (QGt 3) (QLe 2)),
-          testParseQuery "_ > 3, _ <= 2, _" (QTuple (QGt 3) (QTuple (QLe 2) QAny))
+          testParseQuery "_ > 3, _ <= 2, _" (QTuple (QGt 3) (QTuple (QLe 2) QAny)),
+          testParseQuery "(_ < 3)" (QLt 3),
+          testParseQuery "(_ > 3, _ <= 2, _)" (QTuple (QGt 3) (QTuple (QLe 2) QAny)),
+          testParseQuery "(_ > 3, (_ <= 2, _))" (QTuple (QGt 3) (QTuple (QLe 2) QAny)),
+          testParseQuery "(_ > 3, (_ <= 2), _)" (QTuple (QGt 3) (QTuple (QLe 2) QAny)),
+          testParseQuery "((_ > 3, _ <= 2), _)" (QTuple (QTuple (QGt 3) (QLe 2)) QAny),
+          testParseQuery "((_ > 3, _ <= 2), (_, _))" (QTuple (QTuple (QGt 3) (QLe 2)) (QTuple QAny QAny))
         ]
     ]
