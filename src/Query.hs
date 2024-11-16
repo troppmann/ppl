@@ -16,6 +16,7 @@ data QueryType
   | QGt Double
   | QGe Double
   | QTuple QueryType QueryType
+  deriving (Show, Read, Eq)
 
 type ErrorString = String
 

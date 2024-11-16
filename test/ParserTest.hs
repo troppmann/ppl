@@ -6,6 +6,7 @@ where
 import Assert
 import Parser
 import Problems
+import Query
 import Representation
 import Shorter
 import Test.Tasty
@@ -28,6 +29,13 @@ testParseExprFail exprString errorString = testCase msg $ do
   error @?= errorString
   where
     msg = shorter exprString <> ":Expected Error"
+
+testParseQuery :: String -> QueryType -> TestTree
+testParseQuery queryString expectedQuery = testCase msg $ do
+  query <- assertRight $ parseQuery queryString
+  query @?= expectedQuery
+  where
+    msg = shorter queryString
 
 tests =
   testGroup
@@ -88,5 +96,9 @@ tests =
           testParseExpr "if Uniform then (if Uniform then Uniform else Uniform) else Uniform" (IfElseThen Uniform (IfElseThen Uniform Uniform Uniform) Uniform),
           testParseExpr "if Uniform then (3 * if Uniform then Uniform else Uniform) else Uniform" (IfElseThen Uniform (Multiply (Const $ VFloat 3) (IfElseThen Uniform Uniform Uniform)) Uniform),
           testParseExprWithName indiaGpaProblem "IndiaGpaProblem(..)" (IfElseThen (LessThan Uniform (Const $ VFloat 0.5)) (CreateTuple (Const $ VFloat 0) (IfElseThen (LessThan Uniform (Const $ VFloat 0.01)) (Const $ VFloat 4) (Multiply Uniform (Const $ VFloat 4)))) (CreateTuple (Const $ VFloat 1) (IfElseThen (LessThan Uniform (Const $ VFloat 0.01)) (Const $ VFloat 10) (Multiply Uniform (Const $ VFloat 10)))))
+        ],
+      testGroup
+        "Query"
+        [ testParseQuery "_" QAny
         ]
     ]
