@@ -4,6 +4,7 @@ module Representation
     DimensionalProbability,
     (#*#),
     (#+#),
+    (#-#),
   )
 where
 
@@ -55,3 +56,13 @@ infixl 6 #+#
   | dimA < dimB = (dimA, probA)
   | dimA > dimB = (dimB, probB)
   | otherwise = (dimA, probA + probB)
+
+infixl 6 #-#
+
+(#-#) :: DimensionalProbability -> DimensionalProbability -> DimensionalProbability
+(#-#) (_, 0.0) (_, 0.0) = (0, 0.0)
+(#-#) dimProb (_, 0.0) = dimProb
+(#-#) (dimA, probA) (dimB, probB)
+  | dimA < dimB = (dimA, probA)
+  | dimA > dimB = (dimB, -probB)
+  | otherwise = (dimA, probA - probB)

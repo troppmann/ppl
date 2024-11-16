@@ -33,9 +33,8 @@ qInterpret (CreateTuple e1 e2) (QTuple q1 q2) = do
   dimProb2 <- qInterpret e2 q2
   return $ dimProb1 #*# dimProb2
 qInterpret (IfElseThen boolExpr e1 e2) query@(QTuple _ _) = do
-  -- TODO 13.11.24 fix true false with subtraction of dimProbTrue from (0, 1)
-  dimProbTrue@(dim, probTrue) <- interpret boolExpr (VBool True)
-  let dimProbFalse = (dim, 1.0 - probTrue)
+  dimProbTrue <- interpret boolExpr (VBool True)
+  let dimProbFalse = (0, 1.0) #-# dimProbTrue
   dimProbBranchTrue <- qInterpret e1 query
   dimProbBranchFalse <- qInterpret e2 query
   return $ (dimProbTrue #*# dimProbBranchTrue) #+# (dimProbFalse #*# dimProbBranchFalse)
