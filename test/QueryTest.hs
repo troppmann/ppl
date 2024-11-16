@@ -52,7 +52,8 @@ tests =
           testQueryExpr "(4 * Uniform, Uniform)" (QTuple (QAt 2.1) QAny) (1, 0.25),
           testQueryExprFail "(4 * Uniform, Uniform)" (QAt 2.1) "Can't interpret a tuple expression with a singular expression.",
           testQueryExpr "(4 * Uniform, 8 * Uniform)" (QTuple (QAt 2.1) (QGt 4.0)) (1, 0.25 * 0.5),
-          testQueryExpr "(4 * Uniform, 8 * Uniform, Normal)" (QTuple (QAt 2.1) (QTuple (QGt 4.0) (QAt 0.0))) (2, 0.25 * 0.5 * 0.3989)
+          testQueryExpr "(4 * Uniform, 8 * Uniform, Normal)" (QTuple (QAt 2.1) (QTuple (QGt 4.0) (QAt 0.0))) (2, 0.25 * 0.5 * 0.3989),
+          testQueryExpr "((4 * Uniform, 8 * Uniform), Normal)" (QTuple (QTuple (QAt 2.1) (QGt 4.0)) (QAt 0.0)) (2, 0.25 * 0.5 * 0.3989)
         ],
       testGroup
         "ControlFlow"

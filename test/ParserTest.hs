@@ -110,6 +110,10 @@ tests =
           testParseQuery "_ < 3" (QLt 3),
           testParseQuery "3 > _" (QLt 3),
           testParseQuery "3.1 <= _" (QGe 3.1),
-          testParseQuery "_ >= 3.1" (QGe 3.1)
+          testParseQuery "_ >= 3.1" (QGe 3.1),
+          testParseQuery "_, _" (QTuple QAny QAny),
+          testParseQuery "_, 3.2" (QTuple QAny (QAt 3.2)),
+          testParseQuery "_ > 3, _ <= 2" (QTuple (QGt 3) (QLe 2)),
+          testParseQuery "_ > 3, _ <= 2, _" (QTuple (QGt 3) (QTuple (QLe 2) QAny))
         ]
     ]
