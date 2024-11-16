@@ -40,8 +40,12 @@ type Dimension = Int
 
 type DimensionalProbability = (Dimension, Probability)
 
+infixl 7 #*#
+
 (#*#) :: DimensionalProbability -> DimensionalProbability -> DimensionalProbability
 (#*#) (dimA, probA) (dimB, probB) = (dimA + dimB, probA * probB)
+
+infixl 6 #+#
 
 (#+#) :: DimensionalProbability -> DimensionalProbability -> DimensionalProbability
 (#+#) (_, 0.0) (_, 0.0) = (0, 0.0)
