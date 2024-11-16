@@ -99,6 +99,17 @@ tests =
         ],
       testGroup
         "Query"
-        [ testParseQuery "_" QAny
+        [ testParseQuery "_" QAny,
+          testParseQuery "True" (QIs True),
+          testParseQuery "False" (QIs False),
+          testParseQuery "3.1" (QAt 3.1),
+          testParseQuery "_ > 3" (QGt 3),
+          testParseQuery "3 < _" (QGt 3),
+          testParseQuery "3.1 >= _" (QLe 3.1),
+          testParseQuery "_ <= 3.1" (QLe 3.1),
+          testParseQuery "_ < 3" (QLt 3),
+          testParseQuery "3 > _" (QLt 3),
+          testParseQuery "3.1 <= _" (QGe 3.1),
+          testParseQuery "_ >= 3.1" (QGe 3.1)
         ]
     ]
