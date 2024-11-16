@@ -2,8 +2,8 @@ module Representation
   ( Expr (..),
     Value (..),
     DimensionalProbability,
-    (⊙),
-    (⊕),
+    (#*#),
+    (#+#),
   )
 where
 
@@ -40,14 +40,14 @@ type Dimension = Int
 
 type DimensionalProbability = (Dimension, Probability)
 
-(⊙) :: DimensionalProbability -> DimensionalProbability -> DimensionalProbability
-(⊙) (dimA, probA) (dimB, probB) = (dimA + dimB, probA * probB)
+(#*#) :: DimensionalProbability -> DimensionalProbability -> DimensionalProbability
+(#*#) (dimA, probA) (dimB, probB) = (dimA + dimB, probA * probB)
 
-(⊕) :: DimensionalProbability -> DimensionalProbability -> DimensionalProbability
-(⊕) (_, 0.0) (_, 0.0) = (0, 0.0)
-(⊕) dimProb (_, 0.0) = dimProb
-(⊕) (_, 0.0) dimProb = dimProb
-(⊕) (dimA, probA) (dimB, probB)
+(#+#) :: DimensionalProbability -> DimensionalProbability -> DimensionalProbability
+(#+#) (_, 0.0) (_, 0.0) = (0, 0.0)
+(#+#) dimProb (_, 0.0) = dimProb
+(#+#) (_, 0.0) dimProb = dimProb
+(#+#) (dimA, probA) (dimB, probB)
   | dimA < dimB = (dimA, probA)
   | dimA > dimB = (dimB, probB)
   | otherwise = (dimA, probA + probB)

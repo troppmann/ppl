@@ -80,7 +80,7 @@ interpret (IfElseThen e1 e2 e3) value = do
   let dimProbFalse = (dim, 1.0 - probTrue)
   dimProbBranchTrue <- interpret e2 value
   dimProbBranchFalse <- interpret e3 value
-  return $ (dimProbTrue ⊙ dimProbBranchTrue) ⊕ (dimProbFalse ⊙ dimProbBranchFalse)
+  return $ (dimProbTrue #*# dimProbBranchTrue) #+# (dimProbFalse #*# dimProbBranchFalse)
 interpret (Equal e1 e2) (VBool bool)
   | Right constant <- evalConstExpr e2 = case constant of
       (VFloat c) -> do
@@ -164,7 +164,7 @@ interpret (Not _) (VFloat _) = Right (0, 0.0)
 interpret (CreateTuple e1 e2) (VTuple v1 v2) = do
   dimProbA <- interpret e1 v1
   dimProbB <- interpret e2 v2
-  return $ dimProbA ⊙ dimProbB
+  return $ dimProbA #*# dimProbB
 interpret _ (VTuple _ _) = Left "Can't interpret singular value expression with a tuple."
 interpret (CreateTuple _ _) _ = Left "Can't interpret a tuple expression with a singular expression."
 
