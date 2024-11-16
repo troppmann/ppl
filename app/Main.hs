@@ -9,7 +9,7 @@ import Debug.Extended
 import DistributionSampler
 import Interpret
 import Mean
-import Parser
+import Parser.Expr
 import Query
 import Representation
 import Sample
