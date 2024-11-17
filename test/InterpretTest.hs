@@ -76,7 +76,11 @@ tests =
           testInterpretExprEq "(Uniform <= 0.2) || (Uniform <= 0.2)" (VBool True) (0, 0.36),
           testInterpretExprEq "!(Uniform <= (1 / 6))" (VBool True) (0, 5 / 6),
           testInterpretExprEq "(True, Uniform > 0.5) == (True, False)" (VBool True) (0, 0.5),
-          testInterpretExprEq "if Uniform < 0.5 then (Uniform, 2.0) else (Normal, 3.0)" (VTuple (VFloat 1.0) (VFloat 2.0)) (1, 0.5)
+          testInterpretExprEq "if Uniform < 0.5 then (Uniform, 2.0) else (Normal, 3.0)" (VTuple (VFloat 1.0) (VFloat 2.0)) (1, 0.5),
+          testInterpretExprEq "False || (False && True)" (VBool True) (0, 0.0),
+          testInterpretExprEq "False && Uniform" (VBool True) (0, 0.0),
+          testInterpretExprEq "True || 3" (VBool True) (0, 1.0),
+          testInterpretExprEq "False || 3" (VBool True) (0, 0.0)
         ],
       testGroup
         "Dimension:"
@@ -89,7 +93,10 @@ tests =
           testInterpretExprEq "((Uniform, Normal), Uniform < 0.5)" (VTuple (VTuple (VFloat 1.0) (VFloat 0.0)) (VBool True)) (2, 0.3989 * 0.5),
           testInterpretExprEq "(Uniform, Normal + 1, Uniform * 2)" (VTuple (VFloat 0.5) (VTuple (VFloat 1.0) (VFloat 1.0))) (3, 1.0 * 0.3989 * 0.5),
           testInterpretExprEq "(Uniform, Normal) == (0.5, 0.4)" (VBool True) (2, 1.0 * 0.3684),
-          testInterpretExprEq "if Uniform < 0.5 then (Uniform > 0.5, Uniform * 2) else (Uniform * 3 > 0.5, Uniform * 2 + 1)" (VTuple (VBool True) (VFloat 1.5)) (1, 1 / 3)
+          testInterpretExprEq "if Uniform < 0.5 then (Uniform > 0.5, Uniform * 2) else (Uniform * 3 > 0.5, Uniform * 2 + 1)" (VTuple (VBool True) (VFloat 1.5)) (1, 1 / 3),
+          testInterpretExprEq "if 2 * Uniform == 0.5 then 1 + (Uniform * 5) else 4 * Uniform" (VFloat 0.2) (1, 0.25),
+          testInterpretExprEq "if 2 * Uniform == 0.5 then 1 + (Uniform * 5) else 4 * Uniform" (VFloat 5.7) (2, 0.5 * 0.2),
+          testInterpretExprEq "if 2 * Uniform == 0.5 then 1 + (Uniform * 5) else 4 * Uniform" (VFloat 3.0) (1, 0.25)
         ],
       testGroup
         "Problem"

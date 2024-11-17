@@ -61,5 +61,7 @@ tests =
       testSampleExprEq "(3 + Normal * 2)* 0.0" (VFloat 0.0),
       testSampleExprEq "(Normal * 0)* 3.0" (VFloat 0.0),
       testSampleExprEq "2 + (Normal * 0.0) - 0.0" (VFloat 2.0),
+      testSampleExprEq "False && Uniform" (VBool False),
+      testSampleExprEq "True || 3" (VBool True),
       testSampleExprWithName indiaGpaProblem "IndiaGpaProblem(..)"
     ]
