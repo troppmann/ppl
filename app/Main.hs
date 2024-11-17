@@ -27,8 +27,8 @@ main = do
   -- print $ density sampledDis 2.0
   -- let integral = validateExpr LinearSpacing {start = -10, end = 10, stepWidth = 0.10} expr
   -- print $ "Validate: " ++ show integral
-  let value = VTuple (VFloat 0) (VFloat 3.5)
-  let prob = qInterpret expr (QTuple QAny (QAt 3.5))
+  let value = (VFloat 1.0)
+  let prob = interpret expr value
   print ("Test: " <> show value <> " -> " <> show prob)
   print $ "Mean: " <> show (meanExpr expr)
 

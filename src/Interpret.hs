@@ -45,7 +45,7 @@ interpret (Multiply e1 e2) value
           (dim, prob) <- interpret e2 (VFloat $ v / c)
           if dim == 0
             then
-              return (dim, prob)
+              return (0, prob)
             else
               return (1, prob / abs c)
   | Right constant <- evalConstExpr e2 = do
@@ -58,7 +58,7 @@ interpret (Multiply e1 e2) value
           (dim, prob) <- interpret e1 (VFloat $ v / c)
           if dim == 0
             then
-              return (dim, prob)
+              return (0, prob)
             else
               return (1, prob / abs c)
   | otherwise = Left "Can only interpret Multiply(*) with a one side Constant."
@@ -82,24 +82,14 @@ interpret (IfElseThen e1 e2 e3) value = do
   dimProbBranchFalse <- interpret e3 value
   return $ (dimProbTrue #*# dimProbBranchTrue) #+# (dimProbFalse #*# dimProbBranchFalse)
 interpret (Equal e1 e2) (VBool bool)
-  | Right constant <- evalConstExpr e2 = case constant of
-      (VFloat c) -> do
-        prob <- compareFloatExpr e1 (EQ, c)
-        return (0, if bool then prob else 1 - prob)
-      c -> do
-        (dim, prob) <- interpret e1 c
-        return (dim, if bool then prob else 1 - prob)
-  | Right constant <- evalConstExpr e1 = case constant of
-      (VFloat c) -> do
-        prob <- compareFloatExpr e2 (EQ, c)
-        return (0, if bool then prob else 1 - prob)
-      c -> do
-        (dim, prob) <- interpret e2 c
-        return (dim, if bool then prob else 1 - prob)
+  | Right constant <- evalConstExpr e2 = do
+      dimProb <- interpret e1 constant
+      return $ if bool then dimProb else (0, 1.0) #-# dimProb
+  | Right constant <- evalConstExpr e1 = do
+      dimProb <- interpret e2 constant
+      return $ if bool then dimProb else (0, 1.0) #-# dimProb
   | otherwise = Left "Can only interpret == with a one side Constant."
-interpret (Unequal e1 e2) (VBool bool) = do
-  (dim, prob) <- interpret (Equal e1 e2) (VBool bool)
-  return (dim, 1 - prob)
+interpret (Unequal e1 e2) (VBool bool) = interpret (Equal e1 e2) (VBool $ not bool)
 interpret (LessThanOrEqual e1 e2) (VBool bool)
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
@@ -141,10 +131,12 @@ interpret (GreaterThanOrEqual e1 e2) (VBool bool)
       return (0, if bool then x else 1 - x)
   | otherwise = Left "Can only interpret > with a one side Constant."
 interpret (Or e1 e2) (VBool bool) = do
+  -- TODO 17.11.24 dimProb
   (_dim, p1) <- interpret e1 (VBool bool)
   (_dim, p2) <- interpret e2 (VBool bool)
   return (0, 1 - (1 - p1) * (1 - p2))
 interpret (And e1 e2) (VBool bool) = do
+  -- TODO 17.11.24 dimProb
   (_dim, p1) <- interpret e1 (VBool bool)
   (_dim, p2) <- interpret e2 (VBool bool)
   return (0, p1 * p2)
@@ -168,7 +160,7 @@ interpret (CreateTuple e1 e2) (VTuple v1 v2) = do
 interpret _ (VTuple _ _) = Left "Can't interpret singular value expression with a tuple."
 interpret (CreateTuple _ _) _ = Left "Can't interpret a tuple expression with a singular expression."
 
-data CompareCase = LT | LE | EQ | GE | GT deriving (Ord, Enum, Show, Eq)
+data CompareCase = LT | LE | GE | GT deriving (Ord, Enum, Show, Eq)
 
 type CompareQuery = (CompareCase, Double)
 
@@ -177,15 +169,6 @@ swap LT = GT
 swap LE = GE
 swap GT = LT
 swap GE = LE
-swap EQ = EQ
-
--- | Epsilon with IEEE754 doubles \n
--- The smallest positive value x such that 1 + x is representable.
-epsilon :: Double
-epsilon = 2.2204460492503131e-16
-
-inRange :: (Ord a) => (a, a) -> a -> Bool
-inRange (minA, maxB) value = minA <= value && value <= maxB
 
 -- TODO 06.09.2024: Should i add a dimension differentiation?
 compareFloatExpr :: Expr -> CompareQuery -> Either String Double
@@ -195,13 +178,11 @@ compareFloatExpr (Const (VFloat constant)) (ord, value) = return $ case ord of
   LE -> if constant <= value then 1.0 else 0.0
   GT -> if constant > value then 1.0 else 0.0
   GE -> if constant >= value then 1.0 else 0.0
-  EQ -> if constant == value then 1.0 else 0.0
 compareFloatExpr Uniform (ord, value) = return $ case ord of
   LT -> cumulative distr value
   LE -> cumulative distr value
   GT -> complCumulative distr value
   GE -> complCumulative distr value
-  EQ -> if inRange (0.0, 1.0) value then epsilon else 0.0
   where
     distr = uniformDistr 0.0 1.0
 compareFloatExpr Normal (ord, value) = return $ case ord of
@@ -209,7 +190,6 @@ compareFloatExpr Normal (ord, value) = return $ case ord of
   LE -> cumulative distr value
   GT -> complCumulative distr value
   GE -> complCumulative distr value
-  EQ -> epsilon
   where
     distr = normalDistr 0.0 1.0
 compareFloatExpr (Plus e1 e2) (ord, value)
@@ -249,7 +229,7 @@ compareFloatExpr (Divide e1 e2) (ord, value)
       c <- evalAsFloat constant
       if c == 0.0
         then
-          compareFloatExpr (Const $ VFloat 0.0) (EQ, value)
+          return $ if value == 0.0 then 1.0 else 0.0
         else do
           let bound = c / value
           case ord of
@@ -263,8 +243,7 @@ compareFloatExpr (Divide e1 e2) (ord, value)
               lower <- compareFloatExpr e2 (swap ord, min bound 0)
               higher <- compareFloatExpr e2 (swap ord, max bound 0)
               return $ higher - lower
-            -- c / e2 == value => e2 == c / value == bound
-            _eq -> compareFloatExpr e2 (EQ, bound)
+            _ -> undefined
   | Right constant <- evalConstExpr e2 = do
       c <- evalAsFloat constant
       compareFloatExpr e1 (if c < 0 then swap ord else ord, value * c)
