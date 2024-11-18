@@ -15,11 +15,11 @@ parseUntil :: Maybe QueryType -> Maybe Func -> Maybe Symbol -> [Symbol] -> Eithe
 parseUntil (Just q) Nothing s ("," : xs) = do
   (nextQuery, rest) <- parseUntil Nothing Nothing s xs
   parseUntil (Just $ QTuple q nextQuery) Nothing s rest
-parseUntil (Just q) Nothing (Just ")") (")" : xs) = return $ dbg (q, xs)
+parseUntil (Just q) Nothing (Just ")") (")" : xs) = return (q, xs)
 parseUntil Nothing Nothing s (x : xs)
   | x == "(" = do
       (q, rest) <- parseUntil Nothing Nothing (Just ")") xs
-      parseUntil (Just q) Nothing s (dbg rest)
+      parseUntil (Just q) Nothing s rest
   | x == "_" = parseUntil (Just QAny) Nothing s xs
   | x == "True" = parseUntil (Just $ QIs True) Nothing s xs
   | x == "False" = parseUntil (Just $ QIs False) Nothing s xs
