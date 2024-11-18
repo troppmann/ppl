@@ -136,10 +136,9 @@ interpret (Or e1 e2) (VBool bool) = do
   (_dim, p2) <- interpret e2 (VBool bool)
   return (0, 1 - (1 - p1) * (1 - p2))
 interpret (And e1 e2) (VBool bool) = do
-  -- TODO 17.11.24 dimProb
-  (_dim, p1) <- interpret e1 (VBool bool)
-  (_dim, p2) <- interpret e2 (VBool bool)
-  return (0, p1 * p2)
+  dimProb1 <- interpret e1 (VBool bool)
+  dimProb2 <- interpret e2 (VBool bool)
+  return $ dimProb1 #*# dimProb2
 interpret (Not e1) (VBool bool) = interpret e1 (VBool $ not bool)
 -- TODO 06.09.2024 Should this throw an error instead?
 interpret Uniform (VBool _) = Right (0, 0.0)

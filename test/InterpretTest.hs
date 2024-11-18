@@ -96,7 +96,11 @@ tests =
           testInterpretExprEq "if Uniform < 0.5 then (Uniform > 0.5, Uniform * 2) else (Uniform * 3 > 0.5, Uniform * 2 + 1)" (VTuple (VBool True) (VFloat 1.5)) (1, 1 / 3),
           testInterpretExprEq "if 2 * Uniform == 0.5 then 1 + (Uniform * 5) else 4 * Uniform" (VFloat 0.2) (1, 0.25),
           testInterpretExprEq "if 2 * Uniform == 0.5 then 1 + (Uniform * 5) else 4 * Uniform" (VFloat 5.7) (2, 0.5 * 0.2),
-          testInterpretExprEq "if 2 * Uniform == 0.5 then 1 + (Uniform * 5) else 4 * Uniform" (VFloat 3.0) (1, 0.25)
+          testInterpretExprEq "if 2 * Uniform == 0.5 then 1 + (Uniform * 5) else 4 * Uniform" (VFloat 3.0) (1, 0.25),
+          testInterpretExprEq "2 * Uniform == 0.3" (VBool True) (1, 0.5),
+          testInterpretExprEq "2 * Uniform == 0.3 || False" (VBool True) (1, 0.5),
+          testInterpretExprEq "2 * Uniform == 0.3 && True" (VBool True) (1, 0.5),
+          testInterpretExprEq "2 * Uniform == 0.3 && (4 * Uniform == 0.8)" (VBool True) (2, 0.5 * 0.25)
         ],
       testGroup
         "Problem"
