@@ -131,10 +131,13 @@ interpret (GreaterThanOrEqual e1 e2) (VBool bool)
       return (0, if bool then x else 1 - x)
   | otherwise = Left "Can only interpret > with a one side Constant."
 interpret (Or e1 e2) (VBool bool) = do
-  -- TODO 17.11.24 dimProb
-  (_dim, p1) <- interpret e1 (VBool bool)
-  (_dim, p2) <- interpret e2 (VBool bool)
-  return (0, 1 - (1 - p1) * (1 - p2))
+  dimProb1True <- interpret e1 (VBool bool)
+  let dimProb1False = (0, 1.0) #-# dimProb1True
+  dimProb2True <- interpret e2 (VBool bool)
+  let dimProb2False = (0, 1.0) #-# dimProb2True
+  -- double negative vanishes dimensions over 0
+  -- return $ (0, 1.0) #-# ((0, 1.0) #-# dimProb1True) #*# ((0, 1.0) #-# dimProb2True)
+  return $ (dimProb1True #*# dimProb2True) #+# (dimProb1True #*# dimProb2False) #+# (dimProb1False #*# dimProb2True)
 interpret (And e1 e2) (VBool bool) = do
   dimProb1 <- interpret e1 (VBool bool)
   dimProb2 <- interpret e2 (VBool bool)
