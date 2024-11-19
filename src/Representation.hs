@@ -62,9 +62,11 @@ infixl 6 #-#
 (#-#) :: DimensionalProbability -> DimensionalProbability -> DimensionalProbability
 (#-#) (_, 0.0) (_, 0.0) = (0, 0.0)
 (#-#) dimProb (_, 0.0) = dimProb
--- TODO 16.11.24 is this clamping sound
+-- TODO 16.11.24 is this clamping sound or should i just ignore the minus entirely
 (#-#) (_, 0.0) (dim, _) = (dim, 0.0)
 (#-#) (dimA, probA) (dimB, probB)
   | dimA < dimB = (dimA, probA)
-  | dimA > dimB = (dimB, -probB)
+  -- TODO 18.11.24 could also be probB or not?
+  | dimA > dimB = (dimB, 0.0)
+  -- TODO 18.11.24 could also just be an assert
   | otherwise = (dimA, max (probA - probB) 0)
