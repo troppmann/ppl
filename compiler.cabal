@@ -30,6 +30,7 @@ library lib
                       DistributionSampler,
                       Evaluate,
                       Interpret, 
+                      MaximumAPosteriori,
                       Mean,
                       Parser,
                       Parser.Expr, 
@@ -64,6 +65,7 @@ test-suite tests
                       Shorter,
                       SampleTest,
                       DimProbTest,
+                      MapTest,
                       ParserTest,
                       InterpretTest,
                       QueryTest
