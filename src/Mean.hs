@@ -7,7 +7,10 @@ import Debug.Extended
 import Interpret
 import Representation
 
-meanExpr :: Expr -> Either String Double
+type ErrorString = String
+
+-- TODO 19.11.24 convert Double to Value and implement Tuple means
+meanExpr :: Expr -> Either ErrorString Double
 meanExpr Normal = return 0.0
 meanExpr Uniform = return 0.5
 meanExpr (Const (VFloat value)) = return value

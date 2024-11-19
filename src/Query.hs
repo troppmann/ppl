@@ -21,6 +21,7 @@ data QueryType
 type ErrorString = String
 
 qInterpret :: Expr -> QueryType -> Either ErrorString DimensionalProbability
+-- assumes only normalized distributions
 qInterpret _ QAny = return (0, 1.0)
 qInterpret expr (QIs bool) = interpret expr (VBool bool)
 qInterpret expr (QAt float) = interpret expr (VFloat float)
