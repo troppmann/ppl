@@ -77,7 +77,7 @@ interpret (Divide e1 e2) value
   | otherwise = Left "Can only interpret Divide(/) with a one side Constant."
 interpret (IfElseThen e1 e2 e3) value = do
   dimProbTrue <- interpret e1 (VBool True)
-  let dimProbFalse = (0, 1.0) #-# dimProbTrue
+  dimProbFalse <- interpret e1 (VBool False) -- (0, 1.0) #-# dimProbTrue
   dimProbBranchTrue <- interpret e2 value
   dimProbBranchFalse <- interpret e3 value
   return $ (dimProbTrue #*# dimProbBranchTrue) #+# (dimProbFalse #*# dimProbBranchFalse)
