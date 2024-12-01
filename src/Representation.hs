@@ -2,6 +2,8 @@ module Representation
   ( Expr (..),
     Value (..),
     DimensionalProbability,
+    Dimension,
+    Probability,
     (#*#),
     (#+#),
     (#-#),
