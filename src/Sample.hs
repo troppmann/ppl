@@ -36,7 +36,7 @@ sampleRand (LessThan e1 e2) = apply (evaluateCompare (<)) e1 e2
 sampleRand (LessThanOrEqual e1 e2) = apply (evaluateCompare (<=)) e1 e2
 sampleRand (GreaterThan e1 e2) = apply (evaluateCompare (>)) e1 e2
 sampleRand (GreaterThanOrEqual e1 e2) = apply (evaluateCompare (>=)) e1 e2
-sampleRand (IfElseThen e1 e2 e3) = sampleIfElse e1 e2 e3
+sampleRand (IfThenElse e1 e2 e3) = sampleIfElse e1 e2 e3
 sampleRand (CreateTuple e1 e2) = sampleTuple e1 e2
 
 apply :: (MonadRandom m) => (Value -> Value -> Value) -> Expr -> Expr -> m Value

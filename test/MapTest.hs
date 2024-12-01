@@ -50,12 +50,12 @@ tests =
           testMapExpr "Normal * 3 + 7" "_" (VFloat 7.0),
           testMapExpr "(Normal + 7) * 3" "_" (VFloat 21.0),
           testMapExpr "((Normal + 7) * 3 - 1) / 2" "_" (VFloat 10.0),
-          testMapExprFail "if Uniform < 0.2 then 3 * 9 else 7" "_" "IfElseThen is not tractable if the query is not selective.",
-          testMapExprFail "if Uniform < 0.3 then 5 else (if Uniform < 0.49 then 2 else 6)" "_" "IfElseThen is not tractable if the query is not selective.",
+          testMapExprFail "if Uniform < 0.2 then 3 * 9 else 7" "_" "IfThenElse is not tractable if the query is not selective.",
+          testMapExprFail "if Uniform < 0.3 then 5 else (if Uniform < 0.49 then 2 else 6)" "_" "IfThenElse is not tractable if the query is not selective.",
           testMapExpr "if Uniform == 0.5 then 10 else 0" "_" (VFloat 0.0),
           testMapExpr "if Uniform != 3 then 10 else 0" "_" (VFloat 10.0),
           testMapExpr "if Uniform < 0.5 then 3 else Normal" "_" (VFloat 3.0),
-          testMapExprFail "if Uniform < 0.5 then Normal + 0.01 else Normal - 0.01" "_" "IfElseThen is not tractable if the query is not selective.",
+          testMapExprFail "if Uniform < 0.5 then Normal + 0.01 else Normal - 0.01" "_" "IfThenElse is not tractable if the query is not selective.",
           testMapExpr "(Normal * 10 + 5, Normal * 5)" "_" (VTuple (VFloat 5) (VFloat 0)),
           testMapExpr "(Normal * 10 + 5, if Uniform > 0.7 then Normal + 8 else 0)" "_" (VTuple (VFloat 5) (VFloat 0)),
           testMapExpr "(if Uniform > 0.7 then 0 else Normal, if Uniform == 0.7 then 8 else 0)" "_" (VTuple (VFloat 0) (VFloat 0)),
@@ -74,7 +74,7 @@ tests =
           testMapExpr "(Normal, Normal)" "(3, _)" (VTuple (VFloat 3) (VFloat 0)),
           testMapExpr "(Normal, Normal + 7)" "(3, _)" (VTuple (VFloat 3) (VFloat 7)),
           testMapExpr "if Uniform < 0.5 then (Normal + 3, 10) else (Normal + 7, 0)" "(_, 10)" (VTuple (VFloat 3) (VFloat 10)),
-          testMapExprFail "if Uniform < 0.4 then (Normal + 3, 10) else (Normal + 7, 0)" "(3, _)" "IfElseThen is not tractable if the query is not selective.",
+          testMapExprFail "if Uniform < 0.4 then (Normal + 3, 10) else (Normal + 7, 0)" "(3, _)" "IfThenElse is not tractable if the query is not selective.",
           testMapExpr "if Uniform < 0.5 then (Normal + 3, 10) else (3, 0)" "(3, _)" (VTuple (VFloat 3) (VFloat 0))
         ]
     ]

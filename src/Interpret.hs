@@ -75,7 +75,7 @@ interpret (Divide e1 e2) value
       (_dim, prob) <- interpret e1 (VFloat $ v * c)
       return (1, prob * abs c)
   | otherwise = Left "Can only interpret Divide(/) with a one side Constant."
-interpret (IfElseThen e1 e2 e3) value = do
+interpret (IfThenElse e1 e2 e3) value = do
   dimProbTrue <- interpret e1 (VBool True)
   dimProbFalse <- interpret e1 (VBool False) -- (0, 1.0) #-# dimProbTrue
   dimProbBranchTrue <- interpret e2 value
@@ -250,7 +250,7 @@ compareFloatExpr (Divide e1 e2) (ord, value)
       c <- evalAsFloat constant
       compareFloatExpr e1 (if c < 0 then swap ord else ord, value * c)
   | otherwise = Left "Can only interpret Divide(/) with a one side Constant."
-compareFloatExpr (IfElseThen e1 e2 e3) (ord, value) = do
+compareFloatExpr (IfThenElse e1 e2 e3) (ord, value) = do
   (_dim, probTrue) <- interpret e1 (VBool True)
   let probFalse = 1 - probTrue
   p2 <- compareFloatExpr e2 (ord, value)

@@ -27,7 +27,7 @@ data Expr
   | LessThanOrEqual Expr Expr
   | GreaterThan Expr Expr
   | GreaterThanOrEqual Expr Expr
-  | IfElseThen Expr Expr Expr
+  | IfThenElse Expr Expr Expr
   | CreateTuple Expr Expr
   deriving (Show, Read, Eq)
 

@@ -31,7 +31,7 @@ evalConstExpr (LessThan e1 e2) = apply (evalCompare (<)) e1 e2
 evalConstExpr (LessThanOrEqual e1 e2) = apply (evalCompare (<=)) e1 e2
 evalConstExpr (GreaterThan e1 e2) = apply (evalCompare (>)) e1 e2
 evalConstExpr (GreaterThanOrEqual e1 e2) = apply (evalCompare (>=)) e1 e2
-evalConstExpr (IfElseThen e1 e2 e3) = evalIfElseThen e1 e2 e3
+evalConstExpr (IfThenElse e1 e2 e3) = evalIfThenElse e1 e2 e3
 evalConstExpr (CreateTuple e1 e2) = evalCreateTuple e1 e2
 
 apply :: (Value -> Value -> ResultValue) -> Expr -> Expr -> ResultValue
@@ -70,8 +70,8 @@ evalNot expr = do
   bool <- evalAsBool value
   return $ VBool $ not bool
 
-evalIfElseThen :: Expr -> Expr -> Expr -> ResultValue
-evalIfElseThen e1 e2 e3 = do
+evalIfThenElse :: Expr -> Expr -> Expr -> ResultValue
+evalIfThenElse e1 e2 e3 = do
   v1 <- evalConstExpr e1
   bool <- evalAsBool v1
   if bool

@@ -33,7 +33,7 @@ parseUntil Nothing Nothing s@(_, c) (x : xs)
       (boolExpression, rest1) <- parseUntil Nothing Nothing (Just "if", Just "then") xs
       (eIf1, rest2) <- parseUntil Nothing Nothing (Just "then", Just "else") rest1
       (eIf2, rest3) <- parseUntil Nothing Nothing (Just "else", c) rest2
-      let ifExpr = IfElseThen boolExpression eIf1 eIf2
+      let ifExpr = IfThenElse boolExpression eIf1 eIf2
       parseUntil (Just ifExpr) Nothing s rest3
   | e@(Just _) <- tryConvertToLiteral x = parseUntil e Nothing s xs
   | otherwise = Left $ "Error: Unknown String '" <> x <> "'"
@@ -60,7 +60,7 @@ parseUntil (Just e1) (Just f) s@(_, c) (x : xs)
       (boolExpression, rest1) <- parseUntil Nothing Nothing (Just "if", Just "then") xs
       (eIf1, rest2) <- parseUntil Nothing Nothing (Just "then", Just "else") rest1
       (eIf2, rest3) <- parseUntil Nothing Nothing (Just "else", c) rest2
-      let e2 = IfElseThen boolExpression eIf1 eIf2
+      let e2 = IfThenElse boolExpression eIf1 eIf2
       combinedIfExpr <- combineFunction e1 f e2
       parseUntil (Just combinedIfExpr) Nothing s rest3
   | otherwise = Left $ "Error: Unexpected String'" <> x <> "'"
