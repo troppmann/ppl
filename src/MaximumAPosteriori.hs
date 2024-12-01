@@ -63,12 +63,12 @@ map (IfElseThen e1 e2 e3) query = do
                         else
                           Left "IfElseThen is not tractable if the query is not selective."
 map e (QAt v) = do
-  dimProb@(dim, _) <- interpret e (VFloat v)
-  if dimProb /= (0, 0.0)
+  (dim, prob) <- interpret e (VFloat v)
+  if prob /= 0.0
     then
       return (dim, VFloat v)
     else
-      Left "Value is not possible here."
+      Left "Value is not possible."
 map e q = todo $ "Missing case" <> show e <> show q
 
 mapArithmetic :: (Double -> Double -> Double) -> Expr -> Expr -> Either ErrorString (Dimension, Value)

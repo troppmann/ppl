@@ -17,6 +17,8 @@ type QueryString = String
 
 type ExprString = String
 
+type ErrorString = String
+
 testMapExpr :: TestName -> QueryString -> Value -> TestTree
 testMapExpr testName = testMapExprWithName testName testName
 
@@ -29,11 +31,19 @@ testMapExprWithName exprString testName queryString expectedValue = testCase tes
   where
     testString = shorter testName <> ":Query " <> shorter queryString
 
+testMapExprFail :: ExprString -> QueryString -> ErrorString -> TestTree
+testMapExprFail exprString queryString errorString = testCase testString $ do
+  expr <- assertRight $ parseExpr exprString
+  query <- assertRight $ parseQuery queryString
+  MaximumAPosteriori.map expr query @?= Left errorString
+  where
+    testString = shorter exprString <> ":Query " <> shorter queryString <> ":Expected Fail"
+
 tests =
   testGroup
     "MaximumAPosteriori"
     [ testGroup
-        "MAP"
+        "MAP without evidence p(q)"
         [ testMapExpr "3" "_" (VFloat 3.0),
           testMapExpr "Normal" "_" (VFloat 0.0),
           testMapExpr "Uniform" "_" (VFloat 0.5),
@@ -54,10 +64,11 @@ tests =
           testMapExpr "if Normal < 0.1 then (if Uniform == 0.4 then 5 else 8,5) else (10, 10)" "_" (VTuple (VFloat 8) (VFloat 5))
         ],
       testGroup
-        "MMAP (Marginalized MAP)"
+        "MAP with evidence p(q,e)"
         [ testMapExpr "(Normal, 3)" "(_, 3)" (VTuple (VFloat 0) (VFloat 3)),
-          testMapExpr "(Normal, 3)" "(_, 4)" (VTuple (VFloat 0) (VFloat 3)),
-          testMapExpr "Uniform" "(4)" (VTuple (VFloat 0) (VFloat 3)),
+          testMapExprFail "(Normal, 3)" "(_, 4)" "Value is not possible.",
+          testMapExprFail "Uniform" "(4)" "Value is not possible.",
+          testMapExpr "Uniform + 3.5" "(4)" (VFloat 4),
           testMapExpr "(Normal, Normal)" "(_, 3)" (VTuple (VFloat 0) (VFloat 3)),
           testMapExpr "(Normal, Normal)" "(3, _)" (VTuple (VFloat 3) (VFloat 0)),
           testMapExpr "(Normal, Normal + 7)" "(3, _)" (VTuple (VFloat 3) (VFloat 7)),
