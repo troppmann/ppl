@@ -65,6 +65,8 @@ tests =
           testInterpretExprEq "(Uniform * -1) != -0.5" (VBool True) (0, 1.0),
           testInterpretExprEq "(Uniform < 0.5 == False" (VBool True) (0, 0.5),
           testInterpretExprEq "1 == Normal" (VBool True) (1, 0.24197),
+          testInterpretExprEq "Normal != 0" (VBool True) (0, 1.0),
+          testInterpretExprEq "Normal != 0" (VBool False) (1, 0.3989),
           testInterpretExprEq "Normal" (VFloat 1.0) (1, 0.24197),
           testInterpretExprEq "-1 / Normal < -2" (VBool True) (0, 0.80853),
           testInterpretExprEq "3 * Uniform >  0.2" (VBool True) (0, 0.93333),
@@ -100,7 +102,9 @@ tests =
           testInterpretExprEq "2 * Uniform == 0.3" (VBool True) (1, 0.5),
           testInterpretExprEq "2 * Uniform == 0.3 || False" (VBool True) (1, 0.5),
           testInterpretExprEq "2 * Uniform == 0.3 && True" (VBool True) (1, 0.5),
-          testInterpretExprEq "2 * Uniform == 0.3 && (4 * Uniform == 0.8)" (VBool True) (2, 0.5 * 0.25)
+          testInterpretExprEq "2 * Uniform == 0.3 && (4 * Uniform == 0.8)" (VBool True) (2, 0.5 * 0.25),
+          testInterpretExprEq "if Uniform != 0.3 then True else False" (VBool True) (0, 1.0),
+          testInterpretExprEq "if Uniform != 0.3 then True else False" (VBool False) (1, 1.0)
         ],
       testGroup
         "Problem"
