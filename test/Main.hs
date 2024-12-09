@@ -3,6 +3,7 @@ module Main where
 import ApproximateIntegrationTest
 import DimProbTest
 import InterpretTest
+import MapTest
 import ParserTest
 import QueryTest
 import SampleTest
@@ -17,7 +18,8 @@ tests =
       InterpretTest.tests,
       ApproximateIntegrationTest.tests,
       QueryTest.tests,
-      DimProbTest.tests
+      DimProbTest.tests,
+      MapTest.tests
     ]
 
 main :: IO ()

@@ -40,7 +40,7 @@ maxAPost (IfThenElse e1 e2 e3) query = do
         then
           maxAPost e3 query
         else
-          maxAPostIfThenElse (maxAPost e2 query) (maxAPost e3 query)
+          maxAPostIfThenElse dimProbTrue (maxAPost e2 query) (maxAPost e3 query)
 maxAPost e (QAt v) = do
   (dim, prob) <- interpret e (VFloat v)
   if prob /= 0.0
@@ -57,13 +57,14 @@ mapArithmetic op e1 e2 = do
   m3 <- evalArithmetic op m1 m2
   return (d1 + d2, m3)
 
-maxAPostIfThenElse :: Either ErrorString (Dimension, Value) -> Either ErrorString (Dimension, Value) -> Either ErrorString (Dimension, Value)
-maxAPostIfThenElse (Left e1) (Left e2) = Left $ show e1 <> " " <> show e2
-maxAPostIfThenElse (Left "Value is not possible.") (Right (dim, value)) = return (dim, value)
-maxAPostIfThenElse (Left e) (Right _) = Left e
-maxAPostIfThenElse (Right (dim, value)) (Left "Value is not possible.") = return (dim, value)
-maxAPostIfThenElse (Right _) (Left e) = Left e
-maxAPostIfThenElse (Right (dim1, value1)) (Right (dim2, value2))
+maxAPostIfThenElse :: DimensionalProbability -> Either ErrorString (Dimension, Value) -> Either ErrorString (Dimension, Value) -> Either ErrorString (Dimension, Value)
+maxAPostIfThenElse _ (Left e1) (Left e2) = Left $ show e1 <> " " <> show e2
+maxAPostIfThenElse _ (Left "Value is not possible.") (Right (dim, value)) = return (dim, value)
+maxAPostIfThenElse _ (Left e) (Right _) = Left e
+maxAPostIfThenElse _ (Right (dim, value)) (Left "Value is not possible.") = return (dim, value)
+maxAPostIfThenElse _ (Right _) (Left e) = Left e
+maxAPostIfThenElse (dimIf, probIf) (Right (dim1, value1)) (Right (dim2, value2))
   | dim1 < dim2 = return (dim1, value1)
   | dim2 < dim1 = return (dim2, value2)
-  | otherwise = Left "IfThenElse is not tractable if the query is not selective."
+  | dimIf == 0 && probIf > 0.5 = return (dim1, value1)
+  | otherwise = return (dim2, value2)
