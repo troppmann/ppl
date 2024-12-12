@@ -38,6 +38,8 @@ tests =
     [ testGroup
         "Basic"
         [ testInterpretExprEq "Uniform" (VFloat 0.5) (1, 1.0),
+          testInterpretExprEq "Uniform" (VFloat 0.0) (1, 1.0),
+          testInterpretExprEq "Uniform" (VFloat 1.0) (1, 1.0),
           testInterpretExprEq "Uniform" (VFloat (-10.0)) (1, 0.0),
           testInterpretExprEq "Uniform" (VFloat 1.0) (1, 1.0),
           testInterpretExprEq "Uniform" (VBool True) (0, 0.0),
