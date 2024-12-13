@@ -76,7 +76,7 @@ parseFirstExpression (x : xs)
   | otherwise = Left ("Error: Unexpected String'" <> x <> "'")
 
 isInfixFunction :: Symbol -> Bool
-isInfixFunction = flip elem ["+", "-", "*", "/", "==", "!=", "<", "<=", ">", ">=", "&&", "||"]
+isInfixFunction = flip elem ["+", "-", "*", "/", "==", "!=", "<", "<=", ">", ">=", "&&", "||", "**"]
 
 isFunction :: Symbol -> Bool
 isFunction = flip elem ["!"]
@@ -94,6 +94,7 @@ combineFunction e1 ">" e2 = return $ GreaterThan e1 e2
 combineFunction e1 ">=" e2 = return $ GreaterThanOrEqual e1 e2
 combineFunction e1 "&&" e2 = return $ And e1 e2
 combineFunction e1 "||" e2 = return $ Or e1 e2
+combineFunction e1 "**" e2 = return $ Exponent e1 e2
 combineFunction _ f _ = Left $ "Unknown Function '" <> f <> "'"
 
 applyFunction :: Symbol -> Expr -> Either ErrorString Expr

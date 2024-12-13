@@ -75,6 +75,21 @@ interpret (Divide e1 e2) value
       (_dim, prob) <- interpret e1 (VFloat $ v * c)
       return (1, prob * abs c)
   | otherwise = Left "Can only interpret Divide(/) with a one side Constant."
+interpret (Exponent e1 e2) value
+  | Right constant <- evalConstExpr e2 = do
+      c <- evalAsFloat constant
+      if c == 0.0 then
+        interpret (Const $ VFloat 1.0) value
+      else do
+        v <- evalAsFloat value
+        let overC = 1 / c
+        (dim, prob) <- interpret e1 (VFloat $ v ** overC) 
+        if dim == 0
+          then
+            return (0, prob)
+          else
+            return (1, prob * abs (overC * (v ** (overC - 1))))
+  | otherwise = Left "Can only interpret Exponent(**) with a one side Constant."
 interpret (IfThenElse e1 e2 e3) value = do
   dimProbTrue <- interpret e1 (VBool True)
   dimProbFalse <- interpret e1 (VBool False) -- (0, 1.0) #-# dimProbTrue

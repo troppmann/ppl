@@ -83,6 +83,9 @@ tests =
           testInterpretExprEq "if Uniform < 0.5 then (Uniform, 2.0) else (Normal, 3.0)" (VTuple (VFloat 1.0) (VFloat 2.0)) (1, 0.5),
           testInterpretExprEq "False || (False && True)" (VBool True) (0, 0.0),
           testInterpretExprEq "False && Uniform" (VBool True) (0, 0.0),
+          testInterpretExprEq "Uniform ** 0" (VFloat 1.0) (0, 1.0),
+          testInterpretExprEq "Uniform ** 2" (VFloat 2.0) (1, 0.0),
+          testInterpretExprEq "Uniform ** 2" (VFloat 0.5) (1, 0.7071067811865),
           testInterpretExprEq "True || 3" (VBool True) (0, 1.0),
           testInterpretExprEq "False || 3" (VBool True) (0, 0.0)
         ],

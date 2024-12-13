@@ -25,6 +25,9 @@ tests =
     [ testApproxFloatPdf "Uniform" linSpace,
       testApproxFloatPdf "Uniform * 5" linSpace,
       testApproxFloatPdf "Uniform * 5 - 2" linSpace,
+      -- testApproxFloatPdf "Uniform ** 2" positiveSpace,
+      -- testApproxFloatPdf "Normal ** 2" accurateSpace,
+      -- testApproxFloatPdf "Uniform ** 0.5" positiveSpace,
       testApproxFloatPdf "Normal" linSpace,
       testApproxFloatPdf "Normal * 5" linSpace,
       testApproxFloatPdf "Normal * 3 - 2" linSpace,
@@ -34,3 +37,5 @@ tests =
     ]
   where
     linSpace = LinearSpacing {start = -20, end = 20, stepWidth = 0.01}
+    positiveSpace = LinearSpacing {start = 0.0000001, end = 1, stepWidth = 0.0000001}
+    accurateSpace = LinearSpacing {start = -20, end = 20, stepWidth = 0.00001}

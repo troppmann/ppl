@@ -29,7 +29,13 @@ convertExprToFunction :: Expr -> (Double -> Double)
 convertExprToFunction expr = convertOutput . interpret expr . convertInput
   where
     convertInput = VFloat
-    convertOutput = fromRight 0.0 . fmap snd
+    convertOutput = replaceForNanOrInf . fromRight 0.0 . fmap snd
+
+replaceForNanOrInf :: Double -> Double
+replaceForNanOrInf value 
+  | isNaN value = 0.0 
+  | isInfinite value = 100000000 
+  | otherwise = value
 
 -- TODO: f gets executed twice per step value
 approxIntegral :: Double -> Double -> Double -> (Double -> Double) -> Double

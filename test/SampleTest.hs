@@ -47,6 +47,7 @@ tests =
       testSampleExprEq "-3" $ VFloat (-3.0),
       testSampleExprEq "3 * 4 + 12" $ VFloat 24.0,
       testSampleExprEq "3 + 4 * 12" $ VFloat 84.0,
+      testSampleExprEq "3 ** 4" $ VFloat 81.0,
       testSampleExprEq "(3 + 4) * 12" $ VFloat 84.0,
       testSampleExprEq "3 * (4 + 12)" $ VFloat 48.0,
       testSampleExprEq "if True then 3.0 else 2.0" $ VFloat 3.0,

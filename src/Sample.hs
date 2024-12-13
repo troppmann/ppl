@@ -24,6 +24,7 @@ sampleRand Normal = do
   let nValue = quantile normal rValue
   return $ VFloat nValue
 sampleRand (Plus e1 e2) = apply (evaluateArithmetic (+)) e1 e2
+sampleRand (Exponent e1 e2) = apply (evaluateArithmetic (**)) e1 e2
 sampleRand (Multiply e1 e2) = apply (evaluateArithmetic (*)) e1 e2
 sampleRand (Subtract e1 e2) = apply (evaluateArithmetic (-)) e1 e2
 sampleRand (Divide e1 e2) = apply (evaluateArithmetic (/)) e1 e2

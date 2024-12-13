@@ -29,6 +29,7 @@ data Expr
   | GreaterThanOrEqual Expr Expr
   | IfThenElse Expr Expr Expr
   | CreateTuple Expr Expr
+  | Exponent Expr Expr
   deriving (Show, Read, Eq)
 
 data Value
