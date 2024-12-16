@@ -22,6 +22,7 @@ evalConstExpr (Plus e1 e2) = apply (evalArithmetic (+)) e1 e2
 evalConstExpr (Multiply e1 e2) = apply (evalArithmetic (*)) e1 e2
 evalConstExpr (Subtract e1 e2) = apply (evalArithmetic (-)) e1 e2
 evalConstExpr (Divide e1 e2) = apply (evalArithmetic (/)) e1 e2
+evalConstExpr (Exponent e1 e2) = apply (evalArithmetic (**)) e1 e2
 evalConstExpr (And e1 e2) = evalAnd e1 e2
 evalConstExpr (Or e1 e2) = evalOr e1 e2
 evalConstExpr (Not expr) = evalNot expr
