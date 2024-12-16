@@ -83,7 +83,8 @@ interpret (Exponent e1 e2) value
       else do
         v <- evalAsFloat value
         let overC = 1 / c
-        (dim, prob) <- interpret e1 (VFloat $ v ** overC) 
+        let sign = if v < 0 then (-1.0) else 1.0
+        (dim, prob) <- interpret e1 (VFloat $ sign * (v ** overC))
         if dim == 0
           then
             return (0, prob)
