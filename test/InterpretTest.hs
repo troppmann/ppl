@@ -86,6 +86,7 @@ tests =
           testInterpretExprEq "Uniform ** 0" (VFloat 1.0) (0, 1.0),
           testInterpretExprEq "Uniform ** 2" (VFloat 2.0) (1, 0.0),
           testInterpretExprEq "Uniform ** 2" (VFloat 0.5) (1, 0.7071067811865),
+          testInterpretExprEq "Uniform ** 0.5 <= 0.5" (VBool True) (0, 0.25),
           testInterpretExprEq "True || 3" (VBool True) (0, 1.0),
           testInterpretExprEq "False || 3" (VBool True) (0, 0.0)
         ],

@@ -266,6 +266,11 @@ compareFloatExpr (Divide e1 e2) (ord, value)
       c <- evalAsFloat constant
       compareFloatExpr e1 (if c < 0 then swap ord else ord, value * c)
   | otherwise = Left "Can only interpret Divide(/) with a one side Constant."
+compareFloatExpr (Exponent e1 e2) (ord, value)
+  | Right constant <- evalConstExpr e2 = do
+      c <- evalAsFloat constant
+      compareFloatExpr e1 (ord, value ** (1/c))
+  | otherwise = Left "Can only interpret Exponent(**) with a Constant."
 compareFloatExpr (IfThenElse e1 e2 e3) (ord, value) = do
   (_dim, probTrue) <- interpret e1 (VBool True)
   let probFalse = 1 - probTrue
