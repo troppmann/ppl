@@ -2,8 +2,10 @@
 
 module ApproximateIntegration
   ( LinearSpacing (..),
+    convertExprToFunction,
     approxExpr,
     approxFunc,
+    trapezTwoPoints,
   )
 where
 
@@ -47,6 +49,9 @@ approxIntegral start end stepWidth f
 
 trapez :: (Double -> Double) -> Double -> Double -> Double
 trapez f a b = (b - a) * 0.5 * (f a + f b)
+
+trapezTwoPoints :: (Double, Double) -> (Double, Double) -> Double
+trapezTwoPoints (x1, y1) (x2 , y2) = (x2 - x1) * 0.5 * (y1 + y2)
 
 -- TODO: don't execute function twice but utterly unreadable
 -- SpeedUp is measurable

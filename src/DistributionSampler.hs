@@ -1,17 +1,19 @@
 module DistributionSampler
   ( SampledDistribution (..),
     SampleInfo (..),
+    convertToList,
     sampleDistr,
     density,
   )
 where
 
 import Control.Monad.Random
-import Data.List
 import Data.Map qualified as Map
 import Data.Maybe
+import Data.List
 import Representation
 import Sample
+import qualified Data.Bifunctor
 
 data SampleInfo = SampleInfo
   { start :: Double,
@@ -55,8 +57,14 @@ toBucketIndex info sample = index
   where
     index = floor $ (sample - start info) / stepWidth info
 
+fromBucketIndex :: SampleInfo -> BucketIndex -> Double
+fromBucketIndex info index = start info + fromIntegral index * stepWidth info
+
 -- TODO: maybe implement Distribution from Statistics lib
 density :: SampledDistribution -> Double -> Double
 density d value = fromMaybe 0.0 $ Map.lookup index $ buckets d
   where
     index = toBucketIndex (info d) value
+
+convertToList :: SampledDistribution -> [(Double, Double)]
+convertToList sampledDis = map (Data.Bifunctor.first (fromBucketIndex (info sampledDis))) . Map.toList $ buckets sampledDis

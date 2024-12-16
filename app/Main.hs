@@ -2,8 +2,6 @@
 
 module Main where
 
--- import DistributionSampler
-
 import ApproximateIntegration
 import Debug.Extended
 import DistributionSampler
@@ -14,6 +12,8 @@ import Query
 import Representation
 import Sample
 import Spn
+import Chart
+import Chart (plotDistrSvg)
 
 main :: IO ()
 main = do
@@ -27,10 +27,13 @@ main = do
   -- print $ density sampledDis 2.0
   -- let integral = validateExpr LinearSpacing {start = -10, end = 10, stepWidth = 0.10} expr
   -- print $ "Validate: " ++ show integral
-  let value = (VFloat 1.0)
-  let prob = interpret expr value
-  print ("Test: " <> show value <> " -> " <> show prob)
-  print $ "Mean: " <> show (meanExpr expr)
+  -- let value = (VFloat 0.0)
+  let spacing = LinearSpacing {start = -5, end = 5, stepWidth = 0.01}
+  let numberOfSamples = 100000
+  plotDistrSvg "pdf.svg" expr spacing numberOfSamples 
+  -- let prob = interpret expr value
+  -- print ("Test: " <> show value <> " -> " <> show prob)
+  -- print $ "Mean: " <> show (meanExpr expr)
 
 calculateX0TrueGivenX1False :: Float
 calculateX0TrueGivenX1False = calculate ([1, 0], [0, 1]) spn / calculate ([1, 0], [1, 1]) spn

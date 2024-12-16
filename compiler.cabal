@@ -39,9 +39,10 @@ library lib
                       Query,
                       Representation, 
                       Sample, 
+                      Chart,
                       Spn
     hs-source-dirs:   src 
-    build-depends:    base ^>=4.17.2.1, containers, random, statistics, MonadRandom
+    build-depends:    base ^>=4.17.2.1, containers, random, statistics, MonadRandom, Chart, Chart-diagrams
     default-language: GHC2021
 
 executable compiler
@@ -52,6 +53,8 @@ executable compiler
                       random, 
                       statistics, 
                       MonadRandom, 
+                      Chart,
+                      Chart-diagrams,
                       compiler:lib
     hs-source-dirs:   app
     default-language: GHC2021
