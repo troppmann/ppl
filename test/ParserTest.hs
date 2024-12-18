@@ -78,10 +78,18 @@ tests =
         ],
       testGroup
         "Padding"
-        [ testParseExprFail "- 3.4" "Error: Expected Value got Operator '-'",
+        [ testParseExpr "- 3.4" $ Const (VFloat (-3.4)),
+          testParseExpr "-3.4" $ Const (VFloat (-3.4)),
+          testParseExpr "3-3.4" $ Subtract (Const $ VFloat 3.0) (Const $ VFloat 3.4),
+          testParseExpr "3*-3.4" $ Multiply (Const $ VFloat 3.0) (Const $ VFloat (-3.4)),
+          testParseExpr "Uniform-3.4" $ Subtract Uniform (Const $ VFloat 3.4),
+          testParseExpr "3.4-Uniform" $ Subtract (Const $ VFloat 3.4) Uniform ,
+          testParseExpr "3.4*-Uniform" $ Multiply (Const $ VFloat 3.4) (Multiply (Const $ VFloat (-1)) Uniform ),
+          testParseExpr "-Uniform" $ Multiply (Const $ VFloat (-1)) Uniform ,
           testParseExpr "!False" $ Not (Const (VBool False)),
           testParseExpr "(False)" $ Const (VBool False),
           testParseExpr "(False" $ Const (VBool False),
+          testParseExpr "Uniform*3" $ Multiply Uniform (Const $ VFloat 3.0),
           testParseExpr "(True,(False, False" $ CreateTuple (Const (VBool True)) (CreateTuple (Const (VBool False)) (Const (VBool False))),
           testParseExpr "!(3.4)" $ Not (Const (VFloat 3.4))
         ],

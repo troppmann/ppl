@@ -21,6 +21,13 @@ parseUntil (Just e) Nothing (_, Just s) (x : xs)
   | s == x = return (e, xs)
 parseUntil Nothing _ _ [] = Left "Error: Expected Value got ''"
 parseUntil Nothing Nothing s@(_, c) (x : xs)
+  | x == "-" = do
+    (e1, rest) <- parseFirstExpression xs
+    let e2 =
+          case e1 of
+            (Const (VFloat v)) -> Const (VFloat (-v))
+            _ -> Multiply (Const $ VFloat (-1)) e1
+    parseUntil (Just e2) Nothing s rest
   | isInfixFunction x = Left $ "Error: Expected Value got Operator '" <> x <> "'"
   | isFunction x = do
       (expr, rest) <- parseFirstExpression xs
@@ -43,6 +50,14 @@ parseUntil (Just e) Nothing s (x : xs)
 parseUntil (Just _e) (Just _f) _ [] = Left "Expected Value got ''"
 parseUntil Nothing (Just _f) _ (_x : _xs) = Left "Cannot happen yet"
 parseUntil (Just e1) (Just f) s@(_, c) (x : xs)
+  | x == "-" = do
+    (e2, rest) <- parseFirstExpression xs
+    let e3 =
+          case e2 of
+            (Const (VFloat v)) -> Const (VFloat (-v))
+            _ -> Multiply (Const $ VFloat (-1)) e2
+    combinedFunc <- combineFunction e1 f e3
+    parseUntil (Just combinedFunc) Nothing s rest
   | isInfixFunction x = Left $ "Error: Expected Value got Operator '" <> x <> "'"
   | isFunction x = do
       (e2, rest) <- parseFirstExpression xs
