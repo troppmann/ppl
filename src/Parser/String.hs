@@ -22,8 +22,13 @@ escape ('-' : xs) = " - " ++ escape xs
 escape ('*': '*' : xs) = " ** " ++ escape xs
 escape ('*' : xs) = " * " ++ escape xs
 escape ('/' : xs) = " / " ++ escape xs
+escape ('=' : '=' : xs) = " == " ++ escape xs
 escape ('!' : '=' : xs) = " != " ++ escape xs
 escape ('!' : xs) = " ! " ++ escape xs
+escape ('<' : '=' : xs) = " <= " ++ escape xs
+escape ('<' : xs) = " < " ++ escape xs
+escape ('>' : '=' : xs) = " >= " ++ escape xs
+escape ('>' : xs) = " > " ++ escape xs
 escape (x : xs) = x : escape xs
 escape "" = ""
 

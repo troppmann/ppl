@@ -90,6 +90,12 @@ tests =
           testParseExpr "(False)" $ Const (VBool False),
           testParseExpr "(False" $ Const (VBool False),
           testParseExpr "Uniform*3" $ Multiply Uniform (Const $ VFloat 3.0),
+          testParseExpr "Uniform==3" $ Equal Uniform (Const $ VFloat 3.0),
+          testParseExpr "Uniform!=3" $ Unequal Uniform (Const $ VFloat 3.0),
+          testParseExpr "Uniform<=Uniform" $ LessThanOrEqual Uniform Uniform,
+          testParseExpr "Uniform<Uniform" $ LessThan Uniform Uniform,
+          testParseExpr "Uniform>=Uniform" $ GreaterThanOrEqual Uniform Uniform,
+          testParseExpr "Uniform>-Uniform" $ GreaterThan Uniform (Multiply (Const $ VFloat (-1)) Uniform ),
           testParseExpr "(True,(False, False" $ CreateTuple (Const (VBool True)) (CreateTuple (Const (VBool False)) (Const (VBool False))),
           testParseExpr "!(3.4)" $ Not (Const (VFloat 3.4))
         ],
