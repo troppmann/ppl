@@ -13,7 +13,6 @@ import Representation
 import Sample
 import Spn
 import Chart
-import Chart (plotDistrSvg)
 
 main :: IO ()
 main = do
@@ -21,18 +20,18 @@ main = do
   let expr = unwrap $ parseExpr s
   print expr
   sample0 <- sampleExpr expr
-  print sample0
+  --print sample0
   -- sampledDis <- evalRandIO (sampleDistr expr SampleInfo {start = 0, stepWidth = 0.05, numberOfSamples = 100000})
   -- print sampledDis
   -- print $ density sampledDis 2.0
   -- let integral = validateExpr LinearSpacing {start = -10, end = 10, stepWidth = 0.10} expr
   -- print $ "Validate: " ++ show integral
-  -- let value = (VFloat 0.0)
-  let spacing = LinearSpacing {start = -5, end = 5, stepWidth = 0.01}
+  let spacing = LinearSpacing {start = -1, end = 13, stepWidth = 0.1}
   let numberOfSamples = 100000
-  plotDistrSvg "pdf.svg" expr spacing numberOfSamples 
-  -- let prob = interpret expr value
-  -- print ("Test: " <> show value <> " -> " <> show prob)
+  plotDistrSvg "pdf.svg" expr spacing numberOfSamples
+  let value = VFloat 1.0
+  let prob = interpret expr value
+  print ("Test: " <> show value <> " -> " <> showFloatN (snd $ unwrap prob) 5)
   -- print $ "Mean: " <> show (meanExpr expr)
 
 calculateX0TrueGivenX1False :: Float

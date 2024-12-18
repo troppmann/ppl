@@ -38,14 +38,14 @@ tests =
     [ testGroup
         "Basic"
         [ testInterpretExprEq "Uniform" (VFloat 0.5) (1, 1.0),
-          testInterpretExprEq "Uniform" (VFloat 0.0) (1, 1.0),
+          testInterpretExprEq "Uniform" (VFloat 0.0) (1, 0.0),
           testInterpretExprEq "Uniform" (VFloat 1.0) (1, 1.0),
           testInterpretExprEq "Uniform" (VFloat (-10.0)) (1, 0.0),
           testInterpretExprEq "Uniform" (VFloat 1.0) (1, 1.0),
           testInterpretExprEq "Uniform" (VBool True) (0, 0.0),
           testInterpretExprEq "Uniform" (VBool False) (0, 0.0),
           testInterpretExprEq "Normal" (VFloat 0.0) (1, 0.3989),
-          testInterpretExprEq "Uniform * 5" (VFloat 0.0) (1, 0.2),
+          testInterpretExprEq "Uniform * 5" (VFloat 5.0) (1, 0.2),
           testInterpretExprFail "Normal / Normal" (VFloat 0.0) "Can only interpret Divide(/) with a one side Constant.",
           testInterpretExprFail "(Normal * 10) / (Normal + 10)" (VFloat 0.0) "Can only interpret Divide(/) with a one side Constant.",
           testInterpretExprEq "Normal + 10" (VFloat 10.0) (1, 0.3989),

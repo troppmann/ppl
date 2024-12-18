@@ -11,10 +11,8 @@ import Statistics.Distribution.Uniform
 import Prelude hiding (EQ, GT, LT)
 
 interpret :: Expr -> Value -> Either String DimensionalProbability
-interpret Uniform (VFloat f) = Right (1, density distr f)
-  where
-    distr = uniformDistr 0.0 1.0
-interpret Normal (VFloat f) = Right (1, density distr f)
+interpret Uniform (VFloat v) = Right (1, if 0.0 < v && v <= 1.0 then 1.0 else 0.0)
+interpret Normal (VFloat v) = Right (1, density distr v)
   where
     distr = normalDistr 0.0 1.0
 interpret (Const v1) value = Right (0, if v1 == value then 1.0 else 0.0)

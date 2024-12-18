@@ -77,7 +77,7 @@ tests =
           testMapExpr "if Uniform < 0.5 then (Normal + 3, 10) else (Normal + 7, 0)" "(_, 10)" (VTuple (VFloat 3) (VFloat 10)),
           testMapExpr "if Uniform < 0.4 then (Normal + 3, 10) else (Normal + 7, 0)" "(3, _)" (VTuple (VFloat 3) (VFloat 0)),
           testMapExpr "if Uniform < 0.5 then (Normal + 3, 10) else (3, 0)" "(3, _)" (VTuple (VFloat 3) (VFloat 0)),
-          testMapExpr "if Uniform < 0.2 then (Uniform, Normal) else (Uniform + 3, Normal)" "(3, _)" (VTuple (VFloat 3) (VFloat 0.0)),
+          testMapExpr "if Uniform < 0.2 then (Uniform, Normal) else (Uniform + 3, Normal)" "(3.1, _)" (VTuple (VFloat 3.1) (VFloat 0.0)),
           testMapExpr "if Uniform < 0.8 then (Uniform, Normal) else (Uniform + 3, Normal)" "(_, _)" (VTuple (VFloat 0.5) (VFloat 0.0)),
           testMapExpr "if Uniform < 0.2 then Uniform else Uniform + 3" "(_)" (VFloat 3.5)
         ]
