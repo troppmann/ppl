@@ -122,6 +122,8 @@ tests =
           testInterpretExprEqWithName indiaGpaProblem "IndiaGpaProblem(..)" (VTuple (VFloat 1.0) (VFloat 4.0)) (1, 0.5 * 0.99 * 0.1),
           testInterpretExprEqWithName indiaGpaProblem "IndiaGpaProblem(..)" (VTuple (VFloat 1.0) (VFloat 9.5)) (1, 0.5 * 0.99 * 0.1),
           testInterpretExprEqWithName indiaGpaProblem "IndiaGpaProblem(..)" (VTuple (VFloat 1.0) (VFloat 10.0)) (0, 0.5 * 0.01),
-          testInterpretExprEqWithName indiaGpaProblem "IndiaGpaProblem(..)" (VTuple (VFloat 1.0) (VFloat 12.0)) (0, 0.0)
+          testInterpretExprEqWithName indiaGpaProblem "IndiaGpaProblem(..)" (VTuple (VFloat 1.0) (VFloat 12.0)) (0, 0.0),
+          testInterpretExprEqWithName add2Uniform "Add2Uniform(..)" (VFloat 1.0) (1, 1.0),
+          testInterpretExprEqWithName add2Uniform "Add2Uniform(..)" (VFloat 0.5) (1, 0.5)
         ]
     ]

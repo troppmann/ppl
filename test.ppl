@@ -1,4 +1,4 @@
 if Uniform < 0.5 then
-Uniform 
+    Uniform ** 0.5
 else
-Uniform + 1
+    2 - ((1 - Uniform) ** 0.5)

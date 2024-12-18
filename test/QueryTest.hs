@@ -74,6 +74,8 @@ tests =
           testQueryExprWithName indiaGpaProblem "IndiaGpaProblem(..)" "(_, _ > 2.0)" (0, 0.5 * 0.99 * 0.5 + 0.5 * 0.01 + 0.5 * 0.99 * 0.8 + 0.5 * 0.01),
           testQueryExprWithName indiaGpaProblem "IndiaGpaProblem(..)" "(_, _ > 6.0)" (0, 0.5 * 0.99 * 0.4 + 0.5 * 0.01),
           testQueryExprWithName indiaGpaProblem "IndiaGpaProblem(..)" "(1, _)" (0, 0.5),
-          testQueryExprWithName indiaGpaProblem "IndiaGpaProblem(..)" "(1, _ > 6.0)" (0, 0.5 * 0.99 * 0.4 + 0.5 * 0.01)
+          testQueryExprWithName indiaGpaProblem "IndiaGpaProblem(..)" "(1, _ > 6.0)" (0, 0.5 * 0.99 * 0.4 + 0.5 * 0.01),
+          testQueryExprWithName add2Uniform "add2Uniform(..)" "(_ < 1)" (0, 0.5),
+          testQueryExprWithName add2Uniform "add2Uniform(..)" "(_ < 1.5)" (0, 0.5 + 0.75 * 0.5)
         ]
     ]
