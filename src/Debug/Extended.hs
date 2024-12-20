@@ -2,14 +2,15 @@ module Debug.Extended
   ( todo,
     dbg,
     dbg',
-    unwrap,
+    unwrapEither,
+    unwrapMaybe,
     showFloatN
   )
 where
 
 import Debug.Trace (trace)
 import GHC.Stack
-import Numeric 
+import Numeric
 
 todo :: String -> a
 todo msg = error ("not yet implemented: " ++ msg)
@@ -30,9 +31,13 @@ dbg' string a = trace ("[" <> filename <> ":" <> lineNumber <> ":" <> col <> "] 
     lineNumber = show $ srcLocStartLine info
     col = show $ srcLocStartCol info
 
-unwrap :: (Show a, HasCallStack) => Either a b -> b
-unwrap (Left e) = error $ show e
-unwrap (Right value) = value
+unwrapEither :: Show a => Either a b -> b
+unwrapEither (Left e) = error $ show e
+unwrapEither (Right value) = value
+
+unwrapMaybe :: Maybe b -> b
+unwrapMaybe Nothing = error "Expected Value in Maybe got: Nothing"
+unwrapMaybe (Just value) = value
 
 showFloatN :: RealFloat a => a -> Int -> String
 showFloatN floatNum numOfDecimals = showFFloat (Just numOfDecimals) floatNum ""

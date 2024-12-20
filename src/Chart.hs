@@ -67,7 +67,7 @@ plotMassToFile :: FileName -> Expr -> NumberOfSamples -> IO ()
 plotMassToFile filename expr numberOfSamples = do
   sampledMasses <- evalRandIO (sampleMass expr numberOfSamples)
   let sampledPointLine = toBarLayout sampledMasses
-  let inferPoints = map (\(x, _) -> (x, snd $ unwrap $ interpret expr (VFloat x))) sampledMasses
+  let inferPoints = map (\(x, _) -> (x, snd $ unwrapEither $ interpret expr (VFloat x))) sampledMasses
   let inferPointLine = toBarLayout inferPoints
   let totalMass = sum . map snd $ inferPoints
   toFile def filename $ do
