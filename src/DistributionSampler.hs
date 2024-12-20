@@ -1,6 +1,10 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Use tuple-section" #-}
 module DistributionSampler
-  ( SampledDistribution (..),
+  ( SampledDensity (..),
     SampleInfo (..),
+    sampleMass,
     convertToList,
     sampleDistr,
     density,
@@ -8,12 +12,12 @@ module DistributionSampler
 where
 
 import Control.Monad.Random
+import Data.Bifunctor qualified
+import Data.List
 import Data.Map qualified as Map
 import Data.Maybe
-import Data.List
 import Representation
 import Sample
-import qualified Data.Bifunctor
 
 data SampleInfo = SampleInfo
   { start :: Double,
@@ -22,19 +26,19 @@ data SampleInfo = SampleInfo
   }
   deriving (Show)
 
-data SampledDistribution = SampledDistribution
+data SampledDensity = SampledDensity
   { info :: SampleInfo,
     buckets :: Map.Map Int Double
   }
   deriving (Show)
 
-sampleDistr :: (MonadRandom m) => Expr -> SampleInfo -> m SampledDistribution
+sampleDistr :: (MonadRandom m) => Expr -> SampleInfo -> m SampledDensity
 sampleDistr expr info = do
   samples <- fmap (fmap convertToFloat) (replicateM (numberOfSamples info) $ sampleRand expr)
   let indices = map (toBucketIndex info) samples
   let sorted = group . sort $ indices
   let densities = map (toDensityEntry info) sorted
-  return $ SampledDistribution {info, buckets = Map.fromList densities}
+  return $ SampledDensity {info, buckets = Map.fromList densities}
 
 convertToFloat :: Value -> Double
 convertToFloat (VFloat f) = f
@@ -62,10 +66,21 @@ fromBucketIndex :: SampleInfo -> BucketIndex -> Double
 fromBucketIndex info index = start info + fromIntegral index * stepWidth info
 
 -- TODO: maybe implement Distribution from Statistics lib
-density :: SampledDistribution -> Double -> Double
+density :: SampledDensity -> Double -> Double
 density d value = fromMaybe 0.0 $ Map.lookup index $ buckets d
   where
     index = toBucketIndex (info d) value
 
-convertToList :: SampledDistribution -> [(Double, Double)]
+convertToList :: SampledDensity -> [(Double, Double)]
 convertToList sampledDis = map (Data.Bifunctor.first (fromBucketIndex (info sampledDis))) . Map.toList $ buckets sampledDis
+
+sampleMass :: (MonadRandom m) => Expr -> Int -> m [(Double, Double)]
+sampleMass expr numberOfSamples = do
+  samples <- fmap (fmap convertToFloat) (replicateM numberOfSamples $ sampleRand expr)
+  let masses =
+        map (\(x, y) -> (x, y / fromIntegral numberOfSamples))
+          . Map.toList
+          . Map.fromListWith (+)
+          . map (\x -> (x, 1))
+          $ samples
+  return masses

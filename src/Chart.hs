@@ -1,38 +1,46 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 
-module Chart ( createPoints
-, plotDistrSvg) where
+module Chart
+  ( createPoints,
+    plotDensityToFile,
+    plotMassToFile,
+  )
+where
 
-import Representation
-import ApproximateIntegration (LinearSpacing(..), convertExprToFunction, trapezTwoPoints)
-import DistributionSampler
-import qualified ApproximateIntegration as LinearSpacing
-import Debug.Extended
+import ApproximateIntegration (LinearSpacing (..), convertExprToFunction, trapezTwoPoints)
+import ApproximateIntegration qualified as LinearSpacing
 import Control.Monad.Random
+import Debug.Extended
+import DistributionSampler
+import Graphics.Rendering.Chart.Backend.Diagrams (toFile)
 import Graphics.Rendering.Chart.Easy
-import Graphics.Rendering.Chart.Backend.Diagrams(toFile)
 import Parser.String
+import Representation
+import Interpret
 
 type Point2D = (Double, Double)
+
 createPoints :: Expr -> LinearSpacing -> [Point2D]
 createPoints expr spacing = addYValues (convertExprToFunction expr) (xValues spacing)
 
 xValues :: LinearSpacing -> [Double]
-xValues spacing = [(LinearSpacing.start spacing), second..(end spacing)]
-    where second = LinearSpacing.start spacing + LinearSpacing.stepWidth spacing
-
+xValues spacing = [(LinearSpacing.start spacing), second .. (end spacing)]
+  where
+    second = LinearSpacing.start spacing + LinearSpacing.stepWidth spacing
 
 addYValues :: (Double -> Double) -> [Double] -> [Point2D]
 addYValues func = map (\x -> (x, func x))
 
 type FileName = String
+
 type NumberOfSamples = Int
-plotDistrSvg :: FileName ->  Expr -> LinearSpacing ->NumberOfSamples -> IO ()
-plotDistrSvg filename expr spacing numberOfSamples = do
+
+plotDensityToFile :: FileName -> Expr -> LinearSpacing -> NumberOfSamples -> IO ()
+plotDensityToFile filename expr spacing numberOfSamples = do
   let interpretedLine = createPoints expr spacing
-  let approx = approxI (tail interpretedLine) (head interpretedLine)
+  let approx = approxDensity (tail interpretedLine) (head interpretedLine)
   sampledDis <- evalRandIO (sampleDistr expr SampleInfo {start = LinearSpacing.start spacing, stepWidth = LinearSpacing.stepWidth spacing, numberOfSamples})
-  let sampledBars = map (\(x,y) -> (x + 0.5 * LinearSpacing.stepWidth spacing, [y])) $ convertToList sampledDis
+  let sampledBars = map (\(x, y) -> (x + 0.5 * LinearSpacing.stepWidth spacing, [y])) $ convertToList sampledDis
 
   toFile def filename $ do
     layout_title .= "PDF  \n " ++ toString expr
@@ -40,17 +48,60 @@ plotDistrSvg filename expr spacing numberOfSamples = do
     plot $ plotBars <$> normalBars ["Sampled"] sampledBars
     plot (line ("Inferred ~Area: " ++ showFloatN approx 5) [interpretedLine])
 
-normalBars :: (PlotValue x, BarsPlotValue y) => [String] -> [(x,[y])] -> EC l (PlotBars x y)
+normalBars :: (PlotValue x, BarsPlotValue y) => [String] -> [(x, [y])] -> EC l (PlotBars x y)
 normalBars titles vals = liftEC $ do
-    styles <- sequence [fmap mkStyle takeColor | _ <- titles]
-    plot_bars_titles .= titles
-    plot_bars_values .= vals
-    plot_bars_style .= BarsClustered
-    plot_bars_spacing .= BarsFixGap 0 0
-    plot_bars_item_styles .= styles
+  styles <- sequence [fmap mkStyle takeColor | _ <- titles]
+  plot_bars_titles .= titles
+  plot_bars_values .= vals
+  plot_bars_style .= BarsClustered
+  plot_bars_spacing .= BarsFixGap 0 0
+  plot_bars_item_styles .= styles
   where
     mkStyle c = (solidFillStyle c, Nothing)
 
-approxI :: [(Double, Double)] -> (Double, Double) -> Double
-approxI [] _point = 0.0
-approxI (x:xs) point = trapezTwoPoints point x + approxI xs x
+approxDensity :: [(Double, Double)] -> (Double, Double) -> Double
+approxDensity [] _point = 0.0
+approxDensity (x : xs) point = trapezTwoPoints point x + approxDensity xs x
+
+plotMassToFile :: FileName -> Expr -> NumberOfSamples -> IO ()
+plotMassToFile filename expr numberOfSamples = do
+  sampledMasses <- evalRandIO (sampleMass expr numberOfSamples)
+  let sampledPointLine = toBarLayout sampledMasses
+  let inferPoints = map (\(x, _) -> (x, snd $ unwrap $ interpret expr (VFloat x))) sampledMasses
+  let inferPointLine = toBarLayout inferPoints
+  let totalMass = sum . map snd $ inferPoints
+  toFile def filename $ do
+    layout_title .= "PMF  \n " ++ toString expr
+    setColors [withOpacity blue 0.8, withOpacity blue 0.8, withOpacity red 0.8, withOpacity red 0.8]
+    setShapes [PointShapeCircle, PointShapeCircle, PointShapeCircle]
+    plot $ plotBars <$> pointLines ["Sampled"] sampledPointLine
+    plot (pointsWithSize "" 3 sampledMasses)
+    plot $ plotBars <$> pointLines ["Inferred ∑Mass: " ++ show totalMass] inferPointLine
+    plot (pointsWithSize "" 3 inferPoints)
+
+toBarLayout :: [(Double, Double)] -> [(Double, [Double])]
+toBarLayout = map (\(x, y) -> (x , [y]))
+
+
+pointLines :: (PlotValue x, BarsPlotValue y) => [String] -> [(x, [y])] -> EC l (PlotBars x y)
+pointLines titles vals = liftEC $ do
+  styles <- sequence [fmap mkStyle takeColor | _ <- titles]
+  plot_bars_titles .= titles
+  plot_bars_values .= vals
+  plot_bars_style .= BarsClustered
+  plot_bars_spacing .= BarsFixWidth 1
+  plot_bars_item_styles .= styles
+  where
+    mkStyle c = (solidFillStyle c, Nothing)
+
+pointsWithSize :: String -> Double ->[(x,y)]  -> EC l (PlotPoints x y)
+pointsWithSize title size values = liftEC $ do
+    color <- takeColor
+    shape <- takeShape
+    plot_points_values .= values
+    plot_points_title .= title
+    plot_points_style . point_color .= color
+    plot_points_style . point_shape .= shape
+    plot_points_style . point_radius .= size
+    plot_points_style . point_border_color .= color
+    plot_points_style . point_border_width .= 1
