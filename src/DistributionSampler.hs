@@ -1,21 +1,19 @@
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-
-{-# HLINT ignore "Use tuple-section" #-}
 module DistributionSampler
   ( SampledDensity (..),
     SampleInfo (..),
     sampleMass,
     convertToList,
-    sampleDistr,
+    sampleDensity,
     density,
   )
 where
 
 import Control.Monad.Random
+import Control.Monad.Reader
 import Data.Bifunctor qualified
-import Data.List
 import Data.Map qualified as Map
 import Data.Maybe
+import Debug.Extended
 import Representation
 import Sample
 
@@ -32,28 +30,24 @@ data SampledDensity = SampledDensity
   }
   deriving (Show)
 
-sampleDistr :: (MonadRandom m) => Expr -> SampleInfo -> m SampledDensity
-sampleDistr expr info = do
-  samples <- fmap (fmap convertToFloat) (replicateM (numberOfSamples info) $ sampleRand expr)
+sampleDensity :: (MonadRandom m) => Program -> SampleInfo -> m [(Double, Double)]
+sampleDensity program info = do
+  let mainExpr = unwrapMaybe $ lookup "main" program
+  samples <- fmap (fmap convertToFloat) (replicateM (numberOfSamples info) $ runReaderT (sampleRand mainExpr) program)
   let indices = map (toBucketIndex info) samples
-  let sorted = group . sort $ indices
-  let densities = map (toDensityEntry info) sorted
-  return $ SampledDensity {info, buckets = Map.fromList densities}
+  let densities =
+        map (\(x, y) -> (fromBucketIndex info x, y / fromIntegral (numberOfSamples info) / stepWidth info))
+          . Map.toList
+          . Map.fromListWith (+)
+          . map (,1)
+          $ indices
+  return densities
 
 convertToFloat :: Value -> Double
 convertToFloat (VFloat f) = f
 convertToFloat (VBool True) = 1.0
 convertToFloat (VBool False) = 0.0
 convertToFloat (VTuple _ _) = error "Expected Float got Tuple."
-
-toDensityEntry :: SampleInfo -> [Int] -> (Int, Double)
-toDensityEntry _ [] = error "Empty List"
-toDensityEntry info sameIndexList@(x : _xs) = (x, probDensity)
-  where
-    l = fromIntegral $ length sameIndexList
-    samples = fromIntegral $ numberOfSamples info
-    probability = l / samples
-    probDensity = probability / stepWidth info
 
 type BucketIndex = Int
 
@@ -65,7 +59,6 @@ toBucketIndex info sample = index
 fromBucketIndex :: SampleInfo -> BucketIndex -> Double
 fromBucketIndex info index = start info + fromIntegral index * stepWidth info
 
--- TODO: maybe implement Distribution from Statistics lib
 density :: SampledDensity -> Double -> Double
 density d value = fromMaybe 0.0 $ Map.lookup index $ buckets d
   where
@@ -74,13 +67,14 @@ density d value = fromMaybe 0.0 $ Map.lookup index $ buckets d
 convertToList :: SampledDensity -> [(Double, Double)]
 convertToList sampledDis = map (Data.Bifunctor.first (fromBucketIndex (info sampledDis))) . Map.toList $ buckets sampledDis
 
-sampleMass :: (MonadRandom m) => Expr -> Int -> m [(Double, Double)]
-sampleMass expr numberOfSamples = do
-  samples <- fmap (fmap convertToFloat) (replicateM numberOfSamples $ sampleRand expr)
+sampleMass :: (MonadRandom m) => Program -> Int -> m [(Double, Double)]
+sampleMass program numberOfSamples = do
+  let mainExpr = unwrapMaybe $ lookup "main" program
+  samples <- fmap (fmap convertToFloat) (replicateM numberOfSamples $ runReaderT (sampleRand mainExpr) program)
   let masses =
         map (\(x, y) -> (x, y / fromIntegral numberOfSamples))
           . Map.toList
           . Map.fromListWith (+)
-          . map (\x -> (x, 1))
+          . map (,1)
           $ samples
   return masses

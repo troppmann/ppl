@@ -1,6 +1,8 @@
 module Representation
   ( Expr (..),
     Value (..),
+    FnName,
+    Program,
     DimensionalProbability,
     Dimension,
     Probability,
@@ -30,13 +32,19 @@ data Expr
   | IfThenElse Expr Expr Expr
   | CreateTuple Expr Expr
   | Exponent Expr Expr
+  | FnCall FnName [Expr]
   deriving (Show, Read, Eq)
+
+type FnName = String
+
 
 data Value
   = VFloat Double
   | VBool Bool
   | VTuple Value Value
   deriving (Show, Read, Eq)
+
+type Program = [(FnName, Expr)]
 
 type Probability = Double
 

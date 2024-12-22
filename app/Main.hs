@@ -15,6 +15,7 @@ import Spn
 import Chart
 import Control.Monad.Random (replicateM, evalRandIO)
 import Data.List
+import Representation (Expr(IfThenElse))
 
 toFloat :: Value -> Double
 toFloat (VFloat f) = f
@@ -22,9 +23,11 @@ toFloat _ = -1
 
 main :: IO ()
 main = do
-  s <- readFile "test.ppl"
-  let expr = unwrap $ parseExpr s
-  print expr
+  --s <- readFile "test.ppl"
+  --let expr = unwrapEither $ parseExpr s
+  let program = [("main", IfThenElse (LessThan Uniform (Const $ VFloat 0.2)) (Multiply Normal (Const $ VFloat 0.5))(Plus (Const $ VFloat 2.0) (FnCall "main" [])))]
+  sample <- sampleProgram program
+  print sample
   -- sample0 <- sampleExpr expr
   --print sample0
   -- sampledDis <- evalRandIO (sampleDistr expr SampleInfo {start = 0, stepWidth = 0.05, numberOfSamples = 100000})
@@ -32,13 +35,13 @@ main = do
   -- print $ density sampledDis 2.0
   -- let integral = validateExpr LinearSpacing {start = -10, end = 10, stepWidth = 0.10} expr
   -- print $ "Validate: " ++ show integral
-  let spacing = LinearSpacing {start = -1, end = 13, stepWidth = 0.1}
+  let spacing = LinearSpacing {start = -4, end = 60, stepWidth = 0.1}
   let numberOfSamples = 100000
-  --plotDensityToFile "pdf.svg" expr spacing numberOfSamples
-  plotMassToFile "pmf.svg" expr numberOfSamples
-  let value = VFloat 0.0
-  let prob = interpret expr value
-  print ("Test: " <> show value <> " -> " <> showFloatN (snd $ unwrap prob) 5)
+  plotDensityToFile "pdf.svg" program spacing numberOfSamples
+  --plotMassToFile "pmf.svg" program numberOfSamples
+  --let value = VFloat 0.0
+  --let prob = interpret expr value
+  --print ("Test: " <> show value <> " -> " <> showFloatN (snd $ unwrapEither prob) 5)
   -- print $ "Mean: " <> show (meanExpr expr)
 
 calculateX0TrueGivenX1False :: Float

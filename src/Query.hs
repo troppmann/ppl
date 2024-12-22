@@ -20,23 +20,23 @@ data QueryType
 
 type ErrorString = String
 
-qInterpret :: Expr -> QueryType -> Either ErrorString DimensionalProbability
+qInterpret :: InferRunTime -> Expr -> QueryType -> Either ErrorString DimensionalProbability
 -- assumes only normalized distributions
-qInterpret _ QAny = return (0, 1.0)
-qInterpret expr (QIs bool) = interpret expr (VBool bool)
-qInterpret expr (QAt float) = interpret expr (VFloat float)
-qInterpret expr (QLt float) = interpret (LessThan expr (Const $ VFloat float)) (VBool True)
-qInterpret expr (QLe float) = interpret (LessThanOrEqual expr (Const $ VFloat float)) (VBool True)
-qInterpret expr (QGt float) = interpret (GreaterThan expr (Const $ VFloat float)) (VBool True)
-qInterpret expr (QGe float) = interpret (GreaterThanOrEqual expr (Const $ VFloat float)) (VBool True)
-qInterpret (CreateTuple e1 e2) (QTuple q1 q2) = do
-  dimProb1 <- qInterpret e1 q1
-  dimProb2 <- qInterpret e2 q2
+qInterpret _ _ QAny = return (0, 1.0)
+qInterpret rt expr (QIs bool) = interpret rt expr (VBool bool)
+qInterpret  rt expr (QAt float) = interpret rt expr (VFloat float)
+qInterpret  rt expr (QLt float) = interpret rt (LessThan expr (Const $ VFloat float)) (VBool True)
+qInterpret  rt expr (QLe float) = interpret rt (LessThanOrEqual expr (Const $ VFloat float)) (VBool True)
+qInterpret  rt expr (QGt float) = interpret rt (GreaterThan expr (Const $ VFloat float)) (VBool True)
+qInterpret  rt expr (QGe float) = interpret rt (GreaterThanOrEqual expr (Const $ VFloat float)) (VBool True)
+qInterpret  rt (CreateTuple e1 e2) (QTuple q1 q2) = do
+  dimProb1 <- qInterpret rt e1 q1
+  dimProb2 <- qInterpret rt e2 q2
   return $ dimProb1 #*# dimProb2
-qInterpret (IfThenElse boolExpr e1 e2) query@(QTuple _ _) = do
-  dimProbTrue <- interpret boolExpr (VBool True)
+qInterpret  rt (IfThenElse boolExpr e1 e2) query@(QTuple _ _) = do
+  dimProbTrue <- interpret rt boolExpr (VBool True)
   let dimProbFalse = (0, 1.0) #-# dimProbTrue
-  dimProbBranchTrue <- qInterpret e1 query
-  dimProbBranchFalse <- qInterpret e2 query
+  dimProbBranchTrue <- qInterpret rt e1 query
+  dimProbBranchFalse <- qInterpret rt e2 query
   return $ (dimProbTrue #*# dimProbBranchTrue) #+# (dimProbFalse #*# dimProbBranchFalse)
-qInterpret _ (QTuple _ _) = Left "Can't interpret singular value expression with a tuple query."
+qInterpret  rt _ (QTuple _ _) = Left "Can't interpret singular value expression with a tuple query."

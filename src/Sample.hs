@@ -1,19 +1,28 @@
 module Sample
   ( sampleExpr,
     sampleRand,
+    sampleProgram,
   )
 where
 
-import Control.Monad.Random (MonadRandom, evalRandIO, getRandomR)
-import Representation (Expr (..), Value (..))
+import Control.Monad.Random
+import Control.Monad.Reader
+import Debug.Extended
+import Representation
 import Statistics.Distribution
 import Statistics.Distribution.Normal (normalDistr)
 
--- TODO 11.09.24: Make sampleExpr/sampleRand a IO Either String Value return type
-sampleExpr :: Expr -> IO Value
-sampleExpr expr = evalRandIO (sampleRand expr)
+sampleProgram :: Program -> IO Value
+sampleProgram program = evalRandIO $ runReaderT (sampleRand mainExpr) program
+  where
+    mainExpr = unwrapMaybe $ lookup "main" program
 
-sampleRand :: (MonadRandom m) => Expr -> m Value
+type RandomProgram m a = ReaderT Program m a
+
+sampleExpr :: Expr -> IO Value
+sampleExpr expr = evalRandIO $ runReaderT (sampleRand expr) []
+
+sampleRand :: (MonadRandom m) => Expr -> RandomProgram m Value
 sampleRand (Const v) = return v
 sampleRand Uniform = do
   rValue <- getRandomR (0.0, 1.0)
@@ -39,14 +48,20 @@ sampleRand (GreaterThan e1 e2) = apply (evaluateCompare (>)) e1 e2
 sampleRand (GreaterThanOrEqual e1 e2) = apply (evaluateCompare (>=)) e1 e2
 sampleRand (IfThenElse e1 e2 e3) = sampleIfElse e1 e2 e3
 sampleRand (CreateTuple e1 e2) = sampleTuple e1 e2
+sampleRand (FnCall fnName _arguments) = do
+  program <- ask
+  case lookup fnName program of
+    (Just expr) -> sampleRand expr
+    Nothing -> error $ "Could not find FnName: " <> fnName <> " ."
 
-apply :: (MonadRandom m) => (Value -> Value -> Value) -> Expr -> Expr -> m Value
+
+apply :: (MonadRandom m) => (Value -> Value -> Value) -> Expr -> Expr -> RandomProgram m Value
 apply f e1 e2 = do
   v1 <- sampleRand e1
   v2 <- sampleRand e2
   return $ f v1 v2
 
-sampleIfElse :: (MonadRandom m) => Expr -> Expr -> Expr -> m Value
+sampleIfElse :: (MonadRandom m) => Expr -> Expr -> Expr -> RandomProgram m Value
 sampleIfElse e1 e2 e3 = do
   v1 <- sampleRand e1
   if evaluateAsBool v1
@@ -55,7 +70,7 @@ sampleIfElse e1 e2 e3 = do
     else
       sampleRand e3
 
-sampleAnd :: (MonadRandom m) => Expr -> Expr -> m Value
+sampleAnd :: (MonadRandom m) => Expr -> Expr -> RandomProgram m Value
 sampleAnd e1 e2 = do
   v1 <- sampleRand e1
   if evaluateAsBool v1
@@ -65,7 +80,7 @@ sampleAnd e1 e2 = do
     else
       return $ VBool False
 
-sampleOr :: (MonadRandom m) => Expr -> Expr -> m Value
+sampleOr :: (MonadRandom m) => Expr -> Expr -> RandomProgram m Value
 sampleOr e1 e2 = do
   v1 <- sampleRand e1
   if evaluateAsBool v1
@@ -75,12 +90,12 @@ sampleOr e1 e2 = do
       v2 <- sampleRand e2
       return $ VBool $ evaluateAsBool v2
 
-sampleNot :: (MonadRandom m) => Expr -> m Value
+sampleNot :: (MonadRandom m) => Expr -> RandomProgram m Value
 sampleNot expr = do
   value <- sampleRand expr
   return $ VBool $ not $ evaluateAsBool value
 
-sampleTuple :: (MonadRandom m) => Expr -> Expr -> m Value
+sampleTuple :: (MonadRandom m) => Expr -> Expr -> RandomProgram m Value
 sampleTuple e1 e2 = do
   v1 <- sampleRand e1
   v2 <- sampleRand e2

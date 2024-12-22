@@ -30,7 +30,9 @@ maxAPost (CreateTuple e1 e2) (QTuple q1 q2) = do
   (d2, v2) <- maxAPost e2 q2
   return (d1 + d2, VTuple v1 v2)
 maxAPost (IfThenElse e1 e2 e3) query = do
-  dimProbTrue@(dimTrue, probTrue) <- interpret e1 (VBool True)
+  -- Todo(21.12.24) :: fix with program or so dummyProgram
+  --dimProbTrue@(dimTrue, probTrue) <- interpret e1 (VBool True)
+  let dimProbTrue@(dimTrue, probTrue) = (-1,-1.0)
   let dimProbFalse@(dimFalse, probFalse) = (0, 1.0) #-# dimProbTrue
   if dimTrue < dimFalse && probTrue > 0 || (0, 1.0) == dimProbTrue
     then
@@ -42,7 +44,9 @@ maxAPost (IfThenElse e1 e2 e3) query = do
         else
           maxAPostIfThenElse dimProbTrue (maxAPost e2 query) (maxAPost e3 query)
 maxAPost e (QAt v) = do
-  (dim, prob) <- interpret e (VFloat v)
+  -- Todo(21.12.24) :: fix with program or so dummyProgram
+  -- (dim, prob) <- interpret e (VFloat v)
+  let (dim, prob) = (-1,-1.0)
   if prob /= 0.0
     then
       return (dim, VFloat v)

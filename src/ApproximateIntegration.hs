@@ -2,14 +2,13 @@
 
 module ApproximateIntegration
   ( LinearSpacing (..),
-    convertExprToFunction,
-    approxExpr,
+    convertProgramToFunction,
+    approxProgram,
     approxFunc,
     trapezTwoPoints,
   )
 where
 
-import Data.Either
 import Interpret
 import Representation
 
@@ -21,22 +20,22 @@ data LinearSpacing = LinearSpacing
   deriving (Show)
 
 -- only works on pdf's not pmf's
-approxExpr :: LinearSpacing -> Expr -> Double
-approxExpr info expr = approxFunc info (convertExprToFunction expr)
+approxProgram :: LinearSpacing -> Program -> Double
+approxProgram info program = approxFunc info (convertProgramToFunction program)
 
 approxFunc :: LinearSpacing -> (Double -> Double) -> Double
-approxFunc info f = approxIntegral2 (start info) (end info) (stepWidth info) f
+approxFunc info = approxIntegral2 (start info) (end info) (stepWidth info)
 
-convertExprToFunction :: Expr -> (Double -> Double)
-convertExprToFunction expr = convertOutput . interpret expr . convertInput
+convertProgramToFunction :: Program -> (Double -> Double)
+convertProgramToFunction program =  dimProbToDouble . inferProgram program . doubleToValue
   where
-    convertInput = VFloat
-    convertOutput = replaceForNanOrInf . fromRight 0.0 . fmap snd
+    doubleToValue = VFloat
+    dimProbToDouble = replaceForNanOrInf . either (const 0.0) snd
 
 replaceForNanOrInf :: Double -> Double
-replaceForNanOrInf value 
-  | isNaN value = 0.0 
-  | isInfinite value = 100000000 
+replaceForNanOrInf value
+  | isNaN value = 0.0
+  | isInfinite value = 100000000
   | otherwise = value
 
 -- TODO: f gets executed twice per step value

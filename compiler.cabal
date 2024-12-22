@@ -42,7 +42,7 @@ library lib
                       Chart,
                       Spn
     hs-source-dirs:   src 
-    build-depends:    base ^>=4.17.2.1, containers, random, statistics, MonadRandom, Chart, Chart-diagrams
+    build-depends:    base ^>=4.17.2.1, containers, random, statistics, MonadRandom, Chart, Chart-diagrams, mtl, transformers
     default-language: GHC2021
 
 executable compiler

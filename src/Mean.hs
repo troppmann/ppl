@@ -31,7 +31,9 @@ meanExpr (Divide e1 e2) = do
   m2 <- meanExpr e2
   return $ m1 / m2
 meanExpr (IfThenElse condExpr branchE1 branchE2) = do
-  (_dim, prob) <- interpret condExpr (VBool True)
+  -- Todo(21.12.24) :: fix with program or so dummyProgram
+  --(_dim, prob) <- interpret condExpr (VBool True)
+  let (_dim, prob) = (-1,-1.0)
   let probFalse = 1 - prob
   m1 <- meanExpr branchE1
   m2 <- meanExpr branchE2

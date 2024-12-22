@@ -7,21 +7,20 @@ module Chart
   )
 where
 
-import ApproximateIntegration (LinearSpacing (..), convertExprToFunction, trapezTwoPoints)
+import ApproximateIntegration (LinearSpacing (..), trapezTwoPoints, convertProgramToFunction)
 import ApproximateIntegration qualified as LinearSpacing
 import Control.Monad.Random
 import Debug.Extended
 import DistributionSampler
 import Graphics.Rendering.Chart.Backend.Diagrams (toFile)
 import Graphics.Rendering.Chart.Easy
-import Parser.String
 import Representation
 import Interpret
 
 type Point2D = (Double, Double)
 
-createPoints :: Expr -> LinearSpacing -> [Point2D]
-createPoints expr spacing = addYValues (convertExprToFunction expr) (xValues spacing)
+createPoints :: Program -> LinearSpacing -> [Point2D]
+createPoints program spacing = addYValues (convertProgramToFunction program) (xValues spacing)
 
 xValues :: LinearSpacing -> [Double]
 xValues spacing = [(LinearSpacing.start spacing), second .. (end spacing)]
@@ -35,15 +34,15 @@ type FileName = String
 
 type NumberOfSamples = Int
 
-plotDensityToFile :: FileName -> Expr -> LinearSpacing -> NumberOfSamples -> IO ()
-plotDensityToFile filename expr spacing numberOfSamples = do
-  let interpretedLine = createPoints expr spacing
+plotDensityToFile :: FileName -> Program -> LinearSpacing -> NumberOfSamples -> IO ()
+plotDensityToFile filename program spacing numberOfSamples = do
+  let interpretedLine = createPoints program spacing
   let approx = approxDensity (tail interpretedLine) (head interpretedLine)
-  sampledDis <- evalRandIO (sampleDistr expr SampleInfo {start = LinearSpacing.start spacing, stepWidth = LinearSpacing.stepWidth spacing, numberOfSamples})
-  let sampledBars = map (\(x, y) -> (x + 0.5 * LinearSpacing.stepWidth spacing, [y])) $ convertToList sampledDis
+  sampledLine <- evalRandIO (sampleDensity program SampleInfo {start = LinearSpacing.start spacing, stepWidth = LinearSpacing.stepWidth spacing, numberOfSamples})
+  let sampledBars = map (\(x, y) -> (x + 0.5 * LinearSpacing.stepWidth spacing, [y])) sampledLine
 
   toFile def filename $ do
-    layout_title .= "PDF  \n " ++ toString expr
+    layout_title .= "PDF"
     setColors [opaque blue, opaque red]
     plot $ plotBars <$> normalBars ["Sampled"] sampledBars
     plot (line ("Inferred ~Area: " ++ showFloatN approx 5) [interpretedLine])
@@ -63,15 +62,15 @@ approxDensity :: [(Double, Double)] -> (Double, Double) -> Double
 approxDensity [] _point = 0.0
 approxDensity (x : xs) point = trapezTwoPoints point x + approxDensity xs x
 
-plotMassToFile :: FileName -> Expr -> NumberOfSamples -> IO ()
-plotMassToFile filename expr numberOfSamples = do
-  sampledMasses <- evalRandIO (sampleMass expr numberOfSamples)
+plotMassToFile :: FileName -> Program -> NumberOfSamples -> IO ()
+plotMassToFile filename program numberOfSamples = do
+  sampledMasses <- evalRandIO (sampleMass program numberOfSamples)
   let sampledPointLine = toBarLayout sampledMasses
-  let inferPoints = map (\(x, _) -> (x, snd $ unwrapEither $ interpret expr (VFloat x))) sampledMasses
+  let inferPoints = map (\(x, _) -> (x, snd $ unwrapEither $ inferProgram program (VFloat x))) sampledMasses
   let inferPointLine = toBarLayout inferPoints
   let totalMass = sum . map snd $ inferPoints
   toFile def filename $ do
-    layout_title .= "PMF  \n " ++ toString expr
+    layout_title .= "PMF" 
     setColors [withOpacity blue 0.8, withOpacity blue 0.8, withOpacity red 0.8, withOpacity red 0.8]
     setShapes [PointShapeCircle, PointShapeCircle, PointShapeCircle]
     plot $ plotBars <$> pointLines ["Sampled"] sampledPointLine
