@@ -25,7 +25,7 @@ main :: IO ()
 main = do
   --s <- readFile "test.ppl"
   --let expr = unwrapEither $ parseExpr s
-  let program = [("main", IfThenElse (LessThan Uniform (Const $ VFloat 0.2)) (Multiply Normal (Const $ VFloat 0.5))(Plus (Const $ VFloat 2.0) (FnCall "main" [])))]
+  let program = [("main", FnCall "dice" [Const $ VFloat 6.0]),("dice", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (FnParameter 0) (IfThenElse (LessThan Uniform (Divide (Const $ VFloat 1.0) (FnParameter 0))) (FnParameter 0) (FnCall "dice" [Subtract (FnParameter 0) (Const $ VFloat 1.0)])))]
   sample <- sampleProgram program
   print sample
   -- sample0 <- sampleExpr expr
@@ -37,8 +37,8 @@ main = do
   -- print $ "Validate: " ++ show integral
   let spacing = LinearSpacing {start = -4, end = 60, stepWidth = 0.1}
   let numberOfSamples = 100000
-  plotDensityToFile "pdf.svg" program spacing numberOfSamples
-  --plotMassToFile "pmf.svg" program numberOfSamples
+  --plotDensityToFile "pdf.svg" program spacing numberOfSamples
+  plotMassToFile "pmf.svg" program numberOfSamples
   --let value = VFloat 0.0
   --let prob = interpret expr value
   --print ("Test: " <> show value <> " -> " <> showFloatN (snd $ unwrapEither prob) 5)

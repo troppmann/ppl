@@ -1,8 +1,8 @@
 module Sample
-  ( sampleExpr,
-    sampleRand,
+  ( sampleRand,
     sampleProgram,
-    SampleRuntime(..),
+    findParameter,
+    SampleRuntime (..),
     defaultSampleRuntime,
   )
 where
@@ -19,11 +19,8 @@ sampleProgram program = evalRandIO $ sampleRand rt mainExpr
     rt = defaultSampleRuntime program
     mainExpr = unwrapMaybe $ lookup "main" program
 
-sampleExpr :: Expr -> IO Value
-sampleExpr expr = todo "Wrap in main"
-
 defaultSampleRuntime :: Program -> SampleRuntime
-defaultSampleRuntime program = SampleRuntime {program, arguments = [], recursionDepth = 0, maxRecursionDepth = 10000} 
+defaultSampleRuntime program = SampleRuntime {program, arguments = [], recursionDepth = 0, maxRecursionDepth = 10000}
 
 data SampleRuntime = SampleRuntime
   { program :: Program,
@@ -59,16 +56,30 @@ sampleRand rt (GreaterThan e1 e2) = apply rt (evaluateCompare (>)) e1 e2
 sampleRand rt (GreaterThanOrEqual e1 e2) = apply rt (evaluateCompare (>=)) e1 e2
 sampleRand rt (IfThenElse e1 e2 e3) = sampleIfElse rt e1 e2 e3
 sampleRand rt (CreateTuple e1 e2) = sampleTuple rt e1 e2
-sampleRand rt (FnCall fnName _arguments) = do
-  case lookup fnName (program rt ) of
-    (Just expr) -> do 
+sampleRand rt (FnCall fnName arguments) = do
+  case lookup fnName (program rt) of
+    (Just expr) -> do
       let newDepth = 1 + recursionDepth rt
-      let newRt = rt {recursionDepth = newDepth}
-      if newDepth >= maxRecursionDepth rt then
-        error $ "Max Recursion Depth reached: " ++ show (maxRecursionDepth rt)
-      else
-        sampleRand newRt expr 
+      sampledArguments <- traverse (sampleRand rt) arguments
+      let newRt = rt {recursionDepth = newDepth, arguments = sampledArguments}
+      if newDepth > maxRecursionDepth rt
+        then
+          error $ "Max Recursion Depth reached: " ++ show (maxRecursionDepth rt)
+        else
+          sampleRand newRt expr
     Nothing -> error $ "Could not find FnName: " <> fnName <> " ."
+sampleRand rt (FnParameter index) = return $ unwrapEither $ findParameter (arguments rt) index
+
+
+
+
+findParameter :: [a] -> Int -> Either String a
+findParameter [] index = Left $ "Could not find Parameter with index: " ++ show index
+findParameter (x:xs) index 
+  | index <= 0 = Right x
+  | otherwise = findParameter xs (index-1) 
+
+
 
 apply :: (MonadRandom m) => SampleRuntime -> (Value -> Value -> Value) -> Expr -> Expr -> m Value
 apply rt f e1 e2 = do
@@ -105,12 +116,12 @@ sampleOr rt e1 e2 = do
       v2 <- sampleRand rt e2
       return $ VBool $ evaluateAsBool v2
 
-sampleNot :: (MonadRandom m) => SampleRuntime ->  Expr -> m Value
+sampleNot :: (MonadRandom m) => SampleRuntime -> Expr -> m Value
 sampleNot rt expr = do
   value <- sampleRand rt expr
   return $ VBool $ not $ evaluateAsBool value
 
-sampleTuple :: (MonadRandom m) => SampleRuntime ->  Expr -> Expr -> m Value
+sampleTuple :: (MonadRandom m) => SampleRuntime -> Expr -> Expr -> m Value
 sampleTuple rt e1 e2 = do
   v1 <- sampleRand rt e1
   v2 <- sampleRand rt e2

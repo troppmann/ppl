@@ -3,83 +3,96 @@ module Evaluate
     evalArithmetic,
     evalAsBool,
     evalAsFloat,
+    evalCompare,
   )
 where
 
--- TODO:  Sample and Evaluate ar mostly the same could be refactored together
---        but could be less readable
 import Representation
+import Runtime
+import Sample (findParameter)
+import Debug.Extended
 
 type ErrorString = String
 
 type ResultValue = Either ErrorString Value
 
-evalConstExpr :: Expr -> ResultValue
-evalConstExpr (Const v) = Right v
-evalConstExpr Normal = Left "Normal is not a constant."
-evalConstExpr Uniform = Left "Uniform is not a constant."
-evalConstExpr (Plus e1 e2) = apply (evalArithmetic (+)) e1 e2
-evalConstExpr (Multiply e1 e2) = apply (evalArithmetic (*)) e1 e2
-evalConstExpr (Subtract e1 e2) = apply (evalArithmetic (-)) e1 e2
-evalConstExpr (Divide e1 e2) = apply (evalArithmetic (/)) e1 e2
-evalConstExpr (Exponent e1 e2) = apply (evalArithmetic (**)) e1 e2
-evalConstExpr (And e1 e2) = evalAnd e1 e2
-evalConstExpr (Or e1 e2) = evalOr e1 e2
-evalConstExpr (Not expr) = evalNot expr
-evalConstExpr (Equal e1 e2) = apply (evalCompare (==)) e1 e2
-evalConstExpr (Unequal e1 e2) = apply (evalCompare (/=)) e1 e2
-evalConstExpr (LessThan e1 e2) = apply (evalCompare (<)) e1 e2
-evalConstExpr (LessThanOrEqual e1 e2) = apply (evalCompare (<=)) e1 e2
-evalConstExpr (GreaterThan e1 e2) = apply (evalCompare (>)) e1 e2
-evalConstExpr (GreaterThanOrEqual e1 e2) = apply (evalCompare (>=)) e1 e2
-evalConstExpr (IfThenElse e1 e2 e3) = evalIfThenElse e1 e2 e3
-evalConstExpr (CreateTuple e1 e2) = evalCreateTuple e1 e2
+evalConstExpr :: InferRuntime -> Expr -> ResultValue
+evalConstExpr _ (Const v) = Right v
+evalConstExpr _ Normal = Left "Normal is not a constant."
+evalConstExpr _ Uniform = Left "Uniform is not a constant."
+evalConstExpr rt (Plus e1 e2) = apply rt (evalArithmetic (+)) e1 e2
+evalConstExpr rt (Multiply e1 e2) = apply rt (evalArithmetic (*)) e1 e2
+evalConstExpr rt (Subtract e1 e2) = apply rt (evalArithmetic (-)) e1 e2
+evalConstExpr rt (Divide e1 e2) = apply rt (evalArithmetic (/)) e1 e2
+evalConstExpr rt (Exponent e1 e2) = apply rt (evalArithmetic (**)) e1 e2
+evalConstExpr rt (And e1 e2) = evalAnd rt e1 e2
+evalConstExpr rt (Or e1 e2) = evalOr rt e1 e2
+evalConstExpr rt (Not expr) = evalNot rt expr
+evalConstExpr rt (Equal e1 e2) = apply rt (evalCompare (==)) e1 e2
+evalConstExpr rt (Unequal e1 e2) = apply rt (evalCompare (/=)) e1 e2
+evalConstExpr rt (LessThan e1 e2) = apply rt (evalCompare (<)) e1 e2
+evalConstExpr rt (LessThanOrEqual e1 e2) = apply rt (evalCompare (<=)) e1 e2
+evalConstExpr rt (GreaterThan e1 e2) = apply rt (evalCompare (>)) e1 e2
+evalConstExpr rt (GreaterThanOrEqual e1 e2) = apply rt (evalCompare (>=)) e1 e2
+evalConstExpr rt (IfThenElse e1 e2 e3) = evalIfThenElse rt e1 e2 e3
+evalConstExpr rt (CreateTuple e1 e2) = evalCreateTuple rt e1 e2
+evalConstExpr rt (FnCall _ _) = Left "FnCall could be not a constant."
+evalConstExpr rt (FnParameter index) = do
+  expr <- dbg $ findParameter (arguments rt) index
+  evalConstExpr rt expr
 
-apply :: (Value -> Value -> ResultValue) -> Expr -> Expr -> ResultValue
-apply f e1 e2 = do
-  v1 <- evalConstExpr e1
-  v2 <- evalConstExpr e2
+
+apply :: InferRuntime -> (Value -> Value -> ResultValue) -> Expr -> Expr -> ResultValue
+apply rt f e1 e2 = do
+  v1 <- evalConstExpr rt e1
+  v2 <- evalConstExpr rt e2
   f v1 v2
 
-evalAnd :: Expr -> Expr -> ResultValue
-evalAnd e1 e2 = do
-  v1 <- evalConstExpr e1
+evalAnd :: InferRuntime -> Expr -> Expr -> ResultValue
+evalAnd rt e1 e2 = do
+  v1 <- evalConstExpr rt e1
   b1 <- evalAsBool v1
   if b1
     then do
-      v2 <- evalConstExpr e2
+      v2 <- evalConstExpr rt e2
       b2 <- evalAsBool v2
       return $ VBool b2
     else
       return $ VBool False
 
-evalOr :: Expr -> Expr -> ResultValue
-evalOr e1 e2 = do
-  v1 <- evalConstExpr e1
+evalOr :: InferRuntime -> Expr -> Expr -> ResultValue
+evalOr rt e1 e2 = do
+  v1 <- evalConstExpr rt e1
   b1 <- evalAsBool v1
   if b1
     then
       return $ VBool True
     else do
-      v2 <- evalConstExpr e2
+      v2 <- evalConstExpr rt e2
       b2 <- evalAsBool v2
       return $ VBool b2
 
-evalNot :: Expr -> ResultValue
-evalNot expr = do
-  value <- evalConstExpr expr
+evalNot :: InferRuntime -> Expr -> ResultValue
+evalNot rt expr = do
+  value <- evalConstExpr rt expr
   bool <- evalAsBool value
   return $ VBool $ not bool
 
-evalIfThenElse :: Expr -> Expr -> Expr -> ResultValue
-evalIfThenElse e1 e2 e3 = do
-  v1 <- evalConstExpr e1
+evalIfThenElse :: InferRuntime -> Expr -> Expr -> Expr -> ResultValue
+evalIfThenElse rt e1 e2 e3 = do
+  v1 <- evalConstExpr rt e1
   bool <- evalAsBool v1
   if bool
     then
-      evalConstExpr e2
+      evalConstExpr rt e2
     else
-      evalConstExpr e3
+      evalConstExpr rt e3
+
+evalCreateTuple :: InferRuntime -> Expr -> Expr -> ResultValue
+evalCreateTuple rt e1 e2 = do
+  v1 <- evalConstExpr rt e1
+  v2 <- evalConstExpr rt e2
+  return $ VTuple v1 v2
 
 evalAsBool :: Value -> Either ErrorString Bool
 evalAsBool (VBool b) = Right b
@@ -97,9 +110,3 @@ evalCompare :: (forall a. (Eq a, Ord a) => a -> a -> Bool) -> Value -> Value -> 
 evalCompare f (VFloat x) (VFloat y) = Right (VBool $ f x y)
 evalCompare f (VBool x) (VBool y) = Right (VBool $ f x y)
 evalCompare _ v1 v2 = Left $ "Error: Can't compare " <> show v1 <> " with " <> show v2 <> "."
-
-evalCreateTuple :: Expr -> Expr -> ResultValue
-evalCreateTuple e1 e2 = do
-  v1 <- evalConstExpr e1
-  v2 <- evalConstExpr e2
-  return $ VTuple v1 v2

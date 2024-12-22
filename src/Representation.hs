@@ -33,6 +33,7 @@ data Expr
   | CreateTuple Expr Expr
   | Exponent Expr Expr
   | FnCall FnName [Expr]
+  | FnParameter Int
   deriving (Show, Read, Eq)
 
 type FnName = String

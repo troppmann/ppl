@@ -31,6 +31,7 @@ library lib
                       Evaluate,
                       Interpret, 
                       MaximumAPosteriori,
+                      Optimizer,
                       Mean,
                       Parser,
                       Parser.Expr, 
@@ -38,6 +39,7 @@ library lib
                       Parser.String,
                       Query,
                       Representation, 
+                      Runtime,
                       Sample, 
                       Chart,
                       Spn

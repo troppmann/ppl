@@ -1,4 +1,4 @@
-main = if Uniform < 0.2 then
-            Normal * 0.5
+dice x = if x <= 1 then 
+            1
         else 
-            2 + main
+            (if Uniform < (1/x) then x else dice (x-1))
