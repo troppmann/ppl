@@ -9,7 +9,6 @@ module DistributionSampler
 where
 
 import Control.Monad.Random
-import Control.Monad.Reader
 import Data.Bifunctor qualified
 import Data.Map qualified as Map
 import Data.Maybe
@@ -33,7 +32,7 @@ data SampledDensity = SampledDensity
 sampleDensity :: (MonadRandom m) => Program -> SampleInfo -> m [(Double, Double)]
 sampleDensity program info = do
   let mainExpr = unwrapMaybe $ lookup "main" program
-  samples <- fmap (fmap convertToFloat) (replicateM (numberOfSamples info) $ runReaderT (sampleRand mainExpr) program)
+  samples <- fmap (fmap convertToFloat) (replicateM (numberOfSamples info) $ sampleRand (defaultSampleRuntime program) mainExpr)
   let indices = map (toBucketIndex info) samples
   let densities =
         map (\(x, y) -> (fromBucketIndex info x, y / fromIntegral (numberOfSamples info) / stepWidth info))
@@ -70,7 +69,7 @@ convertToList sampledDis = map (Data.Bifunctor.first (fromBucketIndex (info samp
 sampleMass :: (MonadRandom m) => Program -> Int -> m [(Double, Double)]
 sampleMass program numberOfSamples = do
   let mainExpr = unwrapMaybe $ lookup "main" program
-  samples <- fmap (fmap convertToFloat) (replicateM numberOfSamples $ runReaderT (sampleRand mainExpr) program)
+  samples <- fmap (fmap convertToFloat) (replicateM numberOfSamples $ sampleRand (defaultSampleRuntime program) mainExpr)
   let masses =
         map (\(x, y) -> (x, y / fromIntegral numberOfSamples))
           . Map.toList

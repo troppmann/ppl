@@ -2,103 +2,118 @@ module Sample
   ( sampleExpr,
     sampleRand,
     sampleProgram,
+    SampleRuntime(..),
+    defaultSampleRuntime,
   )
 where
 
 import Control.Monad.Random
-import Control.Monad.Reader
 import Debug.Extended
 import Representation
 import Statistics.Distribution
 import Statistics.Distribution.Normal (normalDistr)
 
 sampleProgram :: Program -> IO Value
-sampleProgram program = evalRandIO $ runReaderT (sampleRand mainExpr) program
+sampleProgram program = evalRandIO $ sampleRand rt mainExpr
   where
+    rt = defaultSampleRuntime program
     mainExpr = unwrapMaybe $ lookup "main" program
 
-type RandomProgram m a = ReaderT Program m a
-
 sampleExpr :: Expr -> IO Value
-sampleExpr expr = evalRandIO $ runReaderT (sampleRand expr) []
+sampleExpr expr = todo "Wrap in main"
 
-sampleRand :: (MonadRandom m) => Expr -> RandomProgram m Value
-sampleRand (Const v) = return v
-sampleRand Uniform = do
+defaultSampleRuntime :: Program -> SampleRuntime
+defaultSampleRuntime program = SampleRuntime {program, arguments = [], recursionDepth = 0, maxRecursionDepth = 10000} 
+
+data SampleRuntime = SampleRuntime
+  { program :: Program,
+    arguments :: [Value],
+    recursionDepth :: Int,
+    maxRecursionDepth :: Int
+  }
+  deriving (Show, Eq)
+
+sampleRand :: (MonadRandom m) => SampleRuntime -> Expr -> m Value
+sampleRand _ (Const v) = return v
+sampleRand _ Uniform = do
   rValue <- getRandomR (0.0, 1.0)
   return $ VFloat rValue
-sampleRand Normal = do
+sampleRand _ Normal = do
   rValue <- getRandomR (0, 1)
   let normal = normalDistr 0.0 1.0
   let nValue = quantile normal rValue
   return $ VFloat nValue
-sampleRand (Plus e1 e2) = apply (evaluateArithmetic (+)) e1 e2
-sampleRand (Exponent e1 e2) = apply (evaluateArithmetic (**)) e1 e2
-sampleRand (Multiply e1 e2) = apply (evaluateArithmetic (*)) e1 e2
-sampleRand (Subtract e1 e2) = apply (evaluateArithmetic (-)) e1 e2
-sampleRand (Divide e1 e2) = apply (evaluateArithmetic (/)) e1 e2
-sampleRand (And e1 e2) = sampleAnd e1 e2
-sampleRand (Or e1 e2) = sampleOr e1 e2
-sampleRand (Not expr) = sampleNot expr
-sampleRand (Equal e1 e2) = apply (evaluateCompare (==)) e1 e2
-sampleRand (Unequal e1 e2) = apply (evaluateCompare (/=)) e1 e2
-sampleRand (LessThan e1 e2) = apply (evaluateCompare (<)) e1 e2
-sampleRand (LessThanOrEqual e1 e2) = apply (evaluateCompare (<=)) e1 e2
-sampleRand (GreaterThan e1 e2) = apply (evaluateCompare (>)) e1 e2
-sampleRand (GreaterThanOrEqual e1 e2) = apply (evaluateCompare (>=)) e1 e2
-sampleRand (IfThenElse e1 e2 e3) = sampleIfElse e1 e2 e3
-sampleRand (CreateTuple e1 e2) = sampleTuple e1 e2
-sampleRand (FnCall fnName _arguments) = do
-  program <- ask
-  case lookup fnName program of
-    (Just expr) -> sampleRand expr
+sampleRand rt (Plus e1 e2) = apply rt (evaluateArithmetic (+)) e1 e2
+sampleRand rt (Exponent e1 e2) = apply rt (evaluateArithmetic (**)) e1 e2
+sampleRand rt (Multiply e1 e2) = apply rt (evaluateArithmetic (*)) e1 e2
+sampleRand rt (Subtract e1 e2) = apply rt (evaluateArithmetic (-)) e1 e2
+sampleRand rt (Divide e1 e2) = apply rt (evaluateArithmetic (/)) e1 e2
+sampleRand rt (And e1 e2) = sampleAnd rt e1 e2
+sampleRand rt (Or e1 e2) = sampleOr rt e1 e2
+sampleRand rt (Not expr) = sampleNot rt expr
+sampleRand rt (Equal e1 e2) = apply rt (evaluateCompare (==)) e1 e2
+sampleRand rt (Unequal e1 e2) = apply rt (evaluateCompare (/=)) e1 e2
+sampleRand rt (LessThan e1 e2) = apply rt (evaluateCompare (<)) e1 e2
+sampleRand rt (LessThanOrEqual e1 e2) = apply rt (evaluateCompare (<=)) e1 e2
+sampleRand rt (GreaterThan e1 e2) = apply rt (evaluateCompare (>)) e1 e2
+sampleRand rt (GreaterThanOrEqual e1 e2) = apply rt (evaluateCompare (>=)) e1 e2
+sampleRand rt (IfThenElse e1 e2 e3) = sampleIfElse rt e1 e2 e3
+sampleRand rt (CreateTuple e1 e2) = sampleTuple rt e1 e2
+sampleRand rt (FnCall fnName _arguments) = do
+  case lookup fnName (program rt ) of
+    (Just expr) -> do 
+      let newDepth = 1 + recursionDepth rt
+      let newRt = rt {recursionDepth = newDepth}
+      if newDepth >= maxRecursionDepth rt then
+        error $ "Max Recursion Depth reached: " ++ show (maxRecursionDepth rt)
+      else
+        sampleRand newRt expr 
     Nothing -> error $ "Could not find FnName: " <> fnName <> " ."
 
-
-apply :: (MonadRandom m) => (Value -> Value -> Value) -> Expr -> Expr -> RandomProgram m Value
-apply f e1 e2 = do
-  v1 <- sampleRand e1
-  v2 <- sampleRand e2
+apply :: (MonadRandom m) => SampleRuntime -> (Value -> Value -> Value) -> Expr -> Expr -> m Value
+apply rt f e1 e2 = do
+  v1 <- sampleRand rt e1
+  v2 <- sampleRand rt e2
   return $ f v1 v2
 
-sampleIfElse :: (MonadRandom m) => Expr -> Expr -> Expr -> RandomProgram m Value
-sampleIfElse e1 e2 e3 = do
-  v1 <- sampleRand e1
+sampleIfElse :: (MonadRandom m) => SampleRuntime -> Expr -> Expr -> Expr -> m Value
+sampleIfElse rt e1 e2 e3 = do
+  v1 <- sampleRand rt e1
   if evaluateAsBool v1
     then
-      sampleRand e2
+      sampleRand rt e2
     else
-      sampleRand e3
+      sampleRand rt e3
 
-sampleAnd :: (MonadRandom m) => Expr -> Expr -> RandomProgram m Value
-sampleAnd e1 e2 = do
-  v1 <- sampleRand e1
+sampleAnd :: (MonadRandom m) => SampleRuntime -> Expr -> Expr -> m Value
+sampleAnd rt e1 e2 = do
+  v1 <- sampleRand rt e1
   if evaluateAsBool v1
     then do
-      v2 <- sampleRand e2
+      v2 <- sampleRand rt e2
       return $ VBool $ evaluateAsBool v2
     else
       return $ VBool False
 
-sampleOr :: (MonadRandom m) => Expr -> Expr -> RandomProgram m Value
-sampleOr e1 e2 = do
-  v1 <- sampleRand e1
+sampleOr :: (MonadRandom m) => SampleRuntime -> Expr -> Expr -> m Value
+sampleOr rt e1 e2 = do
+  v1 <- sampleRand rt e1
   if evaluateAsBool v1
     then
       return $ VBool True
     else do
-      v2 <- sampleRand e2
+      v2 <- sampleRand rt e2
       return $ VBool $ evaluateAsBool v2
 
-sampleNot :: (MonadRandom m) => Expr -> RandomProgram m Value
-sampleNot expr = do
-  value <- sampleRand expr
+sampleNot :: (MonadRandom m) => SampleRuntime ->  Expr -> m Value
+sampleNot rt expr = do
+  value <- sampleRand rt expr
   return $ VBool $ not $ evaluateAsBool value
 
-sampleTuple :: (MonadRandom m) => Expr -> Expr -> RandomProgram m Value
-sampleTuple e1 e2 = do
-  v1 <- sampleRand e1
-  v2 <- sampleRand e2
+sampleTuple :: (MonadRandom m) => SampleRuntime ->  Expr -> Expr -> m Value
+sampleTuple rt e1 e2 = do
+  v1 <- sampleRand rt e1
+  v2 <- sampleRand rt e2
   return $ VTuple v1 v2
 
 evaluateAsBool :: Value -> Bool
