@@ -1,6 +1,6 @@
 module Interpret
   ( inferProgram,
-    InferRunTime (..),
+    InferRuntime (..),
     interpret,
   )
 where
@@ -16,10 +16,10 @@ import Prelude hiding (EQ, GT, LT)
 inferProgram :: Program -> Value -> Either String DimensionalProbability
 inferProgram program value = do
   mainExpr <- justOr (lookup "main" program) "main-Func not found."
-  let runTime = InferRunTime {program, arguments = [], recursionDepth = 0, maxRecursionDepth = 100}
+  let runTime = InferRuntime {program, arguments = [], recursionDepth = 0, maxRecursionDepth = 100}
   interpret runTime mainExpr value
 
-data InferRunTime = InferRunTime
+data InferRuntime = InferRuntime
   { program :: Program,
     arguments :: [Value],
     recursionDepth :: Int,
@@ -27,7 +27,7 @@ data InferRunTime = InferRunTime
   }
   deriving (Show, Eq)
 
-interpret :: InferRunTime -> Expr -> Value -> Either String DimensionalProbability
+interpret :: InferRuntime -> Expr -> Value -> Either String DimensionalProbability
 interpret _ Uniform (VFloat v) = Right (1, if 0.0 <= v && v < 1.0 then 1.0 else 0.0)
 interpret _ Normal (VFloat v) = Right (1, density distr v)
   where
@@ -213,7 +213,7 @@ swap GT = LT
 swap GE = LE
 
 -- TODO 06.09.2024: Should i add a dimension differentiation?
-compareFloatExpr :: InferRunTime -> Expr -> CompareQuery -> Either String Double
+compareFloatExpr :: InferRuntime -> Expr -> CompareQuery -> Either String Double
 compareFloatExpr _ (Const (VBool _)) _ = Left "Expected Float got Bool."
 compareFloatExpr _ (Const (VFloat constant)) (ord, value) = return $ case ord of
   LT -> if constant < value then 1.0 else 0.0
