@@ -1,6 +1,5 @@
 module Interpret
   ( inferProgram,
-    InferRuntime (..),
     interpret,
   )
 where

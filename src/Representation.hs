@@ -3,6 +3,7 @@ module Representation
     Value (..),
     FnName,
     Program,
+    wrapInMain,
     DimensionalProbability,
     Dimension,
     Probability,
@@ -46,6 +47,9 @@ data Value
   deriving (Show, Read, Eq)
 
 type Program = [(FnName, Expr)]
+
+wrapInMain :: Expr -> Program
+wrapInMain expr = [("main", expr)]
 
 type Probability = Double
 

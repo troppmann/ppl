@@ -16,6 +16,7 @@ import Chart
 import Control.Monad.Random (replicateM, evalRandIO)
 import Data.List
 import Representation (Expr(IfThenElse))
+import Optimizer
 
 toFloat :: Value -> Double
 toFloat (VFloat f) = f
@@ -24,21 +25,31 @@ toFloat _ = -1
 main :: IO ()
 main = do
   --s <- readFile "test.ppl"
-  --let expr = unwrapEither $ parseExpr s
+  --let program = wrapInMain $ unwrapEither $ parseExpr s
+  print "Programs"
+  --let program = [("main", FnCall "factorial" [Const $ VFloat 5.0]),("factorial", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (Const $ VFloat 1.0) (Multiply (FnParameter 0) (FnCall "factorial" [Subtract (FnParameter 0)(Const $ VFloat 1.0)])))]
   let program = [("main", FnCall "dice" [Const $ VFloat 6.0]),("dice", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (FnParameter 0) (IfThenElse (LessThan Uniform (Divide (Const $ VFloat 1.0) (FnParameter 0))) (FnParameter 0) (FnCall "dice" [Subtract (FnParameter 0) (Const $ VFloat 1.0)])))]
+  print program
+  let optProgram = optimize program
+  print $ head optProgram
+  print "Samples"
   sample <- sampleProgram program
   print sample
-  -- sample0 <- sampleExpr expr
-  --print sample0
+  optSample <- sampleProgram optProgram
+  print optSample
+  --let program = [("main", FnCall "dice" [Const $ VFloat 6.0]),("dice", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (FnParameter 0) (IfThenElse (LessThan Uniform (Divide (Const $ VFloat 1.0) (FnParameter 0))) (FnParameter 0) (FnCall "dice" [Subtract (FnParameter 0) (Const $ VFloat 1.0)])))]
+  --print program
+  -- sample <- sampleProgram program
+  -- print sample
   -- sampledDis <- evalRandIO (sampleDistr expr SampleInfo {start = 0, stepWidth = 0.05, numberOfSamples = 100000})
   -- print sampledDis
   -- print $ density sampledDis 2.0
   -- let integral = validateExpr LinearSpacing {start = -10, end = 10, stepWidth = 0.10} expr
   -- print $ "Validate: " ++ show integral
-  let spacing = LinearSpacing {start = -4, end = 60, stepWidth = 0.1}
-  let numberOfSamples = 100000
+  --let spacing = LinearSpacing {start = -4, end = 60, stepWidth = 0.1}
+  --let numberOfSamples = 100000
   --plotDensityToFile "pdf.svg" program spacing numberOfSamples
-  plotMassToFile "pmf.svg" program numberOfSamples
+  --plotMassToFile "pmf.svg" program numberOfSamples
   --let value = VFloat 0.0
   --let prob = interpret expr value
   --print ("Test: " <> show value <> " -> " <> showFloatN (snd $ unwrapEither prob) 5)

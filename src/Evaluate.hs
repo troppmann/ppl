@@ -36,7 +36,7 @@ evalConstExpr rt (GreaterThan e1 e2) = apply rt (evalCompare (>)) e1 e2
 evalConstExpr rt (GreaterThanOrEqual e1 e2) = apply rt (evalCompare (>=)) e1 e2
 evalConstExpr rt (IfThenElse e1 e2 e3) = evalIfThenElse rt e1 e2 e3
 evalConstExpr rt (CreateTuple e1 e2) = evalCreateTuple rt e1 e2
-evalConstExpr rt (FnCall _ _) = Left "FnCall could be not a constant."
+evalConstExpr _ (FnCall _ _) = Left "FnCall could be not a constant."
 evalConstExpr rt (FnParameter index) = do
   expr <- dbg $ findParameter (arguments rt) index
   evalConstExpr rt expr

@@ -6,6 +6,7 @@ where
 
 import Interpret
 import Representation
+import Runtime
 
 data QueryType
   = QAny -- other names: undefined anything unspecified blank uncertain

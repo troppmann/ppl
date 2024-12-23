@@ -1,5 +1,6 @@
 module Runtime
   ( InferRuntime (..),
+    defaultInferRuntime,
   )
 where
 import Representation
@@ -11,3 +12,6 @@ data InferRuntime = InferRuntime
     maxRecursionDepth :: Int
   }
   deriving (Show, Eq)
+
+defaultInferRuntime :: Program -> InferRuntime
+defaultInferRuntime program = InferRuntime {program, arguments=[], recursionDepth=0, maxRecursionDepth=100}
