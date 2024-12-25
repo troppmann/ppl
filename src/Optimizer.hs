@@ -5,21 +5,21 @@ module Optimizer
 where
 
 import Control.Monad.State
+import Control.Monad.Except
 import Runtime
 import Representation
 import Sample (findParameter)
-import Data.Bifunctor
 import Debug.Extended
 
 optimize :: Program -> Program
-optimize program = map (Data.Bifunctor.second optExpr) program
+optimize program = map (\(fnName,expr) -> (fnName, unwrapEither $ optExpr fnName expr)) program
   where
-    runTime = InferRuntime {program, arguments=[], recursionDepth=0, maxRecursionDepth=10}
-    optExpr expr = evalState (optimizeExpr expr) runTime
+    runTime fnName = InferRuntime {program, arguments=[], currentFnName=fnName, recursionDepth=0, maxRecursionDepth=10}
+    optExpr fnName expr = runExcept $ evalStateT (optimizeExpr expr) (runTime fnName)
 
 
-
-type RuntimeState a = State InferRuntime a
+type ErrorString = String
+type RuntimeState a = StateT InferRuntime (Except ErrorString) a
 
 optimizeExpr :: Expr -> RuntimeState Expr
 optimizeExpr (Plus e1 e2) = optimizeArithmetic e1 e2 Plus (+)
@@ -103,17 +103,24 @@ optimizeFnParameter index = do
     (Right expr) -> return expr
     (Left _) -> return $ FnParameter index
 optimizeFnCall :: FnName -> [Expr] -> RuntimeState Expr
-optimizeFnCall fnName arguments = do
-  optArgs <- traverse optimizeExpr arguments
+optimizeFnCall fnName args = do
+  optArgs <- traverse optimizeExpr args
   rt <- get
   let newExpr = lookup fnName (program rt)
-  case newExpr of 
-    (Just e1) -> do 
-      let newDepth = recursionDepth rt + 1
-      let newRt = rt {recursionDepth=newDepth, arguments=optArgs}
-      put newRt
-      optimizeExpr e1
+  case newExpr of
+    (Just e1) -> do
+      let oldDepth = recursionDepth rt
+      if oldDepth + 1 > maxRecursionDepth rt then
+        throwError "MaxRecursionDepth reached"
+      else do
+        let oldFnName = currentFnName rt
+        let newRt = rt {recursionDepth=oldDepth + 1, arguments=optArgs, currentFnName=fnName}
+        put newRt
+        catchError (optimizeExpr e1) (\_ -> if fnName /= oldFnName || recursionDepth rt <= 0 then 
+          return $ FnCall fnName args
+          else throwError "backTrack cause of MaxRecursionDepth"
+          )
     Nothing ->
-      return $ FnCall fnName arguments
+      return $ FnCall fnName args
 
 
