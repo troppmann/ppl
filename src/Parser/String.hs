@@ -14,7 +14,22 @@ import Representation
 import Data.Char
 
 separate :: String -> [String]
-separate = words . escape
+separate = words . escape . handleNewLines OneLine
+
+
+data NewLineState = OneLine | Stick | Separate 
+handleNewLines :: NewLineState -> String -> String
+handleNewLines _ [] = ""
+handleNewLines OneLine (x: xs)
+  | x == '\n' = handleNewLines Stick xs
+  | otherwise = x : handleNewLines OneLine xs
+handleNewLines Stick (x: xs)
+  | x == '\n' = handleNewLines Separate xs
+  | isSpace x = handleNewLines Stick xs
+  | otherwise = ' ' : x : handleNewLines OneLine xs
+handleNewLines Separate (x: xs)
+  | isSpace x = handleNewLines Separate xs
+  | otherwise = ';' : x : handleNewLines OneLine xs
 
 escape :: String -> String
 escape ('_' : xs) = " _ " ++ escape xs
@@ -81,9 +96,13 @@ toString (LessThan e1 e2) = middle "<" e1 e2
 toString (LessThanOrEqual e1 e2) = middle "<=" e1 e2
 toString (GreaterThan e1 e2) = middle ">" e1 e2
 toString (GreaterThanOrEqual e1 e2) = middle ">=" e1 e2
-toString (IfThenElse e1 e2 e3) = "if " ++ toString e1 ++ " then " ++ toString e2 ++ " else " ++ toString e3 
+toString (IfThenElse e1 e2 e3) = "if " ++ toString e1 ++ " then " ++ toString e2 ++ " else " ++ toString e3
 toString (CreateTuple e1 e2) = "(" ++ toString e1 ++ ", " ++ toString e2 ++ ")"
 toString (Exponent e1 e2) = middle "**" e1 e2
+toString (FnCall fnName expr) = do
+  let args = unwords $ map toString expr
+  "(" ++ fnName ++ " " ++ args ++ ")"
+toString (FnParameter index) = "Arg" ++ show index
 
 
 middle :: String -> Expr -> Expr -> String

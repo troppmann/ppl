@@ -1,2 +1,14 @@
-add x y z1 = (x - z1)/y;
-main = Normal * add 3 4 (2+1);
+
+normal mean std = std * Normal + mean
+
+uniform a b = (b - a) * Uniform 
+            + a
+
+
+
+
+
+
+
+
+main = uniform 10 10
