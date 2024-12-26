@@ -4,27 +4,28 @@ module Optimizer
   )
 where
 
-import Control.Monad.State
 import Control.Monad.Except
-import Runtime
-import Representation
+import Control.Monad.State
 import Debug.Extended
+import Representation
+import Runtime
 
 optimize :: Program -> Program
-optimize program = map (\(fnName,expr) -> (fnName, unwrapEither $ optExpr fnName expr)) program
+optimize program = map (\(fnName, expr) -> (fnName, unwrapEither $ optExpr fnName expr)) program
   where
-    runTime fnName = InferRuntime {program, arguments=[], currentFnName=fnName, recursionDepth=0, maxRecursionDepth=10}
+    runTime fnName = InferRuntime {program, arguments = [], currentFnName = fnName, recursionDepth = 0, maxRecursionDepth = 10}
     optExpr fnName expr = runExcept $ evalStateT (optimizeExpr expr) (runTime fnName)
 
-
 type ErrorString = String
+
 type RuntimeState a = StateT InferRuntime (Except ErrorString) a
 
 optimizeExpr :: Expr -> RuntimeState Expr
-optimizeExpr (Plus e1 e2) = optimizeArithmetic e1 e2 Plus (+)
-optimizeExpr (Subtract e1 e2) = optimizeArithmetic e1 e2 Subtract (-)
-optimizeExpr (Multiply e1 e2) = optimizeArithmetic e1 e2 Multiply (*)
-optimizeExpr (Divide e1 e2) = optimizeArithmetic e1 e2 Divide (/)
+optimizeExpr (Plus e1 e2) = optimizePlus e1 e2
+optimizeExpr (Subtract e1 e2) = optimizeSubtract e1 e2
+optimizeExpr (Multiply e1 e2) = optimizeMultiply e1 e2
+optimizeExpr (Divide e1 e2) = optimizeDivide e1 e2
+optimizeExpr (Exponent e1 e2) = optimizeExponent e1 e2
 optimizeExpr (And e1 e2) = optimizeAnd e1 e2
 optimizeExpr (Or e1 e2) = optimizeOr e1 e2
 optimizeExpr (LessThan e1 e2) = optimizeCompareArithmetic e1 e2 LessThan (<)
@@ -40,13 +41,55 @@ optimizeExpr (FnCall fnName argument) = optimizeFnCall fnName argument
 optimizeExpr (FnParameter index) = optimizeFnParameter index
 optimizeExpr expr = return expr
 
-optimizeArithmetic :: Expr -> Expr -> (Expr -> Expr -> Expr) -> (Double -> Double -> Double) -> RuntimeState Expr
-optimizeArithmetic e1 e2 makeExpr f = do
+optimizePlus :: Expr -> Expr -> RuntimeState Expr
+optimizePlus e1 e2 = do
   opt1 <- optimizeExpr e1
   opt2 <- optimizeExpr e2
   case (opt1, opt2) of
-    (Const (VFloat v1), Const (VFloat v2)) -> return $ Const $ VFloat $ f v1 v2
-    _ -> return $ makeExpr opt1 opt2
+    (_, Const (VFloat 0.0)) -> return opt1
+    (Const (VFloat 0.0), _) -> return opt2
+    (Const (VFloat v1), Const (VFloat v2)) -> return $ Const $ VFloat (v1 + v2)
+    (_, _) -> return $ Plus opt1 opt2
+
+optimizeSubtract :: Expr -> Expr -> RuntimeState Expr
+optimizeSubtract e1 e2 = do
+  opt1 <- optimizeExpr e1
+  opt2 <- optimizeExpr e2
+  case (opt1, opt2) of
+    (_, Const (VFloat 0.0)) -> return opt1
+    (Const (VFloat v1), Const (VFloat v2)) -> return $ Const $ VFloat (v1 - v2)
+    (_, _) -> return $ Subtract opt1 opt2
+
+optimizeMultiply :: Expr -> Expr -> RuntimeState Expr
+optimizeMultiply e1 e2 = do
+  opt1 <- optimizeExpr e1
+  opt2 <- optimizeExpr e2
+  case (opt1, opt2) of
+    (_ ,Const (VFloat 0.0)) -> return (Const (VFloat 0.0))
+    (Const (VFloat 0.0) ,_) -> return (Const (VFloat 0.0))
+    (_ ,Const (VFloat 1.0)) -> return opt1
+    (Const (VFloat 1.0), _) -> return opt2
+    (Const (VFloat v1), Const (VFloat v2)) -> return $ Const $ VFloat (v1 * v2)
+    (_, _) -> return $ Multiply opt1 opt2
+
+optimizeDivide :: Expr -> Expr -> RuntimeState Expr
+optimizeDivide e1 e2 = do
+  opt1 <- optimizeExpr e1
+  opt2 <- optimizeExpr e2
+  case (opt1, opt2) of
+    (_, Const (VFloat 1.0)) -> return opt1
+    (Const (VFloat v1), Const (VFloat v2)) -> return $ Const $ VFloat (v1 / v2)
+    (_, _) -> return $ Divide opt1 opt2
+
+
+optimizeExponent :: Expr -> Expr -> RuntimeState Expr
+optimizeExponent e1 e2 = do
+  opt1 <- optimizeExpr e1
+  opt2 <- optimizeExpr e2
+  case (opt1, opt2) of
+    (_, Const (VFloat 1.0)) -> return opt1
+    (Const (VFloat v1), Const (VFloat v2)) -> return $ Const $ VFloat (v1 ** v2)
+    (_, _) -> return $ Divide opt1 opt2
 
 optimizeOr :: Expr -> Expr -> RuntimeState Expr
 optimizeOr e1 e2 = do
@@ -101,6 +144,7 @@ optimizeFnParameter index = do
   case parameter of
     (Just expr) -> return expr
     Nothing -> return $ FnParameter index
+
 optimizeFnCall :: FnName -> [Expr] -> RuntimeState Expr
 optimizeFnCall fnName args = do
   optArgs <- traverse optimizeExpr args
@@ -109,17 +153,20 @@ optimizeFnCall fnName args = do
   case newExpr of
     (Just e1) -> do
       let oldDepth = recursionDepth rt
-      if oldDepth + 1 > maxRecursionDepth rt then
-        throwError "MaxRecursionDepth reached"
-      else do
-        let oldFnName = currentFnName rt
-        let newRt = rt {recursionDepth=oldDepth + 1, arguments=optArgs, currentFnName=fnName}
-        put newRt
-        catchError (optimizeExpr e1) (\_ -> if fnName /= oldFnName || recursionDepth rt <= 0 then 
-          return $ FnCall fnName args
-          else throwError "backTrack cause of MaxRecursionDepth"
-          )
+      if oldDepth + 1 > maxRecursionDepth rt
+        then
+          throwError "MaxRecursionDepth reached"
+        else do
+          let oldFnName = currentFnName rt
+          let newRt = rt {recursionDepth = oldDepth + 1, arguments = optArgs, currentFnName = fnName}
+          put newRt
+          catchError
+            (optimizeExpr e1)
+            ( \_ ->
+                if fnName /= oldFnName || recursionDepth rt <= 0
+                  then
+                    return $ FnCall fnName args
+                  else throwError "backTrack cause of MaxRecursionDepth"
+            )
     Nothing ->
       return $ FnCall fnName args
-
-
