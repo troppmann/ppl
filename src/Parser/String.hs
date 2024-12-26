@@ -12,14 +12,16 @@ module Parser.String
 where
 import Representation
 import Data.Char
+import Debug.Extended
 
 separate :: String -> [String]
-separate = words . escape . handleNewLines OneLine
+separate = words . escape . dbg . handleNewLines OneLine
 
 
-data NewLineState = OneLine | Stick | Separate 
+data NewLineState = OneLine | Stick | LineComment NewLineState | Separate deriving (Show, Eq)
 handleNewLines :: NewLineState -> String -> String
 handleNewLines _ [] = ""
+handleNewLines previous ('/': '/' : xs) = handleNewLines (LineComment previous) xs
 handleNewLines OneLine (x: xs)
   | x == '\n' = handleNewLines Stick xs
   | otherwise = x : handleNewLines OneLine xs
@@ -30,6 +32,11 @@ handleNewLines Stick (x: xs)
 handleNewLines Separate (x: xs)
   | isSpace x = handleNewLines Separate xs
   | otherwise = ';' : x : handleNewLines OneLine xs
+handleNewLines (LineComment previous) ('\n': xs)
+  | previous == OneLine = handleNewLines Stick xs
+  | previous == Stick = handleNewLines Separate xs
+  | previous == Separate = handleNewLines Separate xs
+handleNewLines (LineComment previous) (_: xs) = handleNewLines (LineComment previous) xs
 
 escape :: String -> String
 escape ('_' : xs) = " _ " ++ escape xs
