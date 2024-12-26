@@ -2,12 +2,16 @@ module Parser.String
   ( Func,
     ErrorString,
     Symbol,
+    VariableName,
     separate,
     escape,
     toString,
+    isViableName,
+    isKeyword,
   )
 where
 import Representation
+import Data.Char
 
 separate :: String -> [String]
 separate = words . escape
@@ -29,6 +33,7 @@ escape ('<' : '=' : xs) = " <= " ++ escape xs
 escape ('<' : xs) = " < " ++ escape xs
 escape ('>' : '=' : xs) = " >= " ++ escape xs
 escape ('>' : xs) = " > " ++ escape xs
+escape (';' : xs) = " ; " ++ escape xs
 escape (x : xs) = x : escape xs
 escape "" = ""
 
@@ -37,6 +42,25 @@ type Func = String
 type ErrorString = String
 
 type Symbol = String
+type VariableName = String
+
+isViableName :: String -> Bool
+isViableName [] = False
+isViableName x
+  | isKeyword x = False
+isViableName (x:xs)
+  | isLetter x && all isAlphaNum xs = True
+  | otherwise = False
+
+isKeyword :: String -> Bool
+isKeyword "if" = True
+isKeyword "else" = True
+isKeyword "then" = True
+isKeyword "True" = True
+isKeyword "False" = True
+isKeyword "Uniform" = True
+isKeyword "Normal" = True
+isKeyword _ = False
 
 toString :: Expr -> String
 toString Normal = "Normal"

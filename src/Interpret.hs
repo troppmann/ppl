@@ -8,7 +8,6 @@ import Debug.Extended
 import Evaluate
 import Representation
 import Runtime
-import Sample(findParameter)
 import Statistics.Distribution
 import Statistics.Distribution.Normal (normalDistr)
 import Statistics.Distribution.Uniform
@@ -197,25 +196,27 @@ interpret rt (FnCall fnName arguments) val = do
     Right (0, 0.0)
   else
     interpret newRt expr val
-interpret rt (FnParameter index) val = do
-  parameter <- findParameter (arguments rt) index
-  interpret rt parameter val
+interpret rt (FnParameter index) val
+  | Just ele <- getElem (arguments rt) index = interpret rt ele val
+  | otherwise = error $ "Could not find Parameter with index: " ++ show index
+
 
 replaceFnParameterWithContent :: InferRuntime -> Expr -> Either ErrorString Expr
-replaceFnParameterWithContent rt (FnParameter index) = do
-  findParameter (arguments rt) index
-replaceFnParameterWithContent rt (Plus e1 e2) = checkBothBranches rt (Plus) e1 e2
-replaceFnParameterWithContent rt (Subtract e1 e2) = checkBothBranches rt (Subtract) e1 e2
-replaceFnParameterWithContent rt (Multiply e1 e2) = checkBothBranches rt (Multiply) e1 e2
-replaceFnParameterWithContent rt (Divide e1 e2) = checkBothBranches rt (Divide) e1 e2
-replaceFnParameterWithContent rt (And e1 e2) = checkBothBranches rt (And) e1 e2
-replaceFnParameterWithContent rt (Or e1 e2) = checkBothBranches rt (Or) e1 e2
-replaceFnParameterWithContent rt (LessThan e1 e2) = checkBothBranches rt (LessThan) e1 e2
-replaceFnParameterWithContent rt (LessThanOrEqual e1 e2) = checkBothBranches rt (LessThanOrEqual) e1 e2
-replaceFnParameterWithContent rt (GreaterThan e1 e2) = checkBothBranches rt (GreaterThan) e1 e2
-replaceFnParameterWithContent rt (GreaterThanOrEqual e1 e2) = checkBothBranches rt (GreaterThanOrEqual) e1 e2
-replaceFnParameterWithContent rt (Equal e1 e2) = checkBothBranches rt (Equal) e1 e2
-replaceFnParameterWithContent rt (Unequal e1 e2) = checkBothBranches rt (Unequal) e1 e2
+replaceFnParameterWithContent rt (FnParameter index)
+  | Just ele <- getElem (arguments rt) index = return ele
+  | otherwise = error $ "Could not find Parameter with index: " ++ show index
+replaceFnParameterWithContent rt (Plus e1 e2) = checkBothBranches rt Plus e1 e2
+replaceFnParameterWithContent rt (Subtract e1 e2) = checkBothBranches rt Subtract e1 e2
+replaceFnParameterWithContent rt (Multiply e1 e2) = checkBothBranches rt Multiply e1 e2
+replaceFnParameterWithContent rt (Divide e1 e2) = checkBothBranches rt Divide e1 e2
+replaceFnParameterWithContent rt (And e1 e2) = checkBothBranches rt And e1 e2
+replaceFnParameterWithContent rt (Or e1 e2) = checkBothBranches rt Or e1 e2
+replaceFnParameterWithContent rt (LessThan e1 e2) = checkBothBranches rt LessThan e1 e2
+replaceFnParameterWithContent rt (LessThanOrEqual e1 e2) = checkBothBranches rt LessThanOrEqual e1 e2
+replaceFnParameterWithContent rt (GreaterThan e1 e2) = checkBothBranches rt GreaterThan e1 e2
+replaceFnParameterWithContent rt (GreaterThanOrEqual e1 e2) = checkBothBranches rt GreaterThanOrEqual e1 e2
+replaceFnParameterWithContent rt (Equal e1 e2) = checkBothBranches rt Equal e1 e2
+replaceFnParameterWithContent rt (Unequal e1 e2) = checkBothBranches rt Unequal e1 e2
 replaceFnParameterWithContent rt (Not e1) = do
   r1 <- replaceFnParameterWithContent rt e1
   return $ Not r1
@@ -333,9 +334,9 @@ compareFloatExpr rt (FnCall fnName arguments) (ord, value) = do
     Right 0.0
   else
     compareFloatExpr newRt expr (ord, value)
-compareFloatExpr rt (FnParameter index) (ord,value) = do
-  parameter <- findParameter (arguments rt) index
-  compareFloatExpr rt parameter (ord, value)
+compareFloatExpr rt (FnParameter index) (ord,value)
+  | Just ele <- getElem (arguments rt) index = compareFloatExpr rt ele (ord, value)
+  | otherwise = error $ "Could not find Parameter with index: " ++ show index
 compareFloatExpr _ expr _ = case expr of
   (CreateTuple _ _) -> msgTuple
   (Const (VTuple _ _)) -> msgTuple

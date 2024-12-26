@@ -3,6 +3,7 @@ module Debug.Extended
     dbg,
     dbg',
     unwrapEither,
+    getElem,
     unwrapMaybe,
     justOr,
     showFloatN
@@ -46,3 +47,9 @@ justOr (Just value) _ = Right value
 
 showFloatN :: RealFloat a => a -> Int -> String
 showFloatN floatNum numOfDecimals = showFFloat (Just numOfDecimals) floatNum ""
+
+getElem :: [a] -> Int -> Maybe a
+getElem [] _ = Nothing
+getElem (x:xs) index
+  | index <= 0 = Just x
+  | otherwise = getElem xs (index-1)

@@ -1,7 +1,6 @@
 module Sample
   ( sampleRand,
     sampleProgram,
-    findParameter,
     SampleRuntime (..),
     defaultSampleRuntime,
   )
@@ -68,18 +67,9 @@ sampleRand rt (FnCall fnName arguments) = do
         else
           sampleRand newRt expr
     Nothing -> error $ "Could not find FnName: " <> fnName <> " ."
-sampleRand rt (FnParameter index) = return $ unwrapEither $ findParameter (arguments rt) index
-
-
-
-
-findParameter :: [a] -> Int -> Either String a
-findParameter [] index = Left $ "Could not find Parameter with index: " ++ show index
-findParameter (x:xs) index 
-  | index <= 0 = Right x
-  | otherwise = findParameter xs (index-1) 
-
-
+sampleRand rt (FnParameter index)
+  | Just ele <- getElem (arguments rt) index = return ele
+  | otherwise = error $ "Could not find Parameter with index: " ++ show index
 
 apply :: (MonadRandom m) => SampleRuntime -> (Value -> Value -> Value) -> Expr -> Expr -> m Value
 apply rt f e1 e2 = do

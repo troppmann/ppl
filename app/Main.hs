@@ -11,7 +11,7 @@ import DistributionSampler
 import Interpret
 import Mean
 import Optimizer
-import Parser.Expr
+import Parser
 import Query
 import Representation
 import Sample
@@ -24,7 +24,7 @@ toFloat _ = -1
 main :: IO ()
 main = do
   s <- readFile "test.ppl"
-  let program = wrapInMain $ unwrapEither $ parseExpr s
+  let program = unwrapEither $ parseProgram s
   print "------Programs"
   -- let program = [("main", IfThenElse (LessThan Uniform (Const $ VFloat 0.2)) (Multiply Normal (Const $ VFloat 0.5))(Plus (Const $ VFloat 2.0) (FnCall "main" [])))]
   -- let program = [("main", FnCall "factorial" [Const $ VFloat 5.0]),("factorial", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (Const $ VFloat 1.0) (Multiply (FnParameter 0) (FnCall "factorial" [Subtract (FnParameter 0)(Const $ VFloat 1.0)])))]

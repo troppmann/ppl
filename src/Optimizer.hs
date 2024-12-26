@@ -8,7 +8,6 @@ import Control.Monad.State
 import Control.Monad.Except
 import Runtime
 import Representation
-import Sample (findParameter)
 import Debug.Extended
 
 optimize :: Program -> Program
@@ -98,10 +97,10 @@ optimizeCreateTuple e1 e2 = do
 optimizeFnParameter :: Int -> RuntimeState Expr
 optimizeFnParameter index = do
   rt <- get
-  let parameter = findParameter (arguments rt) index
+  let parameter = getElem (arguments rt) index
   case parameter of
-    (Right expr) -> return expr
-    (Left _) -> return $ FnParameter index
+    (Just expr) -> return expr
+    Nothing -> return $ FnParameter index
 optimizeFnCall :: FnName -> [Expr] -> RuntimeState Expr
 optimizeFnCall fnName args = do
   optArgs <- traverse optimizeExpr args

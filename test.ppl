@@ -1,1 +1,2 @@
-randomFunc (dice 3) 2
+add x y z1 = (x - z1)/y;
+main = Normal * add 3 4 (2+1);

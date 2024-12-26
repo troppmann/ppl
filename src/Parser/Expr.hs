@@ -1,115 +1,124 @@
 module Parser.Expr
   ( parseExpr,
+    parseUntil,
   )
 where
 
 import Parser.String
 import Representation
 import Text.Read (readMaybe)
+import Data.List (elemIndex)
 
 parseExpr :: String -> Either ErrorString Expr
-parseExpr = fmap fst . parseUntil Nothing Nothing (Nothing, Nothing) . separate
+parseExpr = fmap fst . parseUntil [] Nothing Nothing (Nothing, Nothing) . separate
 
-parseUntil :: Maybe Expr -> Maybe Func -> (Maybe Symbol, Maybe Symbol) -> [Symbol] -> Either ErrorString (Expr, [Symbol])
-parseUntil (Just e) Nothing (Just "else", Just s) (x : xs)
+parseUntil :: [VariableName] -> Maybe Expr -> Maybe Func -> (Maybe Symbol, Maybe Symbol) -> [Symbol] -> Either ErrorString (Expr, [Symbol])
+parseUntil _ (Just e) Nothing (Just "else", Just s) (x : xs)
   | s == x || x == "," = return (e, x : xs)
-parseUntil (Just e) Nothing (Just opening, Just ")") ("," : xs)
+parseUntil vs (Just e) Nothing (Just opening, Just ")") ("," : xs)
   | opening `elem` ["(", ","] = do
-      (expr, rest) <- parseUntil Nothing Nothing (Just ",", Just ")") xs
+      (expr, rest) <- parseUntil vs Nothing Nothing (Just ",", Just ")") xs
       return (CreateTuple e expr, rest)
-parseUntil (Just e) Nothing (_, Just s) (x : xs)
+parseUntil _ (Just e) Nothing (_, Just s) (x : xs)
   | s == x = return (e, xs)
-parseUntil Nothing _ _ [] = Left "Error: Expected Value got ''"
-parseUntil Nothing Nothing s@(_, c) (x : xs)
+parseUntil _ Nothing _ _ [] = Left "Error: Expected Value got ''"
+parseUntil vs Nothing Nothing s@(_, c) (x : xs)
   | x == "-" = do
-    (e1, rest) <- parseFirstExpression xs
+    (e1, rest) <- parseFirstExpression vs xs
     let e2 =
           case e1 of
             (Const (VFloat v)) -> Const (VFloat (-v))
             _ -> Multiply (Const $ VFloat (-1)) e1
-    parseUntil (Just e2) Nothing s rest
+    parseUntil vs (Just e2) Nothing s rest
   | isInfixFunction x = Left $ "Error: Expected Value got Operator '" <> x <> "'"
   | isFunction x = do
-      (expr, rest) <- parseFirstExpression xs
+      (expr, rest) <- parseFirstExpression vs xs
       func <- applyFunction x expr
-      parseUntil (Just func) Nothing s rest
+      parseUntil vs (Just func) Nothing s rest
   | x == "(" = do
-      (e, rest) <- parseUntil Nothing Nothing (Just "(", Just ")") xs
-      parseUntil (Just e) Nothing s rest
+      (e, rest) <- parseUntil vs Nothing Nothing (Just "(", Just ")") xs
+      parseUntil vs (Just e) Nothing s rest
   | x == "if" = do
-      (boolExpression, rest1) <- parseUntil Nothing Nothing (Just "if", Just "then") xs
-      (eThen, rest2) <- parseUntil Nothing Nothing (Just "then", Just "else") rest1
-      (eElse, rest3) <- parseUntil Nothing Nothing (Just "else", c) rest2
+      (boolExpression, rest1) <- parseUntil vs Nothing Nothing (Just "if", Just "then") xs
+      (eThen, rest2) <- parseUntil vs Nothing Nothing (Just "then", Just "else") rest1
+      (eElse, rest3) <- parseUntil vs Nothing Nothing (Just "else", c) rest2
       let ifExpr = IfThenElse boolExpression eThen eElse
-      parseUntil (Just ifExpr) Nothing s rest3
-  | e@(Just _) <- tryConvertToLiteral x = parseUntil e Nothing s xs
+      parseUntil vs (Just ifExpr) Nothing s rest3
+  | e@(Just _) <- tryConvertToLiteral x = parseUntil vs e Nothing s xs
+  | Just index <- x `elemIndex` vs = do
+      let e1 =  FnParameter index
+      parseUntil vs (Just e1) Nothing s xs
   | otherwise = do
-      (exprs, rest) <- parseExpressionsUntil c xs
+      (exprs, rest) <- parseExpressionsUntil vs c xs
       let e1 =  FnCall x exprs
       return (e1, rest)
-parseUntil (Just e) Nothing s (x : xs)
-  | isInfixFunction x = parseUntil (Just e) (Just x) s xs
+parseUntil vs (Just e) Nothing s (x : xs)
+  | isInfixFunction x = parseUntil vs (Just e) (Just x) s xs
   | otherwise = Left $ "Error: Unexpected String'" <> x <> "'"
-parseUntil (Just _e) (Just _f) _ [] = Left "Expected Value got ''"
-parseUntil Nothing (Just _f) _ (_x : _xs) = Left "Cannot happen yet"
-parseUntil (Just e1) (Just f) s@(_, c) (x : xs)
+parseUntil _ (Just _e) (Just _f) _ [] = Left "Expected Value got ''"
+parseUntil _ Nothing (Just _f) _ (_x : _xs) = Left "Cannot happen yet"
+parseUntil vs (Just e1) (Just f) s@(_, c) (x : xs)
   | x == "-" = do
-    (e2, rest) <- parseFirstExpression xs
+    (e2, rest) <- parseFirstExpression vs xs
     let e3 =
           case e2 of
             (Const (VFloat v)) -> Const (VFloat (-v))
             _ -> Multiply (Const $ VFloat (-1)) e2
     combinedFunc <- combineFunction e1 f e3
-    parseUntil (Just combinedFunc) Nothing s rest
+    parseUntil vs (Just combinedFunc) Nothing s rest
   | isInfixFunction x = Left $ "Error: Expected Value got Operator '" <> x <> "'"
   | isFunction x = do
-      (e2, rest) <- parseFirstExpression xs
+      (e2, rest) <- parseFirstExpression vs xs
       func <- applyFunction x e2
       combinedFunc <- combineFunction e1 f func
-      parseUntil (Just combinedFunc) Nothing s rest
+      parseUntil vs (Just combinedFunc) Nothing s rest
   | Just e2 <- tryConvertToLiteral x = do
       combinedFunc <- combineFunction e1 f e2
-      parseUntil (Just combinedFunc) Nothing s xs
+      parseUntil vs (Just combinedFunc) Nothing s xs
   | x == "(" = do
-      (e2, rest) <- parseUntil Nothing Nothing (Just "(", Just ")") xs
+      (e2, rest) <- parseUntil vs Nothing Nothing (Just "(", Just ")") xs
       combinedFunc <- combineFunction e1 f e2
-      parseUntil (Just combinedFunc) Nothing s rest
+      parseUntil vs (Just combinedFunc) Nothing s rest
   | x == "if" = do
-      (boolExpression, rest1) <- parseUntil Nothing Nothing (Just "if", Just "then") xs
-      (eIf1, rest2) <- parseUntil Nothing Nothing (Just "then", Just "else") rest1
-      (eIf2, rest3) <- parseUntil Nothing Nothing (Just "else", c) rest2
+      (boolExpression, rest1) <- parseUntil vs Nothing Nothing (Just "if", Just "then") xs
+      (eIf1, rest2) <- parseUntil vs Nothing Nothing (Just "then", Just "else") rest1
+      (eIf2, rest3) <- parseUntil vs Nothing Nothing (Just "else", c) rest2
       let e2 = IfThenElse boolExpression eIf1 eIf2
       combinedIfExpr <- combineFunction e1 f e2
-      parseUntil (Just combinedIfExpr) Nothing s rest3
+      parseUntil vs (Just combinedIfExpr) Nothing s rest3
+  | Just index <- x `elemIndex` vs = do
+      let e2 =  FnParameter index
+      combinedFunc <- combineFunction e1 f e2
+      parseUntil vs (Just combinedFunc) Nothing s xs
   | otherwise = do
-      (exprs, rest) <- parseExpressionsUntil c xs
+      (exprs, rest) <- parseExpressionsUntil vs c xs
       let e2 =  FnCall x exprs
       combinedFunc <- combineFunction e1 f e2
       return (combinedFunc, rest)
-parseUntil (Just e) Nothing _ [] = return (e, [])
+parseUntil _ (Just e) Nothing _ [] = return (e, [])
 
-parseFirstExpression :: [Symbol] -> Either ErrorString (Expr, [Symbol])
-parseFirstExpression [] = error "Error: Expected Value got ''"
-parseFirstExpression (x : xs)
+parseFirstExpression :: [VariableName] -> [Symbol] -> Either ErrorString (Expr, [Symbol])
+parseFirstExpression _ [] = error "Error: Expected Value got ''"
+parseFirstExpression vs (x : xs)
   | isInfixFunction x = Left $ "Error: Expected Value got Operator '" <> x <> "'"
   | isFunction x = Left $ "Error: Expected Value got Operator '" <> x <> "'"
   | Just expr <- tryConvertToLiteral x = return (expr, xs)
-  | x == "(" = parseUntil Nothing Nothing (Just "(", Just ")") xs
+  | x == "(" = parseUntil vs Nothing Nothing (Just "(", Just ")") xs
   | otherwise = Left ("Error: Unexpected String'" <> x <> "'")
 
-parseExpressionsUntil :: Maybe Symbol -> [Symbol] -> Either ErrorString ([Expr], [Symbol])
-parseExpressionsUntil _ [] = return ([],[])
-parseExpressionsUntil (Just c) (x : xs) 
+parseExpressionsUntil :: [VariableName] -> Maybe Symbol -> [Symbol] -> Either ErrorString ([Expr], [Symbol])
+parseExpressionsUntil _ _ [] = return ([],[])
+parseExpressionsUntil _ (Just c) (x : xs) 
   | x == c = return ([], xs)
-parseExpressionsUntil s (x : xs)
+parseExpressionsUntil vs s (x : xs)
   | isInfixFunction x = Left $ "Error: Expected Value got Operator '" <> x <> "'"
   | isFunction x = Left $ "Error: Expected Value got Operator '" <> x <> "'"
   | Just expr <- tryConvertToLiteral x = do
-    (exprs, rest) <- parseExpressionsUntil s xs
+    (exprs, rest) <- parseExpressionsUntil vs s xs
     return (expr : exprs, rest)
   | x == "(" = do
-    (expr, r1) <- parseUntil Nothing Nothing (Just "(", Just ")") xs
-    (exprs, r2) <- parseExpressionsUntil s r1
+    (expr, r1) <- parseUntil vs Nothing Nothing (Just "(", Just ")") xs
+    (exprs, r2) <- parseExpressionsUntil vs s r1
     return (expr : exprs, r2)
   | otherwise = Left ("Error: Unexpected String'" <> x <> "'")
 

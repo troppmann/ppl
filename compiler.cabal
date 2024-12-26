@@ -35,6 +35,7 @@ library lib
                       Mean,
                       Parser,
                       Parser.Expr, 
+                      Parser.Program, 
                       Parser.Query,
                       Parser.String,
                       Query,
