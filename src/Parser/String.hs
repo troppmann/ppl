@@ -12,34 +12,33 @@ module Parser.String
 where
 import Representation
 import Data.Char
-import Debug.Extended
 
 separate :: String -> [String]
-separate = words . escape . dbg . handleNewLines OneLine
+separate = words . escape . handleWhiteSpace OneLine
 
 
-data NewLineState = OneLine | Stick | Separate | LineComment NewLineState | BlockComment NewLineState deriving (Show, Eq)
-handleNewLines :: NewLineState -> String -> String
-handleNewLines _ [] = ""
-handleNewLines previous ('/': '*' : xs) = handleNewLines (BlockComment previous) xs
-handleNewLines (BlockComment previous) ('*': '/' : xs) = handleNewLines previous xs
-handleNewLines (BlockComment previous) (_ : xs) = handleNewLines (BlockComment previous) xs
-handleNewLines previous ('/': '/' : xs) = handleNewLines (LineComment previous) xs
-handleNewLines OneLine (x: xs)
-  | x == '\n' = handleNewLines Stick xs
-  | otherwise = x : handleNewLines OneLine xs
-handleNewLines Stick (x: xs)
-  | x == '\n' = handleNewLines Separate xs
-  | isSpace x = handleNewLines Stick xs
-  | otherwise = ' ' : x : handleNewLines OneLine xs
-handleNewLines Separate (x: xs)
-  | isSpace x = handleNewLines Separate xs
-  | otherwise = ';' : x : handleNewLines OneLine xs
-handleNewLines (LineComment previous) ('\n': xs)
-  | previous == OneLine = handleNewLines Stick xs
-  | previous == Stick = handleNewLines Separate xs
-  | previous == Separate = handleNewLines Separate xs
-handleNewLines (LineComment previous) (_: xs) = handleNewLines (LineComment previous) xs
+data WhiteSpace = OneLine | Stick | Separate | LineComment WhiteSpace | BlockComment WhiteSpace deriving (Show, Eq)
+handleWhiteSpace :: WhiteSpace -> String -> String
+handleWhiteSpace _ [] = ""
+handleWhiteSpace previous ('/': '*' : xs) = handleWhiteSpace (BlockComment previous) xs
+handleWhiteSpace (BlockComment previous) ('*': '/' : xs) = handleWhiteSpace previous xs
+handleWhiteSpace (BlockComment previous) (_ : xs) = handleWhiteSpace (BlockComment previous) xs
+handleWhiteSpace previous ('/': '/' : xs) = handleWhiteSpace (LineComment previous) xs
+handleWhiteSpace OneLine (x: xs)
+  | x == '\n' = handleWhiteSpace Stick xs
+  | otherwise = x : handleWhiteSpace OneLine xs
+handleWhiteSpace Stick (x: xs)
+  | x == '\n' = handleWhiteSpace Separate xs
+  | isSpace x = handleWhiteSpace Stick xs
+  | otherwise = ' ' : x : handleWhiteSpace OneLine xs
+handleWhiteSpace Separate (x: xs)
+  | isSpace x = handleWhiteSpace Separate xs
+  | otherwise = ';' : x : handleWhiteSpace OneLine xs
+handleWhiteSpace (LineComment previous) ('\n': xs)
+  | previous == OneLine = handleWhiteSpace Stick xs
+  | previous == Stick = handleWhiteSpace Separate xs
+  | previous == Separate = handleWhiteSpace Separate xs
+handleWhiteSpace (LineComment previous) (_: xs) = handleWhiteSpace (LineComment previous) xs
 
 escape :: String -> String
 escape ('_' : xs) = " _ " ++ escape xs

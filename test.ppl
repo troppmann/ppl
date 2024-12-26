@@ -1,19 +1,10 @@
-// Produces a normal with a center at mean and and standard deviation of std
+// A normal distribution with a center at mean and and standard deviation of std
 // normal :: VFloat -> VFloat -> VFloat
-normal mean std = 
-    std // standard deviation
-    * Normal /* test
-// test
+normal mean std = std * Normal + mean
 
-                */ 
-    + mean // center
+// An uniform distribution with the range [a,b] 
+// 'a' does not need to be lower than 'b'
+// uniform :: VFloat -> VFloat -> VFloat
+uniform a b = (b - a) * Uniform + a
 
-
-// test
-
-
-// test
-uniform a b = (b - a /*  test */) * // test
-Uniform + a
-
-main = uniform 10 10
+main = uniform 4 10
