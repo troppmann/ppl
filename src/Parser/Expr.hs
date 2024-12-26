@@ -38,9 +38,9 @@ parseUntil Nothing Nothing s@(_, c) (x : xs)
       parseUntil (Just e) Nothing s rest
   | x == "if" = do
       (boolExpression, rest1) <- parseUntil Nothing Nothing (Just "if", Just "then") xs
-      (eIf1, rest2) <- parseUntil Nothing Nothing (Just "then", Just "else") rest1
-      (eIf2, rest3) <- parseUntil Nothing Nothing (Just "else", c) rest2
-      let ifExpr = IfThenElse boolExpression eIf1 eIf2
+      (eThen, rest2) <- parseUntil Nothing Nothing (Just "then", Just "else") rest1
+      (eElse, rest3) <- parseUntil Nothing Nothing (Just "else", c) rest2
+      let ifExpr = IfThenElse boolExpression eThen eElse
       parseUntil (Just ifExpr) Nothing s rest3
   | e@(Just _) <- tryConvertToLiteral x = parseUntil e Nothing s xs
   | otherwise = Left $ "Error: Unknown String '" <> x <> "'"
