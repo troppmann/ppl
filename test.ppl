@@ -1,14 +1,19 @@
+// Produces a normal with a center at mean and and standard deviation of std
+// normal :: VFloat -> VFloat -> VFloat
+normal mean std = 
+    std // standard deviation
+    * Normal /* test
+// test
 
-normal mean std = std * Normal + mean
-
-uniform a b = (b - a) * Uniform 
-            + a
+                */ 
+    + mean // center
 
 
+// test
 
 
-
-
-
+// test
+uniform a b = (b - a /*  test */) * // test
+Uniform + a
 
 main = uniform 10 10

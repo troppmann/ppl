@@ -18,9 +18,12 @@ separate :: String -> [String]
 separate = words . escape . dbg . handleNewLines OneLine
 
 
-data NewLineState = OneLine | Stick | LineComment NewLineState | Separate deriving (Show, Eq)
+data NewLineState = OneLine | Stick | Separate | LineComment NewLineState | BlockComment NewLineState deriving (Show, Eq)
 handleNewLines :: NewLineState -> String -> String
 handleNewLines _ [] = ""
+handleNewLines previous ('/': '*' : xs) = handleNewLines (BlockComment previous) xs
+handleNewLines (BlockComment previous) ('*': '/' : xs) = handleNewLines previous xs
+handleNewLines (BlockComment previous) (_ : xs) = handleNewLines (BlockComment previous) xs
 handleNewLines previous ('/': '/' : xs) = handleNewLines (LineComment previous) xs
 handleNewLines OneLine (x: xs)
   | x == '\n' = handleNewLines Stick xs
