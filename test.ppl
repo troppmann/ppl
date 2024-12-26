@@ -1,4 +1,1 @@
-dice x = if x <= 1 then 
-            1
-        else 
-            (if Uniform < (1/x) then x else dice (x-1))
+randomFunc (dice 3) 2

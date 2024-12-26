@@ -14,7 +14,6 @@ import Optimizer
 import Parser.Expr
 import Query
 import Representation
-import Representation (Expr (IfThenElse))
 import Sample
 import Spn
 
@@ -24,16 +23,16 @@ toFloat _ = -1
 
 main :: IO ()
 main = do
-  -- s <- readFile "test.ppl"
-  -- let program = wrapInMain $ unwrapEither $ parseExpr s
+  s <- readFile "test.ppl"
+  let program = wrapInMain $ unwrapEither $ parseExpr s
   print "------Programs"
   -- let program = [("main", IfThenElse (LessThan Uniform (Const $ VFloat 0.2)) (Multiply Normal (Const $ VFloat 0.5))(Plus (Const $ VFloat 2.0) (FnCall "main" [])))]
   -- let program = [("main", FnCall "factorial" [Const $ VFloat 5.0]),("factorial", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (Const $ VFloat 1.0) (Multiply (FnParameter 0) (FnCall "factorial" [Subtract (FnParameter 0)(Const $ VFloat 1.0)])))]
-  let program =
-        [ ("main", FnCall "middleMan" []),
-          ("dice", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (FnParameter 0) (IfThenElse (LessThan Uniform (Divide (Const $ VFloat 1.0) (FnParameter 0))) (FnParameter 0) (FnCall "dice" [Subtract (FnParameter 0) (Const $ VFloat 1.0)]))),
-          ("middleMan", Plus (Const $ VFloat 1.0) (FnCall "dice" [Const $ VFloat 20]))
-        ]
+  --let program =
+        --[ ("main", FnCall "middleMan" []),
+          --("dice", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (FnParameter 0) (IfThenElse (LessThan Uniform (Divide (Const $ VFloat 1.0) (FnParameter 0))) (FnParameter 0) (FnCall "dice" [Subtract (FnParameter 0) (Const $ VFloat 1.0)]))),
+          --("middleMan", Plus (Const $ VFloat 1.0) (FnCall "dice" [Const $ VFloat 20]))
+        --]
   print "------Unopt"
   print program
   let optProgram = optimize program

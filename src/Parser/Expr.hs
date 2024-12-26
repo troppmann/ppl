@@ -43,7 +43,10 @@ parseUntil Nothing Nothing s@(_, c) (x : xs)
       let ifExpr = IfThenElse boolExpression eThen eElse
       parseUntil (Just ifExpr) Nothing s rest3
   | e@(Just _) <- tryConvertToLiteral x = parseUntil e Nothing s xs
-  | otherwise = Left $ "Error: Unknown String '" <> x <> "'"
+  | otherwise = do
+      (exprs, rest) <- parseExpressionsUntil c xs
+      let e1 =  FnCall x exprs
+      return (e1, rest)
 parseUntil (Just e) Nothing s (x : xs)
   | isInfixFunction x = parseUntil (Just e) (Just x) s xs
   | otherwise = Left $ "Error: Unexpected String'" <> x <> "'"
@@ -78,7 +81,11 @@ parseUntil (Just e1) (Just f) s@(_, c) (x : xs)
       let e2 = IfThenElse boolExpression eIf1 eIf2
       combinedIfExpr <- combineFunction e1 f e2
       parseUntil (Just combinedIfExpr) Nothing s rest3
-  | otherwise = Left $ "Error: Unexpected String'" <> x <> "'"
+  | otherwise = do
+      (exprs, rest) <- parseExpressionsUntil c xs
+      let e2 =  FnCall x exprs
+      combinedFunc <- combineFunction e1 f e2
+      return (combinedFunc, rest)
 parseUntil (Just e) Nothing _ [] = return (e, [])
 
 parseFirstExpression :: [Symbol] -> Either ErrorString (Expr, [Symbol])
@@ -88,6 +95,22 @@ parseFirstExpression (x : xs)
   | isFunction x = Left $ "Error: Expected Value got Operator '" <> x <> "'"
   | Just expr <- tryConvertToLiteral x = return (expr, xs)
   | x == "(" = parseUntil Nothing Nothing (Just "(", Just ")") xs
+  | otherwise = Left ("Error: Unexpected String'" <> x <> "'")
+
+parseExpressionsUntil :: Maybe Symbol -> [Symbol] -> Either ErrorString ([Expr], [Symbol])
+parseExpressionsUntil _ [] = return ([],[])
+parseExpressionsUntil (Just c) (x : xs) 
+  | x == c = return ([], xs)
+parseExpressionsUntil s (x : xs)
+  | isInfixFunction x = Left $ "Error: Expected Value got Operator '" <> x <> "'"
+  | isFunction x = Left $ "Error: Expected Value got Operator '" <> x <> "'"
+  | Just expr <- tryConvertToLiteral x = do
+    (exprs, rest) <- parseExpressionsUntil s xs
+    return (expr : exprs, rest)
+  | x == "(" = do
+    (expr, r1) <- parseUntil Nothing Nothing (Just "(", Just ")") xs
+    (exprs, r2) <- parseExpressionsUntil s r1
+    return (expr : exprs, r2)
   | otherwise = Left ("Error: Unexpected String'" <> x <> "'")
 
 isInfixFunction :: Symbol -> Bool

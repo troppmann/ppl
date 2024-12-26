@@ -136,5 +136,14 @@ tests =
           testParseQuery "(_ > 3, (_ <= 2), _)" (QTuple (QGt 3) (QTuple (QLe 2) QAny)),
           testParseQuery "((_ > 3, _ <= 2), _)" (QTuple (QTuple (QGt 3) (QLe 2)) QAny),
           testParseQuery "((_ > 3, _ <= 2), (_, _))" (QTuple (QTuple (QGt 3) (QLe 2)) (QTuple QAny QAny))
+        ],
+      testGroup
+        "FnCall"
+        [ testParseExpr "3 + 5 * main" (Multiply (Plus (Const (VFloat 3.0) ) (Const (VFloat 5.0) )) (FnCall "main" [])),
+          testParseExpr "8.0 * dice 3" (Multiply (Const (VFloat 8.0) ) (FnCall "dice" [Const (VFloat 3.0)])),
+          testParseExpr "randomFunc 3 4 " (FnCall "randomFunc" [Const (VFloat 3.0), Const (VFloat 4.0)]),
+          testParseExpr "randomFunc (3 + 4) 2 " (FnCall "randomFunc" [Plus (Const (VFloat 3.0)) (Const (VFloat 4.0)), Const (VFloat 2.0)]),
+          testParseExpr "3 * randomFunc (3 + dice 3) 2 " (Multiply (Const (VFloat 3.0)) (FnCall "randomFunc" [Plus (Const (VFloat 3.0)) (FnCall "dice" [Const (VFloat 3.0)]), Const (VFloat 2.0)])),
+          testParseExpr "if randomFunc (3 + dice 3) 2 then 2 else 3" (IfThenElse (FnCall "randomFunc" [Plus (Const (VFloat 3.0)) (FnCall "dice" [Const (VFloat 3.0)]), Const (VFloat 2.0)]) (Const (VFloat 2.0)) (Const (VFloat 3.0)))
         ]
     ]
