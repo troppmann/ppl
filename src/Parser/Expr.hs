@@ -8,7 +8,6 @@ import Parser.String
 import Representation
 import Text.Read (readMaybe)
 import Data.List (elemIndex)
-import Debug.Extended
 
 parseExpr :: String -> Either ErrorString Expr
 parseExpr = fmap fst . parseUntil [] Nothing Nothing (Nothing, Nothing) . separate
@@ -44,18 +43,18 @@ parseUntil vs Nothing Nothing s@(_, c) (x : xs)
       (eThen, rest2) <- parseUntil vs Nothing Nothing (Just "then", Just "else") rest1
       (eElse, rest3) <- parseUntil vs Nothing Nothing (Just "else", c) rest2
       let ifExpr = IfThenElse boolExpression eThen eElse
-      parseUntil vs (Just ifExpr) Nothing (dbg s) rest3
+      parseUntil vs (Just ifExpr) Nothing s rest3
   | e@(Just _) <- tryConvertToLiteral x = parseUntil vs e Nothing s xs
   | Just index <- x `elemIndex` vs = do
       let e1 =  FnParameter index
       parseUntil vs (Just e1) Nothing s xs
   | otherwise = do
-      (exprs, rest) <- parseExpressionsUntil vs s xs
+      (exprs, rest) <- parseExpressionsUntil vs c xs
       let e1 =  FnCall x exprs
-      return (e1, rest)
+      parseUntil vs (Just e1) Nothing s rest
 parseUntil vs (Just e) Nothing s (x : xs)
   | isInfixFunction x = parseUntil vs (Just e) (Just x) s xs
-  | otherwise = Left $ "1Error: Unexpected String'" <> x <> "'" <> show xs <> "END" <> show s <> show e
+  | otherwise = Left $ "Error: Unexpected String'" <> x <> "'" 
 parseUntil _ (Just _e) (Just _f) _ [] = Left "Expected Value got ''"
 parseUntil _ Nothing (Just _f) _ (_x : _xs) = Left "Cannot happen yet"
 parseUntil vs (Just e1) (Just f) s@(_, c) (x : xs)
@@ -92,10 +91,10 @@ parseUntil vs (Just e1) (Just f) s@(_, c) (x : xs)
       combinedFunc <- combineFunction e1 f e2
       parseUntil vs (Just combinedFunc) Nothing s xs
   | otherwise = do
-      (exprs, rest) <- parseExpressionsUntil vs s xs
+      (exprs, rest) <- parseExpressionsUntil vs c xs
       let e2 =  FnCall x exprs
       combinedFunc <- combineFunction e1 f e2
-      return (combinedFunc, rest)
+      parseUntil vs (Just combinedFunc) Nothing s rest
 parseUntil _ (Just e) Nothing _ [] = return (e, [])
 
 parseFirstExpression :: [VariableName] -> [Symbol] -> Either ErrorString (Expr, [Symbol])
@@ -108,29 +107,28 @@ parseFirstExpression vs (x : xs)
   | Just index <- x `elemIndex` vs = do
       let e1 =  FnParameter index
       return (e1, xs)
-  | otherwise = Left ("2Error: Unexpected String'" <> x <> "'")
+  | otherwise = Left ("Error: Unexpected String'" <> x <> "'")
 
-parseExpressionsUntil :: [VariableName] -> (Maybe Symbol, Maybe Symbol) -> [Symbol] -> Either ErrorString ([Expr], [Symbol])
+parseExpressionsUntil :: [VariableName] -> Maybe Symbol -> [Symbol] -> Either ErrorString ([Expr], [Symbol])
 parseExpressionsUntil _ _ [] = return ([],[])
-parseExpressionsUntil _ (Just "else", Just c) (x : xs)
-  | x == c = return ([], c : xs)
-parseExpressionsUntil _ (_, Just c) (x : xs)
-  | x == c = return ([], xs)
-parseExpressionsUntil vs s (x : xs)
+parseExpressionsUntil _ (Just c) (x : xs)
+  | x == "," = return ([], x:xs)
+  | x == c = return ([], x:xs)
+parseExpressionsUntil vs c (x : xs)
   | isInfixFunction x = Left $ "Error: Expected Value got Operator '" <> x <> "'"
   | isFunction x = Left $ "Error: Expected Value got Operator '" <> x <> "'"
   | Just expr <- tryConvertToLiteral x = do
-    (exprs, rest) <- parseExpressionsUntil vs s xs
+    (exprs, rest) <- parseExpressionsUntil vs c xs
     return (expr : exprs, rest)
   | Just index <- x `elemIndex` vs = do
       let expr =  FnParameter index
-      (exprs, rest) <- parseExpressionsUntil vs s xs
+      (exprs, rest) <- parseExpressionsUntil vs c xs
       return (expr : exprs, rest)
   | x == "(" = do
-    (expr, r1) <- dbg $ parseUntil vs Nothing Nothing (Just "(", Just ")") xs
-    (exprs, r2) <- parseExpressionsUntil vs s r1
+    (expr, r1) <- parseUntil vs Nothing Nothing (Just "(", Just ")") xs
+    (exprs, r2) <- parseExpressionsUntil vs c r1
     return (expr : exprs, r2)
-  | otherwise = Left ("3Error: Unexpected String'" <> x <> "'")
+  | otherwise = Left ("Error: Unexpected String'" <> x <> "'")
 
 isInfixFunction :: Symbol -> Bool
 isInfixFunction = flip elem ["+", "-", "*", "/", "==", "!=", "<", "<=", ">", ">=", "&&", "||", "**"]
