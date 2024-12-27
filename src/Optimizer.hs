@@ -165,7 +165,7 @@ optimizeFnCall fnName args = do
             ( \_ ->
                 if fnName /= oldFnName || recursionDepth rt <= 0
                   then
-                    return $ FnCall fnName args
+                    return $ FnCall fnName optArgs
                   else throwError "backTrack cause of MaxRecursionDepth"
             )
     Nothing ->

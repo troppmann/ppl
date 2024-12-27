@@ -19,6 +19,6 @@ dice n =
         else 
             dice (n - 1))
 
-test n = (dice n, dice n)
+test x = 3 + dice x
 
-main = test 10
+main = 3 + test 10
