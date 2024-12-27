@@ -26,7 +26,8 @@ testMapExprWithName :: ExprString -> TestName -> QueryString -> Value -> TestTre
 testMapExprWithName exprString testName queryString expectedValue = testCase testString $ do
   expr <- assertRight $ parseExpr exprString
   query <- assertRight $ parseQuery queryString
-  (dim, value) <- assertRight $ maxAPost expr query
+  let program = wrapInMain expr
+  value <- assertRight $ mle program query
   value @?= expectedValue
   where
     testString = shorter testName <> ":Query " <> shorter queryString
@@ -35,7 +36,8 @@ testMapExprFail :: ExprString -> QueryString -> ErrorString -> TestTree
 testMapExprFail exprString queryString errorString = testCase testString $ do
   expr <- assertRight $ parseExpr exprString
   query <- assertRight $ parseQuery queryString
-  maxAPost expr query @?= Left errorString
+  let program = wrapInMain expr
+  mle program query @?= Left errorString
   where
     testString = shorter exprString <> ":Query " <> shorter queryString <> ":Expected Fail"
 

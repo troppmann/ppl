@@ -14,7 +14,8 @@ import Test.Tasty.HUnit
 testApproxFloatPdf :: TestName -> LinearSpacing -> TestTree
 testApproxFloatPdf exprString linSpace = testCase testString $ do
   expr <- assertRight $ parseExpr exprString
-  let area = approxExpr linSpace expr
+  let program = wrapInMain expr
+  let area = approxProgram linSpace program
   assertApproxEqual "" defaultErrorMargin 1 area
   where
     testString = exprString

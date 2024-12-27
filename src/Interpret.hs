@@ -19,7 +19,7 @@ type ErrorString = String
 inferProgram :: Program -> Value -> Either ErrorString DimensionalProbability
 inferProgram program value = do
   mainExpr <- justOr (lookup "main" program) "main-Func not found."
-  let runTime = Runtime {program, arguments = [], currentFnName="main", recursionDepth = 0, maxRecursionDepth = 10}
+  let runTime = Runtime {program, arguments = [], currentFnName="main", recursionDepth = 0, maxRecursionDepth = 100}
   interpret runTime mainExpr value
 
 interpret :: Runtime -> Expr -> Value -> Either String DimensionalProbability

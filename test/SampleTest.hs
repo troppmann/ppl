@@ -14,14 +14,16 @@ import Test.Tasty.HUnit
 testSampleExprEq :: TestName -> Value -> TestTree
 testSampleExprEq exprString expectedValue = testCase exprString $ do
   expr <- assertRight $ parseExpr exprString
-  sample <- sampleExpr expr
+  let program = wrapInMain expr
+  sample <- sampleProgram program
   sample @?= expectedValue
 
 -- TODO 11.09.24: swap with QuickCheck test
 testSampleExprInRange :: TestName -> (Double, Double) -> TestTree
 testSampleExprInRange exprString (low, high) = testCase testString $ do
   expr <- assertRight $ parseExpr exprString
-  VFloat sample <- sampleExpr expr
+  let program = wrapInMain expr
+  VFloat sample <- sampleProgram program
   assertBool "" $ sample >= low
   assertBool "" $ sample <= high
   where
@@ -33,11 +35,9 @@ testSampleExpr exprString = testSampleExprWithName exprString exprString
 testSampleExprWithName :: String -> TestName -> TestTree
 testSampleExprWithName exprString testName = testCase testName $ do
   expr <- assertRight $ parseExpr exprString
-  _sample <- sampleExpr expr
+  let program = wrapInMain expr
+  _sample <- sampleProgram program
   return ()
-
-infinity = 1 / 0
-
 tests =
   testGroup
     "Sample"

@@ -23,7 +23,8 @@ testQueryExprWithName :: String -> TestName -> QueryString -> DimensionalProbabi
 testQueryExprWithName exprString testName queryString (expectedDim, expectedProb) = testCase testString $ do
   expr <- assertRight $ parseExpr exprString
   query <- assertRight $ parseQuery queryString
-  (dim, prob) <- assertRight $ qInterpret expr query
+  let program = wrapInMain expr
+  (dim, prob) <- assertRight $ qInferProgram program query
   dim @?= expectedDim
   assertApproxEqual "" defaultErrorMargin expectedProb prob
   where
@@ -33,7 +34,8 @@ testQueryExprFail :: TestName -> QueryString -> String -> TestTree
 testQueryExprFail exprString queryString errorString = testCase msg $ do
   expr <- assertRight $ parseExpr exprString
   query <- assertRight $ parseQuery queryString
-  error <- assertLeft $ qInterpret expr query
+  let program = wrapInMain expr
+  error <- assertLeft $ qInferProgram program query
   error @?= errorString
   where
     msg = shorter exprString <> ":Expected Error"
@@ -48,13 +50,13 @@ tests =
           testQueryExpr "Uniform" "_" (0, 1.0),
           testQueryExpr "Uniform" "(_ >= 0.3)" (0, 0.7),
           testQueryExpr "Uniform" "2 <= _" (0, 0.0),
-          testQueryExprFail "Uniform" "(_, _ >= 2.0)" "Can't interpret singular value expression with a tuple query.",
+          testQueryExpr "Uniform" "(_, _ >= 2.0)" (0, 0.0),
           testQueryExpr "Uniform * 3" "(_ >= 2.0)" (0, 1 / 3),
           testQueryExpr "if Uniform < 0.5 then Uniform * 3 else Uniform" "(_ >= 2.0)" (0, 0.5 * (1 / 3)),
           testQueryExpr "(Uniform * 3, 2.0 - 20)" "(_ >= 2.0, _)" (0, 1 / 3),
           testQueryExpr "(Uniform, Uniform)" "(_ <= 0.2, _ <= 0.2)" (0, 0.2 * 0.2),
           testQueryExpr "(4 * Uniform, Uniform)" "(2.1, _)" (1, 0.25),
-          testQueryExprFail "(4 * Uniform, Uniform)" "(2.1)" "Can't interpret a tuple expression with a singular expression.",
+          testQueryExpr "(4 * Uniform, Uniform)" "(2.1)" (0, 0.0),
           testQueryExpr "(4 * Uniform, 8 * Uniform)" "(2.1, _ >= 4.0)" (1, 0.25 * 0.5),
           testQueryExpr "(4 * Uniform, 8 * Uniform, Normal)" "(2.1, _ >= 4.0, 0.0)" (2, 0.25 * 0.5 * 0.3989),
           testQueryExpr "((4 * Uniform, 8 * Uniform), Normal)" "((2.1, _ >= 4.0), 0.0)" (2, 0.25 * 0.5 * 0.3989)

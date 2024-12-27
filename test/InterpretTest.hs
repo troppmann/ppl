@@ -19,7 +19,8 @@ testInterpretExprEq exprString = testInterpretExprEqWithName exprString exprStri
 testInterpretExprEqWithName :: String -> TestName -> Value -> DimensionalProbability -> TestTree
 testInterpretExprEqWithName exprString testName inputValue (expectedDim, expectedProb) = testCase testString $ do
   expr <- assertRight $ parseExpr exprString
-  (dim, prob) <- assertRight $ interpret expr inputValue
+  let program = wrapInMain expr 
+  (dim, prob) <- assertRight $ inferProgram program inputValue
   dim @?= expectedDim
   assertApproxEqual "" defaultErrorMargin expectedProb prob
   where
@@ -28,7 +29,8 @@ testInterpretExprEqWithName exprString testName inputValue (expectedDim, expecte
 testInterpretExprFail :: TestName -> Value -> String -> TestTree
 testInterpretExprFail exprString inputValue expectedError = testCase testString $ do
   expr <- assertRight $ parseExpr exprString
-  interpret expr inputValue @?= Left expectedError
+  let program = wrapInMain expr 
+  inferProgram program  inputValue @?= Left expectedError
   where
     testString = exprString <> ":" <> shorter inputValue <> ":Expected Fail"
 
