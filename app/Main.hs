@@ -25,7 +25,6 @@ main :: IO ()
 main = do
   s <- readFile "test.ppl"
   let program = unwrapEither $ parseProgram s
-  print "------Programs"
   -- let program = [("main", IfThenElse (LessThan Uniform (Const $ VFloat 0.2)) (Multiply Normal (Const $ VFloat 0.5))(Plus (Const $ VFloat 2.0) (FnCall "main" [])))]
   -- let program = [("main", FnCall "factorial" [Const $ VFloat 5.0]),("factorial", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (Const $ VFloat 1.0) (Multiply (FnParameter 0) (FnCall "factorial" [Subtract (FnParameter 0)(Const $ VFloat 1.0)])))]
   --let program =
@@ -33,18 +32,24 @@ main = do
           --("dice", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (FnParameter 0) (IfThenElse (LessThan Uniform (Divide (Const $ VFloat 1.0) (FnParameter 0))) (FnParameter 0) (FnCall "dice" [Subtract (FnParameter 0) (Const $ VFloat 1.0)]))),
           --("middleMan", Plus (Const $ VFloat 1.0) (FnCall "dice" [Const $ VFloat 20]))
         --]
-  print "------Unopt"
+  print "------Program Unopt"
   print program
   let optProgram = optimize program
-  print "------Optimize"
+  print "------Program Optimize"
   print optProgram
-  print "-------Samples"
   sample <- sampleProgram program
-  print "------Unopt"
+  print "------Sample Unopt"
   print sample
   optSample <- sampleProgram optProgram
-  print "------Optimize"
+  print "------Sample Optimize"
   print optSample
+  let inferSample = (VTuple (VFloat 0.7) (VFloat 0.7))
+  let prob = inferProgram program inferSample
+  print "------Infer Unopt"
+  print prob
+  let optProb = inferProgram optProgram inferSample
+  print "------Infer Optimize"
+  print optProb
   --let numberOfSamples = 100000
   --plotMassToFile "pmf.svg" optProgram numberOfSamples
 
