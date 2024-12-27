@@ -185,8 +185,8 @@ interpret rt (CreateTuple e1 e2) (VTuple v1 v2) = do
   dimProbA <- interpret rt e1 v1
   dimProbB <- interpret rt e2 v2
   return $ dimProbA #*# dimProbB
-interpret _ _ (VTuple _ _) = Left "Can't interpret singular value expression with a tuple."
-interpret _ (CreateTuple _ _) _ = Left "Can't interpret a tuple expression with a singular expression."
+interpret _ _ (VTuple _ _) = Right (0,0.0)
+interpret _ (CreateTuple _ _) _ = Right (0,0.0)
 interpret rt (FnCall fnName arguments) val = do
   expr <- justOr (lookup fnName (program rt)) ("Fn '" ++ fnName ++ "' not found.")
   let newDepth = 1 + recursionDepth rt
