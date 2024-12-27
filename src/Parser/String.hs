@@ -51,6 +51,7 @@ escape ('*': '*' : xs) = " ** " ++ escape xs
 escape ('*' : xs) = " * " ++ escape xs
 escape ('/' : xs) = " / " ++ escape xs
 escape ('=' : '=' : xs) = " == " ++ escape xs
+escape ('=' :  xs) = " = " ++ escape xs
 escape ('!' : '=' : xs) = " != " ++ escape xs
 escape ('!' : xs) = " ! " ++ escape xs
 escape ('<' : '=' : xs) = " <= " ++ escape xs
