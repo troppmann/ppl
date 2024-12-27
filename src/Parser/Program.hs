@@ -1,14 +1,25 @@
 module Parser.Program
   ( parseProgram,
+    parseProgramWithOptions,
+    ParseOptions(..),
   )
 where
 
 import Representation
 import Parser.String
 import Parser.Expr
+import Optimizer qualified as Opti
 
 parseProgram :: String -> Either ErrorString Program
-parseProgram = fmap fst . parseProgramUntil [] Nothing . separate
+parseProgram = parseProgramWithOptions ParseOptions{optimization=True,maxLoopUnroll=30}
+
+data ParseOptions = ParseOptions{optimization::Bool, maxLoopUnroll::Int}
+parseProgramWithOptions :: ParseOptions -> String -> Either ErrorString Program
+parseProgramWithOptions options = fmap (optimizeStep . fst) . parseProgramUntil [] Nothing . separate
+  where
+    optimizeOption = Opti.OptimizeOption{Opti.maxLoopUnroll=maxLoopUnroll options}
+    optimizeStep = if optimization options then Opti.optimizeWithOption optimizeOption else id
+
 
 parseProgramUntil :: [VariableName] -> Maybe Func -> [Symbol] -> Either ErrorString (Program, [Symbol])
 parseProgramUntil _ Nothing [] = return ([],[])

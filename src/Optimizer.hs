@@ -1,6 +1,8 @@
 module Optimizer
   ( optimize,
     optimizeExpr,
+    optimizeWithOption,
+    OptimizeOption(..),
   )
 where
 
@@ -11,10 +13,16 @@ import Representation
 import Runtime
 
 optimize :: Program -> Program
-optimize program = map (\(fnName, expr) -> (fnName, unwrapEither $ optExpr fnName expr)) program
+optimize = optimizeWithOption OptimizeOption{maxLoopUnroll=30}
+
+data OptimizeOption = OptimizeOption {maxLoopUnroll::Int}
+optimizeWithOption :: OptimizeOption -> Program -> Program
+optimizeWithOption option program = map (\(fnName, expr) -> (fnName, unwrapEither $ optExpr fnName expr)) program
   where
-    runTime fnName = Runtime {program, arguments = [], currentFnName = fnName, recursionDepth = 0, maxRecursionDepth = 10}
+    runTime fnName = Runtime {program, arguments = [], currentFnName = fnName, recursionDepth = 0, maxRecursionDepth = maxLoopUnroll option}
     optExpr fnName expr = runExcept $ evalStateT (optimizeExpr expr) (runTime fnName)
+
+
 
 type ErrorString = String
 

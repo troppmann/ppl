@@ -24,7 +24,8 @@ toFloat _ = -1
 main :: IO ()
 main = do
   s <- readFile "test.ppl"
-  let program = unwrapEither $ parseProgram s
+  let parseOptions = ParseOptions{optimization=False,maxLoopUnroll=0}
+  let program = unwrapEither $ parseProgramWithOptions parseOptions s
   -- let program = [("main", IfThenElse (LessThan Uniform (Const $ VFloat 0.2)) (Multiply Normal (Const $ VFloat 0.5))(Plus (Const $ VFloat 2.0) (FnCall "main" [])))]
   -- let program = [("main", FnCall "factorial" [Const $ VFloat 5.0]),("factorial", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (Const $ VFloat 1.0) (Multiply (FnParameter 0) (FnCall "factorial" [Subtract (FnParameter 0)(Const $ VFloat 1.0)])))]
   --let program =
@@ -43,7 +44,7 @@ main = do
   optSample <- sampleProgram optProgram
   print "------Sample Optimize"
   print optSample
-  let inferSample = (VTuple (VFloat 0.7) (VFloat 0.7))
+  let inferSample = (VTuple (VFloat 6.0) (VFloat 6.0))
   let prob = inferProgram program inferSample
   print "------Infer Unopt"
   print prob
