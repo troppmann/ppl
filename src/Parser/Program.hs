@@ -6,6 +6,7 @@ where
 import Representation
 import Parser.String
 import Parser.Expr
+import Debug.Extended
 
 parseProgram :: String -> Either ErrorString Program
 parseProgram = fmap fst . parseProgramUntil [] Nothing . separate
@@ -18,7 +19,7 @@ parseProgramUntil vs Nothing (x:xs)
   | isViableName x = parseProgramUntil vs (Just x) xs
   | otherwise = Left $ "'" ++ x ++ "' is no viable Function name."
 parseProgramUntil vs (Just fnName) ("=":xs) = do
-  (expr, r1) <- parseUntil vs Nothing Nothing (Nothing, Just ";") xs
+  (expr, r1) <- dbg $ parseUntil vs Nothing Nothing (Nothing, Just ";") xs
   (program, r2) <- parseProgramUntil [] Nothing r1
   return ((fnName, expr) : program, r2)
 parseProgramUntil vs (Just fnName) (x:xs)

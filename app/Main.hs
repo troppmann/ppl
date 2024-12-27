@@ -45,6 +45,8 @@ main = do
   optSample <- sampleProgram optProgram
   print "------Optimize"
   print optSample
+  let numberOfSamples = 100000
+  plotMassToFile "pmf.svg" optProgram numberOfSamples
 
 -- let program = [("main", FnCall "dice" [Const $ VFloat 6.0]),("dice", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (FnParameter 0) (IfThenElse (LessThan Uniform (Divide (Const $ VFloat 1.0) (FnParameter 0))) (FnParameter 0) (FnCall "dice" [Subtract (FnParameter 0) (Const $ VFloat 1.0)])))]
 -- print program
@@ -56,9 +58,9 @@ main = do
 -- let integral = validateExpr LinearSpacing {start = -10, end = 10, stepWidth = 0.10} expr
 -- print $ "Validate: " ++ show integral
 -- let spacing = LinearSpacing {start = -4, end = 60, stepWidth = 0.1}
--- let numberOfSamples = 100000
+--let numberOfSamples = 100000
 -- plotDensityToFile "pdf.svg" program spacing numberOfSamples
--- plotMassToFile "pmf.svg" program numberOfSamples
+--plotMassToFile "pmf.svg" program numberOfSamples
 -- let value = VFloat 0.0
 -- let prob = interpret expr value
 -- print ("Test: " <> show value <> " -> " <> showFloatN (snd $ unwrapEither prob) 5)
