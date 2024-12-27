@@ -32,7 +32,8 @@ data SampledDensity = SampledDensity
 sampleDensity :: (MonadRandom m) => Program -> SampleInfo -> m [(Double, Double)]
 sampleDensity program info = do
   let mainExpr = unwrapMaybe $ lookup "main" program
-  samples <- fmap (fmap convertToFloat) (replicateM (numberOfSamples info) $ sampleRand (defaultSampleRuntime program) mainExpr)
+  let rt = InferRuntime {program, currentFnName="main", arguments=[], recursionDepth=0,maxRecursionDepth=10000}
+  samples <- fmap (fmap convertToFloat) (replicateM (numberOfSamples info) $ sampleRand rt mainExpr)
   let indices = map (toBucketIndex info) samples
   let densities =
         map (\(x, y) -> (fromBucketIndex info x, y / fromIntegral (numberOfSamples info) / stepWidth info))
@@ -69,7 +70,8 @@ convertToList sampledDis = map (Data.Bifunctor.first (fromBucketIndex (info samp
 sampleMass :: (MonadRandom m) => Program -> Int -> m [(Double, Double)]
 sampleMass program numberOfSamples = do
   let mainExpr = unwrapMaybe $ lookup "main" program
-  samples <- fmap (fmap convertToFloat) (replicateM numberOfSamples $ sampleRand (defaultSampleRuntime program) mainExpr)
+  let rt = InferRuntime {program, currentFnName="main", arguments=[], recursionDepth=0,maxRecursionDepth=10000}
+  samples <- fmap (fmap convertToFloat) (replicateM numberOfSamples $ sampleRand rt mainExpr)
   let masses =
         map (\(x, y) -> (x, y / fromIntegral numberOfSamples))
           . Map.toList

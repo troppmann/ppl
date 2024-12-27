@@ -1,6 +1,7 @@
 module Interpret
   ( inferProgram,
     interpret,
+    replaceFnParameterWithContent,
   )
 where
 

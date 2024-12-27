@@ -1,35 +1,28 @@
 module Sample
   ( sampleRand,
     sampleProgram,
-    SampleRuntime (..),
-    defaultSampleRuntime,
+    InferRuntime (..),
+    defaultInferRuntime,
   )
 where
 
 import Control.Monad.Random
 import Debug.Extended
 import Representation
+import Runtime
 import Statistics.Distribution
 import Statistics.Distribution.Normal (normalDistr)
+import Interpret (replaceFnParameterWithContent)
 
 sampleProgram :: Program -> IO Value
 sampleProgram program = evalRandIO $ sampleRand rt mainExpr
   where
-    rt = defaultSampleRuntime program
+    rt = InferRuntime {program, currentFnName = "main", arguments = [], recursionDepth = 0, maxRecursionDepth = 10000}
     mainExpr = unwrapMaybe $ lookup "main" program
 
-defaultSampleRuntime :: Program -> SampleRuntime
-defaultSampleRuntime program = SampleRuntime {program, arguments = [], recursionDepth = 0, maxRecursionDepth = 10000}
 
-data SampleRuntime = SampleRuntime
-  { program :: Program,
-    arguments :: [Value],
-    recursionDepth :: Int,
-    maxRecursionDepth :: Int
-  }
-  deriving (Show, Eq)
 
-sampleRand :: (MonadRandom m) => SampleRuntime -> Expr -> m Value
+sampleRand :: (MonadRandom m) => InferRuntime -> Expr -> m Value
 sampleRand _ (Const v) = return v
 sampleRand _ Uniform = do
   rValue <- getRandomR (0.0, 1.0)
@@ -59,8 +52,8 @@ sampleRand rt (FnCall fnName arguments) = do
   case lookup fnName (program rt) of
     (Just expr) -> do
       let newDepth = 1 + recursionDepth rt
-      sampledArguments <- traverse (sampleRand rt) arguments
-      let newRt = rt {recursionDepth = newDepth, arguments = sampledArguments}
+      let args = map (unwrapEither. replaceFnParameterWithContent rt) arguments
+      let newRt = rt {recursionDepth = newDepth, arguments=args}
       if newDepth > maxRecursionDepth rt
         then
           error $ "Max Recursion Depth reached: " ++ show (maxRecursionDepth rt)
@@ -68,16 +61,16 @@ sampleRand rt (FnCall fnName arguments) = do
           sampleRand newRt expr
     Nothing -> error $ "Could not find FnName: " <> fnName <> " ."
 sampleRand rt (FnParameter index)
-  | Just ele <- getElem (arguments rt) index = return ele
+  | Just ele <- getElem (arguments rt) index = sampleRand rt ele
   | otherwise = error $ "Could not find Parameter with index: " ++ show index
 
-apply :: (MonadRandom m) => SampleRuntime -> (Value -> Value -> Value) -> Expr -> Expr -> m Value
+apply :: (MonadRandom m) => InferRuntime -> (Value -> Value -> Value) -> Expr -> Expr -> m Value
 apply rt f e1 e2 = do
   v1 <- sampleRand rt e1
   v2 <- sampleRand rt e2
   return $ f v1 v2
 
-sampleIfElse :: (MonadRandom m) => SampleRuntime -> Expr -> Expr -> Expr -> m Value
+sampleIfElse :: (MonadRandom m) => InferRuntime -> Expr -> Expr -> Expr -> m Value
 sampleIfElse rt e1 e2 e3 = do
   v1 <- sampleRand rt e1
   if evaluateAsBool v1
@@ -86,7 +79,7 @@ sampleIfElse rt e1 e2 e3 = do
     else
       sampleRand rt e3
 
-sampleAnd :: (MonadRandom m) => SampleRuntime -> Expr -> Expr -> m Value
+sampleAnd :: (MonadRandom m) => InferRuntime -> Expr -> Expr -> m Value
 sampleAnd rt e1 e2 = do
   v1 <- sampleRand rt e1
   if evaluateAsBool v1
@@ -96,7 +89,7 @@ sampleAnd rt e1 e2 = do
     else
       return $ VBool False
 
-sampleOr :: (MonadRandom m) => SampleRuntime -> Expr -> Expr -> m Value
+sampleOr :: (MonadRandom m) => InferRuntime -> Expr -> Expr -> m Value
 sampleOr rt e1 e2 = do
   v1 <- sampleRand rt e1
   if evaluateAsBool v1
@@ -106,12 +99,12 @@ sampleOr rt e1 e2 = do
       v2 <- sampleRand rt e2
       return $ VBool $ evaluateAsBool v2
 
-sampleNot :: (MonadRandom m) => SampleRuntime -> Expr -> m Value
+sampleNot :: (MonadRandom m) => InferRuntime -> Expr -> m Value
 sampleNot rt expr = do
   value <- sampleRand rt expr
   return $ VBool $ not $ evaluateAsBool value
 
-sampleTuple :: (MonadRandom m) => SampleRuntime -> Expr -> Expr -> m Value
+sampleTuple :: (MonadRandom m) => InferRuntime -> Expr -> Expr -> m Value
 sampleTuple rt e1 e2 = do
   v1 <- sampleRand rt e1
   v2 <- sampleRand rt e2
