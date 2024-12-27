@@ -15,7 +15,7 @@ type ErrorString = String
 
 type ResultValue = Either ErrorString Value
 
-evalConstExpr :: InferRuntime -> Expr -> ResultValue
+evalConstExpr :: Runtime -> Expr -> ResultValue
 evalConstExpr _ (Const v) = Right v
 evalConstExpr _ Normal = Left "Normal is not a constant."
 evalConstExpr _ Uniform = Left "Uniform is not a constant."
@@ -40,13 +40,13 @@ evalConstExpr rt (FnParameter index)
   | Just ele <- getElem (arguments rt) index = evalConstExpr rt ele
   | otherwise = error $ "Could not find Parameter with index: " ++ show index
 
-apply :: InferRuntime -> (Value -> Value -> ResultValue) -> Expr -> Expr -> ResultValue
+apply :: Runtime -> (Value -> Value -> ResultValue) -> Expr -> Expr -> ResultValue
 apply rt f e1 e2 = do
   v1 <- evalConstExpr rt e1
   v2 <- evalConstExpr rt e2
   f v1 v2
 
-evalAnd :: InferRuntime -> Expr -> Expr -> ResultValue
+evalAnd :: Runtime -> Expr -> Expr -> ResultValue
 evalAnd rt e1 e2 = do
   v1 <- evalConstExpr rt e1
   b1 <- evalAsBool v1
@@ -58,7 +58,7 @@ evalAnd rt e1 e2 = do
     else
       return $ VBool False
 
-evalOr :: InferRuntime -> Expr -> Expr -> ResultValue
+evalOr :: Runtime -> Expr -> Expr -> ResultValue
 evalOr rt e1 e2 = do
   v1 <- evalConstExpr rt e1
   b1 <- evalAsBool v1
@@ -70,13 +70,13 @@ evalOr rt e1 e2 = do
       b2 <- evalAsBool v2
       return $ VBool b2
 
-evalNot :: InferRuntime -> Expr -> ResultValue
+evalNot :: Runtime -> Expr -> ResultValue
 evalNot rt expr = do
   value <- evalConstExpr rt expr
   bool <- evalAsBool value
   return $ VBool $ not bool
 
-evalIfThenElse :: InferRuntime -> Expr -> Expr -> Expr -> ResultValue
+evalIfThenElse :: Runtime -> Expr -> Expr -> Expr -> ResultValue
 evalIfThenElse rt e1 e2 e3 = do
   v1 <- evalConstExpr rt e1
   bool <- evalAsBool v1
@@ -86,7 +86,7 @@ evalIfThenElse rt e1 e2 e3 = do
     else
       evalConstExpr rt e3
 
-evalCreateTuple :: InferRuntime -> Expr -> Expr -> ResultValue
+evalCreateTuple :: Runtime -> Expr -> Expr -> ResultValue
 evalCreateTuple rt e1 e2 = do
   v1 <- evalConstExpr rt e1
   v2 <- evalConstExpr rt e2

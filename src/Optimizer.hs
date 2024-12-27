@@ -13,12 +13,12 @@ import Runtime
 optimize :: Program -> Program
 optimize program = map (\(fnName, expr) -> (fnName, unwrapEither $ optExpr fnName expr)) program
   where
-    runTime fnName = InferRuntime {program, arguments = [], currentFnName = fnName, recursionDepth = 0, maxRecursionDepth = 10}
+    runTime fnName = Runtime {program, arguments = [], currentFnName = fnName, recursionDepth = 0, maxRecursionDepth = 10}
     optExpr fnName expr = runExcept $ evalStateT (optimizeExpr expr) (runTime fnName)
 
 type ErrorString = String
 
-type RuntimeState a = StateT InferRuntime (Except ErrorString) a
+type RuntimeState a = StateT Runtime (Except ErrorString) a
 
 optimizeExpr :: Expr -> RuntimeState Expr
 optimizeExpr (Plus e1 e2) = optimizePlus e1 e2

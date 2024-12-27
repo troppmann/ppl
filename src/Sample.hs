@@ -1,8 +1,7 @@
 module Sample
   ( sampleRand,
     sampleProgram,
-    InferRuntime (..),
-    defaultInferRuntime,
+    Runtime (..),
   )
 where
 
@@ -17,12 +16,12 @@ import Interpret (replaceFnParameterWithContent)
 sampleProgram :: Program -> IO Value
 sampleProgram program = evalRandIO $ sampleRand rt mainExpr
   where
-    rt = InferRuntime {program, currentFnName = "main", arguments = [], recursionDepth = 0, maxRecursionDepth = 10000}
+    rt = Runtime {program, currentFnName = "main", arguments = [], recursionDepth = 0, maxRecursionDepth = 10000}
     mainExpr = unwrapMaybe $ lookup "main" program
 
 
 
-sampleRand :: (MonadRandom m) => InferRuntime -> Expr -> m Value
+sampleRand :: (MonadRandom m) => Runtime -> Expr -> m Value
 sampleRand _ (Const v) = return v
 sampleRand _ Uniform = do
   rValue <- getRandomR (0.0, 1.0)
@@ -64,13 +63,13 @@ sampleRand rt (FnParameter index)
   | Just ele <- getElem (arguments rt) index = sampleRand rt ele
   | otherwise = error $ "Could not find Parameter with index: " ++ show index
 
-apply :: (MonadRandom m) => InferRuntime -> (Value -> Value -> Value) -> Expr -> Expr -> m Value
+apply :: (MonadRandom m) => Runtime -> (Value -> Value -> Value) -> Expr -> Expr -> m Value
 apply rt f e1 e2 = do
   v1 <- sampleRand rt e1
   v2 <- sampleRand rt e2
   return $ f v1 v2
 
-sampleIfElse :: (MonadRandom m) => InferRuntime -> Expr -> Expr -> Expr -> m Value
+sampleIfElse :: (MonadRandom m) => Runtime -> Expr -> Expr -> Expr -> m Value
 sampleIfElse rt e1 e2 e3 = do
   v1 <- sampleRand rt e1
   if evaluateAsBool v1
@@ -79,7 +78,7 @@ sampleIfElse rt e1 e2 e3 = do
     else
       sampleRand rt e3
 
-sampleAnd :: (MonadRandom m) => InferRuntime -> Expr -> Expr -> m Value
+sampleAnd :: (MonadRandom m) => Runtime -> Expr -> Expr -> m Value
 sampleAnd rt e1 e2 = do
   v1 <- sampleRand rt e1
   if evaluateAsBool v1
@@ -89,7 +88,7 @@ sampleAnd rt e1 e2 = do
     else
       return $ VBool False
 
-sampleOr :: (MonadRandom m) => InferRuntime -> Expr -> Expr -> m Value
+sampleOr :: (MonadRandom m) => Runtime -> Expr -> Expr -> m Value
 sampleOr rt e1 e2 = do
   v1 <- sampleRand rt e1
   if evaluateAsBool v1
@@ -99,12 +98,12 @@ sampleOr rt e1 e2 = do
       v2 <- sampleRand rt e2
       return $ VBool $ evaluateAsBool v2
 
-sampleNot :: (MonadRandom m) => InferRuntime -> Expr -> m Value
+sampleNot :: (MonadRandom m) => Runtime -> Expr -> m Value
 sampleNot rt expr = do
   value <- sampleRand rt expr
   return $ VBool $ not $ evaluateAsBool value
 
-sampleTuple :: (MonadRandom m) => InferRuntime -> Expr -> Expr -> m Value
+sampleTuple :: (MonadRandom m) => Runtime -> Expr -> Expr -> m Value
 sampleTuple rt e1 e2 = do
   v1 <- sampleRand rt e1
   v2 <- sampleRand rt e2

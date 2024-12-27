@@ -1,11 +1,11 @@
 module Runtime
-  ( InferRuntime (..),
-    defaultInferRuntime,
+  ( Runtime (..),
+    defaultRuntime,
   )
 where
 import Representation
 
-data InferRuntime = InferRuntime
+data Runtime = Runtime
   { program :: Program,
     arguments :: [Expr],
     currentFnName :: String, 
@@ -14,5 +14,5 @@ data InferRuntime = InferRuntime
   }
   deriving (Show, Eq)
 
-defaultInferRuntime :: Program -> InferRuntime
-defaultInferRuntime program = InferRuntime {program, arguments=[], currentFnName="main", recursionDepth=0, maxRecursionDepth=100}
+defaultRuntime :: Program -> Runtime
+defaultRuntime program = Runtime {program, arguments=[], currentFnName="main", recursionDepth=0, maxRecursionDepth=100}

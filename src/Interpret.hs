@@ -19,10 +19,10 @@ type ErrorString = String
 inferProgram :: Program -> Value -> Either ErrorString DimensionalProbability
 inferProgram program value = do
   mainExpr <- justOr (lookup "main" program) "main-Func not found."
-  let runTime = InferRuntime {program, arguments = [], currentFnName="main", recursionDepth = 0, maxRecursionDepth = 10}
+  let runTime = Runtime {program, arguments = [], currentFnName="main", recursionDepth = 0, maxRecursionDepth = 10}
   interpret runTime mainExpr value
 
-interpret :: InferRuntime -> Expr -> Value -> Either String DimensionalProbability
+interpret :: Runtime -> Expr -> Value -> Either String DimensionalProbability
 interpret _ Uniform (VFloat v) = Right (1, if 0.0 <= v && v < 1.0 then 1.0 else 0.0)
 interpret _ Normal (VFloat v) = Right (1, density distr v)
   where
@@ -202,7 +202,7 @@ interpret rt (FnParameter index) val
   | otherwise = error $ "Could not find Parameter with index: " ++ show index
 
 
-replaceFnParameterWithContent :: InferRuntime -> Expr -> Either ErrorString Expr
+replaceFnParameterWithContent :: Runtime -> Expr -> Either ErrorString Expr
 replaceFnParameterWithContent rt (FnParameter index)
   | Just ele <- getElem (arguments rt) index = return ele
   | otherwise = error $ "Could not find Parameter with index: " ++ show index
@@ -223,7 +223,7 @@ replaceFnParameterWithContent rt (Not e1) = do
   return $ Not r1
 replaceFnParameterWithContent _ expr = return expr
 
-checkBothBranches :: InferRuntime -> (Expr -> Expr -> Expr) -> Expr -> Expr -> Either ErrorString Expr
+checkBothBranches :: Runtime -> (Expr -> Expr -> Expr) -> Expr -> Expr -> Either ErrorString Expr
 checkBothBranches rt exprF e1 e2 = do
   r1 <- replaceFnParameterWithContent rt e1
   r2 <- replaceFnParameterWithContent rt e2
@@ -239,7 +239,7 @@ swap GT = LT
 swap GE = LE
 
 -- TODO 06.09.2024: Should i add a dimension differentiation?
-compareFloatExpr :: InferRuntime -> Expr -> CompareQuery -> Either String Double
+compareFloatExpr :: Runtime -> Expr -> CompareQuery -> Either String Double
 compareFloatExpr _ (Const (VBool _)) _ = Left "Expected Float got Bool."
 compareFloatExpr _ (Const (VFloat constant)) (ord, value) = return $ case ord of
   LT -> if constant < value then 1.0 else 0.0
