@@ -4,7 +4,7 @@ module Mean
 where
 
 import Debug.Extended
-import Infer
+--import Infer
 import Representation
 
 type ErrorString = String
@@ -30,10 +30,10 @@ meanExpr (Divide e1 e2) = do
   m1 <- meanExpr e1
   m2 <- meanExpr e2
   return $ m1 / m2
-meanExpr (IfThenElse condExpr branchE1 branchE2) = do
+meanExpr (IfThenElse _condExpr branchE1 branchE2) = do
   -- Todo(21.12.24) :: fix with program or so dummyProgram
-  --(_dim, prob) <- infer condExpr (VBool True)
-  let (_dim, prob) = (-1,-1.0)
+  -- (_dim, prob) <- infer condExpr (VBool True)
+  let (_dim, prob) = (0 :: Integer, -1.0)
   let probFalse = 1 - prob
   m1 <- meanExpr branchE1
   m2 <- meanExpr branchE2
