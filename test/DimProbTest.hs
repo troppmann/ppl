@@ -8,15 +8,13 @@ import Representation
 import Shorter
 import Test.HUnit.Approx
 import Test.Tasty
-import Test.Tasty.ExpectedFailure
 import Test.Tasty.HUnit
 
 testDimProbWithName :: TestName -> DimensionalProbability -> DimensionalProbability -> TestTree
-testDimProbWithName testName (dim, prob) expectedDimProb@(expectedDim, expectedProb) = testCase msg $ do
-  dim @?= expectedDim
-  assertApproxEqual "" defaultErrorMargin expectedProb prob
+testDimProbWithName testName calculated expected = testCase msg $ do
+  assertEqDimProb calculated expected
   where
-    msg = testName <> ":" <> show expectedDimProb
+    msg = testName <> ":" <> show expected
 
 tests =
   testGroup

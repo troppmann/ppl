@@ -17,12 +17,11 @@ testInferExprEq :: String -> Value -> DimensionalProbability -> TestTree
 testInferExprEq exprString = testInferExprEqWithName exprString exprString
 
 testInferExprEqWithName :: String -> TestName -> Value -> DimensionalProbability -> TestTree
-testInferExprEqWithName exprString testName inputValue (expectedDim, expectedProb) = testCase testString $ do
+testInferExprEqWithName exprString testName inputValue expected = testCase testString $ do
   expr <- assertRight $ parseExpr exprString
   let program = wrapInMain expr
-  (dim, prob) <- assertRight $ inferProgram program inputValue
-  dim @?= expectedDim
-  assertApproxEqual "" defaultErrorMargin expectedProb prob
+  dimProb <- assertRight $ inferProgram program inputValue
+  assertEqDimProb dimProb expected
   where
     testString = shorter testName <> ":Value " <> shorter inputValue
 
@@ -35,12 +34,11 @@ testInferExprFail exprString inputValue expectedError = testCase testString $ do
     testString = exprString <> ":" <> shorter inputValue <> ":Expected Fail"
 
 testInferProgram :: String -> Value -> DimensionalProbability -> TestTree
-testInferProgram programString inputValue (expectedDim, expectedProb) = testCase testString $ do
+testInferProgram programString inputValue expected = testCase testString $ do
   let parseOpt = ParseOptions False 0
   program <- assertRight $ parseProgramWithOptions parseOpt programString
-  (dim, prob) <- assertRight $ inferProgram program inputValue
-  dim @?= expectedDim
-  assertApproxEqual "" defaultErrorMargin expectedProb prob
+  dimProb <- assertRight $ inferProgram program inputValue
+  assertEqDimProb dimProb expected
   where
     testString = shorter programString <> ":Value " <> shorter inputValue
 

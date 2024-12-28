@@ -20,13 +20,12 @@ testQueryExpr :: TestName -> QueryString -> DimensionalProbability -> TestTree
 testQueryExpr testName = testQueryExprWithName testName testName
 
 testQueryExprWithName :: String -> TestName -> QueryString -> DimensionalProbability -> TestTree
-testQueryExprWithName exprString testName queryString (expectedDim, expectedProb) = testCase testString $ do
+testQueryExprWithName exprString testName queryString expected = testCase testString $ do
   expr <- assertRight $ parseExpr exprString
   query <- assertRight $ parseQuery queryString
   let program = wrapInMain expr
-  (dim, prob) <- assertRight $ qInferProgram program query
-  dim @?= expectedDim
-  assertApproxEqual "" defaultErrorMargin expectedProb prob
+  dimProb <- assertRight $ qInferProgram program query
+  assertEqDimProb dimProb expected
   where
     testString = shorter testName <> ":Query " <> shorter queryString
 
