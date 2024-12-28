@@ -36,8 +36,8 @@ type NumberOfSamples = Int
 
 plotDensityToFile :: FileName -> Program -> LinearSpacing -> NumberOfSamples -> IO ()
 plotDensityToFile filename program spacing numberOfSamples = do
-  let interpretedLine = createPoints program spacing
-  let approx = approxDensity (tail interpretedLine) (head interpretedLine)
+  let inferedLine = createPoints program spacing
+  let approx = approxDensity (tail inferedLine) (head inferedLine)
   sampledLine <- evalRandIO (sampleDensity program SampleInfo {start = LinearSpacing.start spacing, stepWidth = LinearSpacing.stepWidth spacing, numberOfSamples})
   let sampledBars = map (\(x, y) -> (x + 0.5 * LinearSpacing.stepWidth spacing, [y])) sampledLine
 
@@ -45,7 +45,7 @@ plotDensityToFile filename program spacing numberOfSamples = do
     layout_title .= "PDF"
     setColors [opaque blue, opaque red]
     plot $ plotBars <$> normalBars ["Sampled"] sampledBars
-    plot (line ("Inferred ~Area: " ++ showFloatN approx 5) [interpretedLine])
+    plot (line ("Inferred ~Area: " ++ showFloatN approx 5) [inferedLine])
 
 normalBars :: (PlotValue x, BarsPlotValue y) => [String] -> [(x, [y])] -> EC l (PlotBars x y)
 normalBars titles vals = liftEC $ do

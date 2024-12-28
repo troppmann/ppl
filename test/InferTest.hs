@@ -19,7 +19,7 @@ testInferExprEq exprString = testInferExprEqWithName exprString exprString
 testInferExprEqWithName :: String -> TestName -> Value -> DimensionalProbability -> TestTree
 testInferExprEqWithName exprString testName inputValue (expectedDim, expectedProb) = testCase testString $ do
   expr <- assertRight $ parseExpr exprString
-  let program = wrapInMain expr 
+  let program = wrapInMain expr
   (dim, prob) <- assertRight $ inferProgram program inputValue
   dim @?= expectedDim
   assertApproxEqual "" defaultErrorMargin expectedProb prob
@@ -29,10 +29,20 @@ testInferExprEqWithName exprString testName inputValue (expectedDim, expectedPro
 testInferExprFail :: TestName -> Value -> String -> TestTree
 testInferExprFail exprString inputValue expectedError = testCase testString $ do
   expr <- assertRight $ parseExpr exprString
-  let program = wrapInMain expr 
-  inferProgram program  inputValue @?= Left expectedError
+  let program = wrapInMain expr
+  inferProgram program inputValue @?= Left expectedError
   where
     testString = exprString <> ":" <> shorter inputValue <> ":Expected Fail"
+
+testInferProgram :: String -> Value -> DimensionalProbability -> TestTree
+testInferProgram programString inputValue (expectedDim, expectedProb) = testCase testString $ do
+  let parseOpt = ParseOptions False 0
+  program <- assertRight $ parseProgramWithOptions parseOpt programString
+  (dim, prob) <- assertRight $ inferProgram program inputValue
+  dim @?= expectedDim
+  assertApproxEqual "" defaultErrorMargin expectedProb prob
+  where
+    testString = shorter programString <> ":Value " <> shorter inputValue
 
 tests =
   testGroup
@@ -47,8 +57,8 @@ tests =
           testInferExprEq "Uniform" (VBool False) (0, 0.0),
           testInferExprEq "Normal" (VFloat 0.0) (1, 0.3989),
           testInferExprEq "Uniform * 5" (VFloat 4.8) (1, 0.2),
-          testInferExprFail "Normal / Normal" (VFloat 0.0) "Can only interpret Divide(/) with a one side Constant.",
-          testInferExprFail "(Normal * 10) / (Normal + 10)" (VFloat 0.0) "Can only interpret Divide(/) with a one side Constant.",
+          testInferExprFail "Normal / Normal" (VFloat 0.0) "Can only infer Divide(/) with a one side Constant.",
+          testInferExprFail "(Normal * 10) / (Normal + 10)" (VFloat 0.0) "Can only infer Divide(/) with a one side Constant.",
           testInferExprEq "Normal + 10" (VFloat 10.0) (1, 0.3989),
           testInferExprEq "(3 + Normal * 2)* 0.0" (VFloat 0.0) (0, 1.0),
           testInferExprEq "(Normal * 0)* 3.0" (VFloat 0.0) (0, 1.0),
@@ -92,7 +102,7 @@ tests =
           testInferExprEq "False || 3" (VBool True) (0, 0.0)
         ],
       testGroup
-        "Dimension:"
+        "Dimension"
         [ testInferExprEq "(Uniform, Uniform)" (VTuple (VFloat 0.4) (VFloat 0.1)) (2, 1.0),
           testInferExprEq "(Uniform * 4, Uniform * 8)" (VTuple (VFloat 1.0) (VFloat 0.1)) (2, 0.25 * 0.125),
           testInferExprEq "(Uniform * 4, Uniform * 8)" (VTuple (VFloat 1.0) (VFloat 20.0)) (2, 0.0),
@@ -130,7 +140,14 @@ tests =
         ],
       testGroup
         "Programs"
-        [
-
+        [ testInferProgram "main = 2 + 2" (VFloat 4.0) (0, 1.0),
+          testInferProgram "mult2 x = x + x;main = mult2 3" (VFloat 6.0) (0, 1.0),
+          testInferProgram "test x = if x < 0.5 then 1 else 2;main = test Uniform" (VFloat 1.0) (0, 0.5),
+          testInferProgram "test x = if x < 0.5 then 1 else 2;main = test Uniform" (VFloat 4.0) (0, 0.0),
+          testInferProgram "replicate n value = if n <= 1 then value else (value, replicate (n-1) value);main = replicate 1 Uniform" (VFloat 3.0) (0, 0.0),
+          testInferProgram "replicate n value = if n <= 1 then value else (value, replicate (n-1) value);main = replicate 1 Uniform" (VFloat 0.5) (1, 1.0),
+          testInferProgram "main = (Uniform, Uniform)" (VTuple (VFloat 0.5)(VFloat 0.5)) (2, 1.0),
+          testInferProgram "pair x = (x,x); main = pair (Uniform)" (VTuple (VFloat 0.5)(VFloat 0.5)) (2, 1.0),
+          testInferProgram "tIn = 1; tMid x = (x,x); main = tMid (tIn)" (VTuple (VFloat 1.0)(VFloat 1.0)) (1, 1.0)
         ]
     ]

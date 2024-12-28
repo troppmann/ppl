@@ -44,7 +44,7 @@ main = do
   optSample <- sampleProgram optProgram
   print "------Sample Optimize"
   print optSample
-  let inferSample = (VTuple (VFloat 6.0) (VFloat 6.0))
+  let inferSample = (VTuple (VFloat 1.0) (VFloat 1.0))
   let prob = inferProgram program inferSample
   print "------Infer Unopt"
   print prob
@@ -68,7 +68,7 @@ main = do
 -- plotDensityToFile "pdf.svg" program spacing numberOfSamples
 --plotMassToFile "pmf.svg" program numberOfSamples
 -- let value = VFloat 0.0
--- let prob = interpret expr value
+-- let prob = infer expr value
 -- print ("Test: " <> show value <> " -> " <> showFloatN (snd $ unwrapEither prob) 5)
 -- print $ "Mean: " <> show (meanExpr expr)
 

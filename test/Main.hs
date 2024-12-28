@@ -15,11 +15,11 @@ tests =
     "Tests"
     [ ParserTest.tests,
       SampleTest.tests,
-      InferTest.tests,
       ApproximateIntegrationTest.tests,
       QueryTest.tests,
       DimProbTest.tests,
-      MapTest.tests
+      MapTest.tests,
+      InferTest.tests
     ]
 
 main :: IO ()

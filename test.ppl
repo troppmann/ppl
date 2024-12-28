@@ -25,4 +25,4 @@ replicate n value = if n <= 1 then
     else 
         (value, replicate (n-1) value)
 
-main = replicate 3 (dice 2)
+pair x = (x,x); main = pair (Uniform)
