@@ -57,6 +57,7 @@ tests =
           testInferExprEq "Uniform * 5" (VFloat 4.8) (1, 0.2),
           testInferExprFail "Normal / Normal" (VFloat 0.0) "Can only infer Divide(/) with a one side Constant.",
           testInferExprFail "(Normal * 10) / (Normal + 10)" (VFloat 0.0) "Can only infer Divide(/) with a one side Constant.",
+          testInferExprEq "5/10" (VFloat 0.5) (0, 1.0),
           testInferExprEq "Normal + 10" (VFloat 10.0) (1, 0.3989),
           testInferExprEq "(3 + Normal * 2)* 0.0" (VFloat 0.0) (0, 1.0),
           testInferExprEq "(Normal * 0)* 3.0" (VFloat 0.0) (0, 1.0),
@@ -150,6 +151,8 @@ tests =
           testInferProgram "main = dice 40;dice n = if n <= 1 then 1 else ( if Uniform < (1/n) then n else dice (n-1));" (VFloat 20) (1, 1.0/40.0),
           testInferProgram "main = replicate 2 (Uniform + 1);replicate n value = if n <= 1 then value else (value, replicate (n-1) value);" (VTuple (VFloat 1.5) (VFloat 1.5)) (2, 1.0),
           testInferProgram "main = pair (Uniform); pair x = (x,x)" (VTuple (VFloat 0.5) (VFloat 0.5)) (2, 1.0),
-          testInferProgram "main = tMid (tIn);tIn = 1; tMid x = (x,x)" (VTuple (VFloat 1.0) (VFloat 1.0)) (1, 1.0)
+          testInferProgram "main = tMid (tIn);tIn = 1; tMid x = (x,x)" (VTuple (VFloat 1.0) (VFloat 1.0)) (1, 1.0),
+          testInferProgram "main = replicate 2 (dice 6);dice n = if n <= 1 then 1 else ( if Uniform < (1/n) then n else dice (n-1));replicate n value = if n <= 1 then value else (value, replicate (n-1) value);" (VTuple (VFloat 3) (VFloat 2)) (0, 1.0/(6.0 * 6.0)),
+          testInferProgram "main = (Uniform, Uniform, Uniform)" (VTuple (VFloat 0.5) (VTuple (VFloat 0.5) (VFloat 0.5))) (3, 1.0)
         ]
     ]
