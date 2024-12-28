@@ -185,14 +185,14 @@ infer rt (CreateTuple e1 e2) (VTuple v1 v2) = do
   dimProbA <- infer rt e1 v1
   dimProbB <- infer rt e2 v2
   return $ dimProbA #*# dimProbB
-infer _ _ (VTuple _ _) = Right (0, 0.0)
-infer _ (CreateTuple _ _) _ = Right (0, 0.0)
+infer _ (CreateTuple _ _) (VBool _) = Right (0, 0.0)
+infer _ (CreateTuple _ _) (VFloat _) = Right (0, 0.0)
 infer rt (FnCall fnName arguments) val = do
   expr <- justOr (lookup fnName (program rt)) ("Fn '" ++ fnName ++ "' not found.")
   let newDepth = 1 + recursionDepth rt
   args <- traverse (replaceFnParameterWithContent rt) arguments
   let newRt = rt {recursionDepth = newDepth, arguments = args}
-  if newDepth >= maxRecursionDepth rt
+  if recursionDepth rt >= maxRecursionDepth rt
     then
       Right (0, 0.0)
     else
@@ -200,6 +200,7 @@ infer rt (FnCall fnName arguments) val = do
 infer rt (FnParameter index) val
   | Just ele <- getElem (arguments rt) index = infer rt ele val
   | otherwise = error $ "Could not find Parameter with index: " ++ show index
+infer _ _ (VTuple _ _) = Right (0, 0.0)
 
 replaceFnParameterWithContent :: Runtime -> Expr -> Either ErrorString Expr
 replaceFnParameterWithContent rt (FnParameter index)
@@ -331,7 +332,7 @@ compareFloatExpr rt (FnCall fnName arguments) (ord, value) = do
   expr <- justOr (lookup fnName (program rt)) ("Fn '" ++ fnName ++ "' not found.")
   let newDepth = 1 + recursionDepth rt
   let newRt = rt {recursionDepth = newDepth, arguments}
-  if newDepth >= maxRecursionDepth rt
+  if recursionDepth rt >= maxRecursionDepth rt
     then
       Right 0.0
     else
