@@ -119,7 +119,9 @@ tests =
           testInferExprEq "2 * Uniform == 0.3 && True" (VBool True) (1, 0.5),
           testInferExprEq "2 * Uniform == 0.3 && (4 * Uniform == 0.8)" (VBool True) (2, 0.5 * 0.25),
           testInferExprEq "if Uniform != 0.3 then True else False" (VBool True) (0, 1.0),
-          testInferExprEq "if Uniform != 0.3 then True else False" (VBool False) (1, 1.0)
+          testInferExprEq "if Uniform != 0.3 then True else False" (VBool False) (1, 1.0),
+          testInferExprEq "Uniform" (VTuple (VFloat 0.5) (VFloat 0.5)) (0, 0.0),
+          testInferExprEq "Uniform + 1" (VTuple (VFloat 0.5) (VFloat 0.5)) (0, 0.0)
         ],
       testGroup
         "Problem"
@@ -139,13 +141,15 @@ tests =
       testGroup
         "Programs"
         [ testInferProgram "main = 2 + 2" (VFloat 4.0) (0, 1.0),
-          testInferProgram "mult2 x = x + x;main = mult2 3" (VFloat 6.0) (0, 1.0),
-          testInferProgram "test x = if x < 0.5 then 1 else 2;main = test Uniform" (VFloat 1.0) (0, 0.5),
-          testInferProgram "test x = if x < 0.5 then 1 else 2;main = test Uniform" (VFloat 4.0) (0, 0.0),
-          testInferProgram "replicate n value = if n <= 1 then value else (value, replicate (n-1) value);main = replicate 1 Uniform" (VFloat 3.0) (0, 0.0),
-          testInferProgram "replicate n value = if n <= 1 then value else (value, replicate (n-1) value);main = replicate 1 Uniform" (VFloat 0.5) (1, 1.0),
+          testInferProgram "main = mult2 3; mult2 x = x + x;" (VFloat 6.0) (0, 1.0),
+          testInferProgram "main = test Uniform; test x = if x < 0.5 then 1 else 2;" (VFloat 1.0) (0, 0.5),
+          testInferProgram "main = test Uniform; test x = if x < 0.5 then 1 else 2;" (VFloat 4.0) (0, 0.0),
+          testInferProgram "main = replicate 1 Uniform; replicate n value = if n <= 1 then value else (value, replicate (n-1) value);" (VFloat 3.0) (0, 0.0),
+          testInferProgram "main = replicate 1 Uniform; replicate n value = if n <= 1 then value else (value, replicate (n-1) value);" (VFloat 0.5) (1, 1.0),
           testInferProgram "main = (Uniform, Uniform)" (VTuple (VFloat 0.5) (VFloat 0.5)) (2, 1.0),
-          testInferProgram "pair x = (x,x); main = pair (Uniform)" (VTuple (VFloat 0.5) (VFloat 0.5)) (2, 1.0),
-          testInferProgram "tIn = 1; tMid x = (x,x); main = tMid (tIn)" (VTuple (VFloat 1.0) (VFloat 1.0)) (1, 1.0)
+          testInferProgram "main = dice 40;dice n = if n <= 1 then 1 else ( if Uniform < (1/n) then n else dice (n-1));" (VFloat 20) (1, 1.0/40.0),
+          testInferProgram "main = replicate 2 (Uniform + 1);replicate n value = if n <= 1 then value else (value, replicate (n-1) value);" (VTuple (VFloat 1.5) (VFloat 1.5)) (2, 1.0),
+          testInferProgram "main = pair (Uniform); pair x = (x,x)" (VTuple (VFloat 0.5) (VFloat 0.5)) (2, 1.0),
+          testInferProgram "main = tMid (tIn);tIn = 1; tMid x = (x,x)" (VTuple (VFloat 1.0) (VFloat 1.0)) (1, 1.0)
         ]
     ]

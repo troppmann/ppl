@@ -23,12 +23,12 @@ inferProgram program value = do
   infer runTime mainExpr value
 
 infer :: Runtime -> Expr -> Value -> Either String DimensionalProbability
-infer _ Uniform (VFloat v) = Right (1, if 0.0 <= v && v < 1.0 then 1.0 else 0.0)
-infer _ Normal (VFloat v) = Right (1, density distr v)
+infer _ Uniform (VFloat v) = return (1, if 0.0 <= v && v < 1.0 then 1.0 else 0.0)
+infer _ Normal (VFloat v) = return (1, density distr v)
   where
     distr = normalDistr 0.0 1.0
-infer _ (Const v1) value = Right (0, if v1 == value then 1.0 else 0.0)
-infer rt (Plus e1 e2) value
+infer _ (Const v1) value = return (0, if v1 == value then 1.0 else 0.0)
+infer rt (Plus e1 e2) value@(VFloat _)
   | Right constant <- evalConstExpr rt e1 = do
       newValue <- evalArithmetic (-) value constant
       infer rt e2 newValue
@@ -36,7 +36,7 @@ infer rt (Plus e1 e2) value
       newValue <- evalArithmetic (-) value constant
       infer rt e1 newValue
   | otherwise = Left "Can only infer Plus(+) with a one side Constant."
-infer rt (Subtract e1 e2) value
+infer rt (Subtract e1 e2) value@(VFloat _)
   | Right constant <- evalConstExpr rt e1 = do
       newValue <- evalArithmetic (-) constant value
       infer rt e2 newValue
@@ -44,7 +44,7 @@ infer rt (Subtract e1 e2) value
       newValue <- evalArithmetic (+) value constant
       infer rt e1 newValue
   | otherwise = Left "Can only infer Subtract(-) with a one side Constant."
-infer rt (Multiply e1 e2) value
+infer rt (Multiply e1 e2) value@(VFloat _)
   | Right constant <- evalConstExpr rt e1 = do
       c <- evalAsFloat constant
       if c == 0.0
@@ -72,7 +72,7 @@ infer rt (Multiply e1 e2) value
             else
               return (1, prob / abs c)
   | otherwise = Left "Can only infer Multiply(*) with a one side Constant."
-infer rt (Divide e1 e2) value
+infer rt (Divide e1 e2) value@(VFloat _)
   | Right constant <- evalConstExpr rt e1 = do
       -- TODO works only on monotone functions and c != 0.0 and v != 0.0
       c <- evalAsFloat constant
@@ -85,7 +85,7 @@ infer rt (Divide e1 e2) value
       (_dim, prob) <- infer rt e1 (VFloat $ v * c)
       return (1, prob * abs c)
   | otherwise = Left "Can only infer Divide(/) with a one side Constant."
-infer rt (Exponent e1 e2) value
+infer rt (Exponent e1 e2) value@(VFloat _)
   | Right constant <- evalConstExpr rt e2 = do
       c <- evalAsFloat constant
       if c == 0.0
@@ -170,23 +170,10 @@ infer rt (And e1 e2) (VBool bool) = do
   dimProb2 <- infer rt e2 (VBool bool)
   return $ dimProb1 #*# dimProb2
 infer rt (Not e1) (VBool bool) = infer rt e1 (VBool $ not bool)
-infer _ Uniform (VBool _) = Right (0, 0.0)
-infer _ Normal (VBool _) = Right (0, 0.0)
-infer _ (GreaterThan _ _) (VFloat _) = Right (0, 0.0)
-infer _ (GreaterThanOrEqual _ _) (VFloat _) = Right (0, 0.0)
-infer _ (LessThan _ _) (VFloat _) = Right (0, 0.0)
-infer _ (LessThanOrEqual _ _) (VFloat _) = Right (0, 0.0)
-infer _ (Equal _ _) (VFloat _) = Right (0, 0.0)
-infer _ (Unequal _ _) (VFloat _) = Right (0, 0.0)
-infer _ (And _ _) (VFloat _) = Right (0, 0.0)
-infer _ (Or _ _) (VFloat _) = Right (0, 0.0)
-infer _ (Not _) (VFloat _) = Right (0, 0.0)
 infer rt (CreateTuple e1 e2) (VTuple v1 v2) = do
   dimProbA <- infer rt e1 v1
   dimProbB <- infer rt e2 v2
   return $ dimProbA #*# dimProbB
-infer _ (CreateTuple _ _) (VBool _) = Right (0, 0.0)
-infer _ (CreateTuple _ _) (VFloat _) = Right (0, 0.0)
 infer rt (FnCall fnName arguments) val = do
   expr <- justOr (lookup fnName (program rt)) ("Fn '" ++ fnName ++ "' not found.")
   let newDepth = 1 + recursionDepth rt
@@ -194,13 +181,49 @@ infer rt (FnCall fnName arguments) val = do
   let newRt = rt {recursionDepth = newDepth, arguments = args}
   if recursionDepth rt >= maxRecursionDepth rt
     then
-      Right (0, 0.0)
+      return (0, 0.0)
     else
       infer newRt expr val
 infer rt (FnParameter index) val
   | Just ele <- getElem (arguments rt) index = infer rt ele val
   | otherwise = error $ "Could not find Parameter with index: " ++ show index
-infer _ _ (VTuple _ _) = Right (0, 0.0)
+-- In all other cases is the requested value not the right output.
+-- The catch all case _ is not used.
+-- This is explicit so that not all new Expr are auto implemented.
+infer _ Uniform (VBool _) = return (0, 0.0)
+infer _ Normal (VBool _) = return (0, 0.0)
+infer _ (Plus _ _) (VBool _) = return (0, 0.0)
+infer _ (Subtract _ _) (VBool _) = return (0, 0.0)
+infer _ (Multiply _ _) (VBool _) = return (0, 0.0)
+infer _ (Divide _ _) (VBool _) = return (0, 0.0)
+infer _ (Exponent _ _) (VBool _) = return (0, 0.0)
+infer _ (CreateTuple _ _) (VBool _) = return (0, 0.0)
+infer _ (Not _) (VFloat _) = return (0, 0.0)
+infer _ (And _ _) (VFloat _) = return (0, 0.0)
+infer _ (Or _ _) (VFloat _) = return (0, 0.0)
+infer _ (Equal _ _) (VFloat _) = return (0, 0.0)
+infer _ (Unequal _ _) (VFloat _) = return (0, 0.0)
+infer _ (LessThan _ _) (VFloat _) = return (0, 0.0)
+infer _ (LessThanOrEqual _ _) (VFloat _) = return (0, 0.0)
+infer _ (GreaterThan _ _) (VFloat _) = return (0, 0.0)
+infer _ (GreaterThanOrEqual _ _) (VFloat _) = return (0, 0.0)
+infer _ (CreateTuple _ _) (VFloat _) = return (0, 0.0)
+infer _ Uniform (VTuple _ _) = return (0, 0.0)
+infer _ Normal (VTuple _ _) = return (0, 0.0)
+infer _ (Plus _ _) (VTuple _ _) = return (0, 0.0)
+infer _ (Subtract _ _) (VTuple _ _) = return (0, 0.0)
+infer _ (Multiply _ _) (VTuple _ _) = return (0, 0.0)
+infer _ (Divide _ _) (VTuple _ _) = return (0, 0.0)
+infer _ (Exponent _ _) (VTuple _ _) = return (0, 0.0)
+infer _ (Not _) (VTuple _ _) = return (0, 0.0)
+infer _ (And _ _) (VTuple _ _) = return (0, 0.0)
+infer _ (Or _ _) (VTuple _ _) = return (0, 0.0)
+infer _ (Equal _ _) (VTuple _ _) = return (0, 0.0)
+infer _ (Unequal _ _) (VTuple _ _) = return (0, 0.0)
+infer _ (LessThan _ _) (VTuple _ _) = return (0, 0.0)
+infer _ (LessThanOrEqual _ _) (VTuple _ _) = return (0, 0.0)
+infer _ (GreaterThan _ _) (VTuple _ _) = return (0, 0.0)
+infer _ (GreaterThanOrEqual _ _) (VTuple _ _) = return (0, 0.0)
 
 replaceFnParameterWithContent :: Runtime -> Expr -> Either ErrorString Expr
 replaceFnParameterWithContent rt (FnParameter index)
@@ -334,7 +357,7 @@ compareFloatExpr rt (FnCall fnName arguments) (ord, value) = do
   let newRt = rt {recursionDepth = newDepth, arguments}
   if recursionDepth rt >= maxRecursionDepth rt
     then
-      Right 0.0
+      return 0.0
     else
       compareFloatExpr newRt expr (ord, value)
 compareFloatExpr rt (FnParameter index) (ord, value)
