@@ -2,7 +2,7 @@ module Optimizer
   ( optimize,
     optimizeExpr,
     optimizeWithOption,
-    OptimizeOption(..),
+    OptimizeOption (..),
   )
 where
 
@@ -13,16 +13,15 @@ import Representation
 import Runtime
 
 optimize :: Program -> Program
-optimize = optimizeWithOption OptimizeOption{maxLoopUnroll=30}
+optimize = optimizeWithOption OptimizeOption {maxLoopUnroll = 30}
 
-data OptimizeOption = OptimizeOption {maxLoopUnroll::Int}
+data OptimizeOption = OptimizeOption {maxLoopUnroll :: Int}
+
 optimizeWithOption :: OptimizeOption -> Program -> Program
 optimizeWithOption option program = map (\(fnName, expr) -> (fnName, unwrapEither $ optExpr fnName expr)) program
   where
     runTime fnName = Runtime {program, arguments = [], currentFnName = fnName, recursionDepth = 0, maxRecursionDepth = maxLoopUnroll option}
     optExpr fnName expr = runExcept $ evalStateT (optimizeExpr expr) (runTime fnName)
-
-
 
 type ErrorString = String
 
@@ -73,9 +72,9 @@ optimizeMultiply e1 e2 = do
   opt1 <- optimizeExpr e1
   opt2 <- optimizeExpr e2
   case (opt1, opt2) of
-    (_ ,Const (VFloat 0.0)) -> return (Const (VFloat 0.0))
-    (Const (VFloat 0.0) ,_) -> return (Const (VFloat 0.0))
-    (_ ,Const (VFloat 1.0)) -> return opt1
+    (_, Const (VFloat 0.0)) -> return (Const (VFloat 0.0))
+    (Const (VFloat 0.0), _) -> return (Const (VFloat 0.0))
+    (_, Const (VFloat 1.0)) -> return opt1
     (Const (VFloat 1.0), _) -> return opt2
     (Const (VFloat v1), Const (VFloat v2)) -> return $ Const $ VFloat (v1 * v2)
     (_, _) -> return $ Multiply opt1 opt2
@@ -88,7 +87,6 @@ optimizeDivide e1 e2 = do
     (_, Const (VFloat 1.0)) -> return opt1
     (Const (VFloat v1), Const (VFloat v2)) -> return $ Const $ VFloat (v1 / v2)
     (_, _) -> return $ Divide opt1 opt2
-
 
 optimizeExponent :: Expr -> Expr -> RuntimeState Expr
 optimizeExponent e1 e2 = do

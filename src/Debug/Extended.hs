@@ -6,7 +6,7 @@ module Debug.Extended
     getElem,
     unwrapMaybe,
     justOr,
-    showFloatN
+    showFloatN,
   )
 where
 
@@ -33,7 +33,7 @@ dbg' string a = trace ("[" <> filename <> ":" <> lineNumber <> ":" <> col <> "] 
     lineNumber = show $ srcLocStartLine info
     col = show $ srcLocStartCol info
 
-unwrapEither :: Show a => Either a b -> b
+unwrapEither :: (Show a) => Either a b -> b
 unwrapEither (Left e) = error $ show e
 unwrapEither (Right value) = value
 
@@ -41,15 +41,15 @@ unwrapMaybe :: Maybe a -> a
 unwrapMaybe Nothing = error "Expected Value in Maybe got: Nothing"
 unwrapMaybe (Just value) = value
 
-justOr :: Maybe a -> b -> Either b a
-justOr Nothing left =  Left left
+justOr :: Maybe a -> err -> Either err a
+justOr Nothing left = Left left
 justOr (Just value) _ = Right value
 
-showFloatN :: RealFloat a => a -> Int -> String
+showFloatN :: (RealFloat a) => a -> Int -> String
 showFloatN floatNum numOfDecimals = showFFloat (Just numOfDecimals) floatNum ""
 
 getElem :: [a] -> Int -> Maybe a
 getElem [] _ = Nothing
-getElem (x:xs) index
+getElem (x : xs) index
   | index <= 0 = Just x
-  | otherwise = getElem xs (index-1)
+  | otherwise = getElem xs (index - 1)

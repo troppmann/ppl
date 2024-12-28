@@ -144,8 +144,8 @@ tests =
           testInferProgram "test x = if x < 0.5 then 1 else 2;main = test Uniform" (VFloat 4.0) (0, 0.0),
           testInferProgram "replicate n value = if n <= 1 then value else (value, replicate (n-1) value);main = replicate 1 Uniform" (VFloat 3.0) (0, 0.0),
           testInferProgram "replicate n value = if n <= 1 then value else (value, replicate (n-1) value);main = replicate 1 Uniform" (VFloat 0.5) (1, 1.0),
-          testInferProgram "main = (Uniform, Uniform)" (VTuple (VFloat 0.5)(VFloat 0.5)) (2, 1.0),
-          testInferProgram "pair x = (x,x); main = pair (Uniform)" (VTuple (VFloat 0.5)(VFloat 0.5)) (2, 1.0),
-          testInferProgram "tIn = 1; tMid x = (x,x); main = tMid (tIn)" (VTuple (VFloat 1.0)(VFloat 1.0)) (1, 1.0)
+          testInferProgram "main = (Uniform, Uniform)" (VTuple (VFloat 0.5) (VFloat 0.5)) (2, 1.0),
+          testInferProgram "pair x = (x,x); main = pair (Uniform)" (VTuple (VFloat 0.5) (VFloat 0.5)) (2, 1.0),
+          testInferProgram "tIn = 1; tMid x = (x,x); main = tMid (tIn)" (VTuple (VFloat 1.0) (VFloat 1.0)) (1, 1.0)
         ]
     ]

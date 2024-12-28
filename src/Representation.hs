@@ -39,7 +39,6 @@ data Expr
 
 type FnName = String
 
-
 data Value
   = VFloat Double
   | VBool Bool

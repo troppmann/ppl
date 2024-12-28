@@ -13,10 +13,10 @@ import Runtime
 
 type ErrorString = String
 
-mle :: Program -> QueryType -> Either  ErrorString Value
+mle :: Program -> QueryType -> Either ErrorString Value
 mle program query = do
   mainExpr <- justOr (lookup "main" program) "main-Func not found."
-  let runTime = Runtime {program, arguments = [], currentFnName="main", recursionDepth = 0, maxRecursionDepth = 100}
+  let runTime = Runtime {program, arguments = [], currentFnName = "main", recursionDepth = 0, maxRecursionDepth = 100}
   dimValue <- maxAPost runTime mainExpr query
   return $ snd dimValue
 

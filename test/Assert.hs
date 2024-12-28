@@ -7,9 +7,9 @@ module Assert
   )
 where
 
+import Representation (DimensionalProbability)
 import Test.Tasty
 import Test.Tasty.HUnit
-import Representation (DimensionalProbability)
 
 assertEither :: (Show a, Show b) => Either a b -> Either a b -> Assertion
 assertEither (Left _) (Left _) = return ()
@@ -27,13 +27,11 @@ assertLeft (Left error) = return error
 assertLeft (Right value) = assertFailure $ show value
 
 assertEqDimProb :: DimensionalProbability -> DimensionalProbability -> Assertion
-assertEqDimProb value@(dimValue,probValue) expected@(dimExpected,probExpected)
+assertEqDimProb value@(dimValue, probValue) expected@(dimExpected, probExpected)
   | dimValue /= dimValue = assertFailure failureMsg
-  | abs (probExpected-probValue) > defaultErrorMargin = assertFailure failureMsg
+  | abs (probExpected - probValue) > defaultErrorMargin = assertFailure failureMsg
   | otherwise = return ()
   where
-      failureMsg = "expected: " ++ show expected ++ "\n but got: " ++ show value
-
-
+    failureMsg = "expected: " ++ show expected ++ "\n but got: " ++ show value
 
 defaultErrorMargin = 0.001

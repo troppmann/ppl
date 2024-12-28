@@ -3,10 +3,10 @@ module Parser
     Parser.Query.parseQuery,
     Parser.Program.parseProgram,
     Parser.Program.parseProgramWithOptions,
-    Parser.Program.ParseOptions(..),
+    Parser.Program.ParseOptions (..),
   )
 where
 
 import Parser.Expr
-import Parser.Query
 import Parser.Program
+import Parser.Query

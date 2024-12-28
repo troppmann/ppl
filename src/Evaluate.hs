@@ -7,9 +7,9 @@ module Evaluate
   )
 where
 
+import Debug.Extended
 import Representation
 import Runtime
-import Debug.Extended
 
 type ErrorString = String
 

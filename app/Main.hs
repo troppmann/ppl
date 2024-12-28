@@ -24,15 +24,15 @@ toFloat _ = -1
 main :: IO ()
 main = do
   s <- readFile "test.ppl"
-  let parseOptions = ParseOptions{optimization=False,maxLoopUnroll=0}
+  let parseOptions = ParseOptions {optimization = False, maxLoopUnroll = 0}
   let program = unwrapEither $ parseProgramWithOptions parseOptions s
   -- let program = [("main", IfThenElse (LessThan Uniform (Const $ VFloat 0.2)) (Multiply Normal (Const $ VFloat 0.5))(Plus (Const $ VFloat 2.0) (FnCall "main" [])))]
   -- let program = [("main", FnCall "factorial" [Const $ VFloat 5.0]),("factorial", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (Const $ VFloat 1.0) (Multiply (FnParameter 0) (FnCall "factorial" [Subtract (FnParameter 0)(Const $ VFloat 1.0)])))]
-  --let program =
-        --[ ("main", FnCall "middleMan" []),
-          --("dice", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (FnParameter 0) (IfThenElse (LessThan Uniform (Divide (Const $ VFloat 1.0) (FnParameter 0))) (FnParameter 0) (FnCall "dice" [Subtract (FnParameter 0) (Const $ VFloat 1.0)]))),
-          --("middleMan", Plus (Const $ VFloat 1.0) (FnCall "dice" [Const $ VFloat 20]))
-        --]
+  -- let program =
+  -- [ ("main", FnCall "middleMan" []),
+  -- ("dice", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (FnParameter 0) (IfThenElse (LessThan Uniform (Divide (Const $ VFloat 1.0) (FnParameter 0))) (FnParameter 0) (FnCall "dice" [Subtract (FnParameter 0) (Const $ VFloat 1.0)]))),
+  -- ("middleMan", Plus (Const $ VFloat 1.0) (FnCall "dice" [Const $ VFloat 20]))
+  -- ]
   print "------Program Unopt"
   print program
   let optProgram = optimize program
@@ -51,8 +51,9 @@ main = do
   let optProb = inferProgram optProgram inferSample
   print "------Infer Optimize"
   print optProb
-  --let numberOfSamples = 100000
-  --plotMassToFile "pmf.svg" optProgram numberOfSamples
+
+-- let numberOfSamples = 100000
+-- plotMassToFile "pmf.svg" optProgram numberOfSamples
 
 -- let program = [("main", FnCall "dice" [Const $ VFloat 6.0]),("dice", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (FnParameter 0) (IfThenElse (LessThan Uniform (Divide (Const $ VFloat 1.0) (FnParameter 0))) (FnParameter 0) (FnCall "dice" [Subtract (FnParameter 0) (Const $ VFloat 1.0)])))]
 -- print program
@@ -64,9 +65,9 @@ main = do
 -- let integral = validateExpr LinearSpacing {start = -10, end = 10, stepWidth = 0.10} expr
 -- print $ "Validate: " ++ show integral
 -- let spacing = LinearSpacing {start = -4, end = 60, stepWidth = 0.1}
---let numberOfSamples = 100000
+-- let numberOfSamples = 100000
 -- plotDensityToFile "pdf.svg" program spacing numberOfSamples
---plotMassToFile "pmf.svg" program numberOfSamples
+-- plotMassToFile "pmf.svg" program numberOfSamples
 -- let value = VFloat 0.0
 -- let prob = infer expr value
 -- print ("Test: " <> show value <> " -> " <> showFloatN (snd $ unwrapEither prob) 5)

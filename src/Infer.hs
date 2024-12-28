@@ -19,7 +19,7 @@ type ErrorString = String
 inferProgram :: Program -> Value -> Either ErrorString DimensionalProbability
 inferProgram program value = do
   mainExpr <- justOr (lookup "main" program) "main-Func not found."
-  let runTime = Runtime {program, arguments = [], currentFnName="main", recursionDepth = 0, maxRecursionDepth = 100}
+  let runTime = Runtime {program, arguments = [], currentFnName = "main", recursionDepth = 0, maxRecursionDepth = 100}
   infer runTime mainExpr value
 
 infer :: Runtime -> Expr -> Value -> Either String DimensionalProbability
@@ -185,21 +185,21 @@ infer rt (CreateTuple e1 e2) (VTuple v1 v2) = do
   dimProbA <- infer rt e1 v1
   dimProbB <- infer rt e2 v2
   return $ dimProbA #*# dimProbB
-infer _ _ (VTuple _ _) = Right (0,0.0)
-infer _ (CreateTuple _ _) _ = Right (0,0.0)
+infer _ _ (VTuple _ _) = Right (0, 0.0)
+infer _ (CreateTuple _ _) _ = Right (0, 0.0)
 infer rt (FnCall fnName arguments) val = do
   expr <- justOr (lookup fnName (program rt)) ("Fn '" ++ fnName ++ "' not found.")
   let newDepth = 1 + recursionDepth rt
   args <- traverse (replaceFnParameterWithContent rt) arguments
-  let newRt = rt {recursionDepth = newDepth, arguments=args}
-  if newDepth >= maxRecursionDepth rt then
-    Right (0, 0.0)
-  else
-    infer newRt expr val
+  let newRt = rt {recursionDepth = newDepth, arguments = args}
+  if newDepth >= maxRecursionDepth rt
+    then
+      Right (0, 0.0)
+    else
+      infer newRt expr val
 infer rt (FnParameter index) val
   | Just ele <- getElem (arguments rt) index = infer rt ele val
   | otherwise = error $ "Could not find Parameter with index: " ++ show index
-
 
 replaceFnParameterWithContent :: Runtime -> Expr -> Either ErrorString Expr
 replaceFnParameterWithContent rt (FnParameter index)
@@ -227,6 +227,7 @@ checkBothBranches rt exprF e1 e2 = do
   r1 <- replaceFnParameterWithContent rt e1
   r2 <- replaceFnParameterWithContent rt e2
   return $ exprF r1 r2
+
 data CompareCase = LT | LE | GE | GT deriving (Ord, Enum, Show, Eq)
 
 type CompareQuery = (CompareCase, Double)
@@ -330,11 +331,12 @@ compareFloatExpr rt (FnCall fnName arguments) (ord, value) = do
   expr <- justOr (lookup fnName (program rt)) ("Fn '" ++ fnName ++ "' not found.")
   let newDepth = 1 + recursionDepth rt
   let newRt = rt {recursionDepth = newDepth, arguments}
-  if newDepth >= maxRecursionDepth rt then
-    Right 0.0
-  else
-    compareFloatExpr newRt expr (ord, value)
-compareFloatExpr rt (FnParameter index) (ord,value)
+  if newDepth >= maxRecursionDepth rt
+    then
+      Right 0.0
+    else
+      compareFloatExpr newRt expr (ord, value)
+compareFloatExpr rt (FnParameter index) (ord, value)
   | Just ele <- getElem (arguments rt) index = compareFloatExpr rt ele (ord, value)
   | otherwise = error $ "Could not find Parameter with index: " ++ show index
 compareFloatExpr _ expr _ = case expr of
@@ -353,4 +355,3 @@ compareFloatExpr _ expr _ = case expr of
     msg = "Expected Float got " <> show expr <> " that evaluates to a"
     msgBool = Left $ msg <> "Bool."
     msgTuple = Left $ msg <> "Tuple."
-

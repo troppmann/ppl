@@ -83,9 +83,9 @@ tests =
           testParseExpr "3-3.4" $ Subtract (Const $ VFloat 3.0) (Const $ VFloat 3.4),
           testParseExpr "3*-3.4" $ Multiply (Const $ VFloat 3.0) (Const $ VFloat (-3.4)),
           testParseExpr "Uniform-3.4" $ Subtract Uniform (Const $ VFloat 3.4),
-          testParseExpr "3.4-Uniform" $ Subtract (Const $ VFloat 3.4) Uniform ,
-          testParseExpr "3.4*-Uniform" $ Multiply (Const $ VFloat 3.4) (Multiply (Const $ VFloat (-1)) Uniform ),
-          testParseExpr "-Uniform" $ Multiply (Const $ VFloat (-1)) Uniform ,
+          testParseExpr "3.4-Uniform" $ Subtract (Const $ VFloat 3.4) Uniform,
+          testParseExpr "3.4*-Uniform" $ Multiply (Const $ VFloat 3.4) (Multiply (Const $ VFloat (-1)) Uniform),
+          testParseExpr "-Uniform" $ Multiply (Const $ VFloat (-1)) Uniform,
           testParseExpr "!False" $ Not (Const (VBool False)),
           testParseExpr "(False)" $ Const (VBool False),
           testParseExpr "(False" $ Const (VBool False),
@@ -95,7 +95,7 @@ tests =
           testParseExpr "Uniform<=Uniform" $ LessThanOrEqual Uniform Uniform,
           testParseExpr "Uniform<Uniform" $ LessThan Uniform Uniform,
           testParseExpr "Uniform>=Uniform" $ GreaterThanOrEqual Uniform Uniform,
-          testParseExpr "Uniform>-Uniform" $ GreaterThan Uniform (Multiply (Const $ VFloat (-1)) Uniform ),
+          testParseExpr "Uniform>-Uniform" $ GreaterThan Uniform (Multiply (Const $ VFloat (-1)) Uniform),
           testParseExpr "(True,(False, False" $ CreateTuple (Const (VBool True)) (CreateTuple (Const (VBool False)) (Const (VBool False))),
           testParseExpr "!(3.4)" $ Not (Const (VFloat 3.4))
         ],
@@ -139,8 +139,8 @@ tests =
         ],
       testGroup
         "FnCall"
-        [ testParseExpr "3 + 5 * main" (Multiply (Plus (Const (VFloat 3.0) ) (Const (VFloat 5.0) )) (FnCall "main" [])),
-          testParseExpr "8.0 * dice 3" (Multiply (Const (VFloat 8.0) ) (FnCall "dice" [Const (VFloat 3.0)])),
+        [ testParseExpr "3 + 5 * main" (Multiply (Plus (Const (VFloat 3.0)) (Const (VFloat 5.0))) (FnCall "main" [])),
+          testParseExpr "8.0 * dice 3" (Multiply (Const (VFloat 8.0)) (FnCall "dice" [Const (VFloat 3.0)])),
           testParseExpr "randomFunc 3 4 " (FnCall "randomFunc" [Const (VFloat 3.0), Const (VFloat 4.0)]),
           testParseExpr "randomFunc (3 + 4) 2 " (FnCall "randomFunc" [Plus (Const (VFloat 3.0)) (Const (VFloat 4.0)), Const (VFloat 2.0)]),
           testParseExpr "3 * randomFunc (3 + dice 3) 2 " (Multiply (Const (VFloat 3.0)) (FnCall "randomFunc" [Plus (Const (VFloat 3.0)) (FnCall "dice" [Const (VFloat 3.0)]), Const (VFloat 2.0)])),

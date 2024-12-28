@@ -7,19 +7,17 @@ where
 
 import Control.Monad.Random
 import Debug.Extended
+import Infer (replaceFnParameterWithContent)
 import Representation
 import Runtime
 import Statistics.Distribution
 import Statistics.Distribution.Normal (normalDistr)
-import Infer (replaceFnParameterWithContent)
 
 sampleProgram :: Program -> IO Value
 sampleProgram program = evalRandIO $ sampleRand rt mainExpr
   where
     rt = Runtime {program, currentFnName = "main", arguments = [], recursionDepth = 0, maxRecursionDepth = 10000}
     mainExpr = unwrapMaybe $ lookup "main" program
-
-
 
 sampleRand :: (MonadRandom m) => Runtime -> Expr -> m Value
 sampleRand _ (Const v) = return v
@@ -51,8 +49,8 @@ sampleRand rt (FnCall fnName arguments) = do
   case lookup fnName (program rt) of
     (Just expr) -> do
       let newDepth = 1 + recursionDepth rt
-      let args = map (unwrapEither. replaceFnParameterWithContent rt) arguments
-      let newRt = rt {recursionDepth = newDepth, arguments=args}
+      let args = map (unwrapEither . replaceFnParameterWithContent rt) arguments
+      let newRt = rt {recursionDepth = newDepth, arguments = args}
       if newDepth > maxRecursionDepth rt
         then
           error $ "Max Recursion Depth reached: " ++ show (maxRecursionDepth rt)

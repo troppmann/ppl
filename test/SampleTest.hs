@@ -38,6 +38,7 @@ testSampleExprWithName exprString testName = testCase testName $ do
   let program = wrapInMain expr
   _sample <- sampleProgram program
   return ()
+
 tests =
   testGroup
     "Sample"

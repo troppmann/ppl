@@ -7,15 +7,15 @@ module Chart
   )
 where
 
-import ApproximateIntegration (LinearSpacing (..), trapezTwoPoints, convertProgramToFunction)
+import ApproximateIntegration (LinearSpacing (..), convertProgramToFunction, trapezTwoPoints)
 import ApproximateIntegration qualified as LinearSpacing
 import Control.Monad.Random
 import Debug.Extended
 import DistributionSampler
 import Graphics.Rendering.Chart.Backend.Diagrams (toFile)
 import Graphics.Rendering.Chart.Easy
-import Representation
 import Infer
+import Representation
 
 type Point2D = (Double, Double)
 
@@ -70,7 +70,7 @@ plotMassToFile filename program numberOfSamples = do
   let inferPointLine = toBarLayout inferPoints
   let totalMass = sum . map snd $ inferPoints
   toFile def filename $ do
-    layout_title .= "PMF" 
+    layout_title .= "PMF"
     setColors [withOpacity blue 0.8, withOpacity blue 0.8, withOpacity red 0.8, withOpacity red 0.8]
     setShapes [PointShapeCircle, PointShapeCircle, PointShapeCircle]
     plot $ plotBars <$> pointLines ["Sampled"] sampledPointLine
@@ -79,8 +79,7 @@ plotMassToFile filename program numberOfSamples = do
     plot (pointsWithSize "" 3 inferPoints)
 
 toBarLayout :: [(Double, Double)] -> [(Double, [Double])]
-toBarLayout = map (\(x, y) -> (x , [y]))
-
+toBarLayout = map (\(x, y) -> (x, [y]))
 
 pointLines :: (PlotValue x, BarsPlotValue y) => [String] -> [(x, [y])] -> EC l (PlotBars x y)
 pointLines titles vals = liftEC $ do
@@ -93,14 +92,14 @@ pointLines titles vals = liftEC $ do
   where
     mkStyle c = (solidFillStyle c, Nothing)
 
-pointsWithSize :: String -> Double ->[(x,y)]  -> EC l (PlotPoints x y)
+pointsWithSize :: String -> Double -> [(x, y)] -> EC l (PlotPoints x y)
 pointsWithSize title size values = liftEC $ do
-    color <- takeColor
-    shape <- takeShape
-    plot_points_values .= values
-    plot_points_title .= title
-    plot_points_style . point_color .= color
-    plot_points_style . point_shape .= shape
-    plot_points_style . point_radius .= size
-    plot_points_style . point_border_color .= color
-    plot_points_style . point_border_width .= 1
+  color <- takeColor
+  shape <- takeShape
+  plot_points_values .= values
+  plot_points_title .= title
+  plot_points_style . point_color .= color
+  plot_points_style . point_shape .= shape
+  plot_points_style . point_radius .= size
+  plot_points_style . point_border_color .= color
+  plot_points_style . point_border_width .= 1
