@@ -15,7 +15,7 @@ import DistributionSampler
 import Graphics.Rendering.Chart.Backend.Diagrams (toFile)
 import Graphics.Rendering.Chart.Easy
 import Representation
-import Interpret
+import Infer
 
 type Point2D = (Double, Double)
 

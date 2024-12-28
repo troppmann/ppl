@@ -1,4 +1,4 @@
-module Interpret
+module Infer
   ( inferProgram,
     interpret,
     replaceFnParameterWithContent,
@@ -170,7 +170,6 @@ interpret rt (And e1 e2) (VBool bool) = do
   dimProb2 <- interpret rt e2 (VBool bool)
   return $ dimProb1 #*# dimProb2
 interpret rt (Not e1) (VBool bool) = interpret rt e1 (VBool $ not bool)
--- TODO 06.09.2024 Should this throw an error instead?
 interpret _ Uniform (VBool _) = Right (0, 0.0)
 interpret _ Normal (VBool _) = Right (0, 0.0)
 interpret _ (GreaterThan _ _) (VFloat _) = Right (0, 0.0)

@@ -9,7 +9,7 @@ module ApproximateIntegration
   )
 where
 
-import Interpret
+import Infer
 import Representation
 
 data LinearSpacing = LinearSpacing

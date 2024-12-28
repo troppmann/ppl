@@ -8,7 +8,7 @@ import Control.Monad.Random (evalRandIO, replicateM)
 import Data.List
 import Debug.Extended
 import DistributionSampler
-import Interpret
+import Infer
 import Mean
 import Optimizer
 import Parser

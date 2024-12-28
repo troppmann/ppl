@@ -29,7 +29,7 @@ library lib
                       Debug.Extended,
                       DistributionSampler,
                       Evaluate,
-                      Interpret, 
+                      Infer, 
                       MaximumAPosteriori,
                       Optimizer,
                       Mean,
@@ -73,7 +73,7 @@ test-suite tests
                       DimProbTest,
                       MapTest,
                       ParserTest,
-                      InterpretTest,
+                      InferTest,
                       QueryTest
     main-is:          Main.hs
     build-depends:    base ^>=4.17.2.1, 

@@ -11,7 +11,7 @@ import Representation
 import Runtime
 import Statistics.Distribution
 import Statistics.Distribution.Normal (normalDistr)
-import Interpret (replaceFnParameterWithContent)
+import Infer (replaceFnParameterWithContent)
 
 sampleProgram :: Program -> IO Value
 sampleProgram program = evalRandIO $ sampleRand rt mainExpr

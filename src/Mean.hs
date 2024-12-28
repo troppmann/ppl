@@ -4,7 +4,7 @@ module Mean
 where
 
 import Debug.Extended
-import Interpret
+import Infer
 import Representation
 
 type ErrorString = String

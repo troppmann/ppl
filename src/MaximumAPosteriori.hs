@@ -6,7 +6,7 @@ where
 
 import Debug.Extended
 import Evaluate (evalArithmetic)
-import Interpret
+import Infer
 import Query
 import Representation
 import Runtime

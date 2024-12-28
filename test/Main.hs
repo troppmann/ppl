@@ -2,7 +2,7 @@ module Main where
 
 import ApproximateIntegrationTest
 import DimProbTest
-import InterpretTest
+import InferTest
 import MapTest
 import ParserTest
 import QueryTest
@@ -15,7 +15,7 @@ tests =
     "Tests"
     [ ParserTest.tests,
       SampleTest.tests,
-      InterpretTest.tests,
+      InferTest.tests,
       ApproximateIntegrationTest.tests,
       QueryTest.tests,
       DimProbTest.tests,
