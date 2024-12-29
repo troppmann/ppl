@@ -101,28 +101,15 @@ maxAPost rt (IfThenElse e1 e2 e3) query = do
         then
           maxAPost rt e3 query
         else
-          maxAPostIfThenElse dimProbTrue (maxAPost rt e2 query) (maxAPost rt e3 query)
+          maxAPostIfThenElse dimProbTrue <$> maxAPost rt e2 query <*> maxAPost rt e3 query
 maxAPost rt expr (QAt v) = do
   (dim, prob) <- infer rt expr (VFloat v)
-  if prob /= 0.0
-    then
-      return ((dim, prob), VFloat v)
-    else
-      Left "Value is not possible."
+  return ((dim, prob), VFloat v)
 maxAPost _ e q = todo $ "Missing case" <> show e <> show q
 
-maxAPostIfThenElse ::
-  DimensionalProbability ->
-  Either ErrorString (DimensionalProbability, Value) ->
-  Either ErrorString (DimensionalProbability, Value) ->
-  Either ErrorString (DimensionalProbability, Value)
-maxAPostIfThenElse _ (Left e1) (Left e2) = Left $ show e1 <> " " <> show e2
-maxAPostIfThenElse _ (Left "Value is not possible.") (Right (dim, value)) = return (dim, value)
-maxAPostIfThenElse _ (Left e) (Right _) = Left e
-maxAPostIfThenElse _ (Right (dim, value)) (Left "Value is not possible.") = return (dim, value)
-maxAPostIfThenElse _ (Right _) (Left e) = Left e
-maxAPostIfThenElse (dimIf, probIf) (Right ((dim1,prob1), value1)) (Right ((dim2,prob2), value2))
-  | dim1 < dim2 = return ((dim1,prob1), value1)
-  | dim2 < dim1 = return ((dim2,prob2), value2)
-  | dimIf == 0 && probIf * prob1 > (1-probIf) * prob2 = return ((dim1,prob1), value1)
-  | otherwise = return ((dim2,prob2), value2)
+maxAPostIfThenElse :: DimensionalProbability -> (DimensionalProbability, Value) -> (DimensionalProbability, Value) -> (DimensionalProbability, Value)
+maxAPostIfThenElse (dimIf, probIf) ((dim1, prob1), value1) ((dim2, prob2), value2)
+  | dim1 < dim2 = ((dim1, prob1), value1)
+  | dim2 < dim1 = ((dim2, prob2), value2)
+  | dimIf == 0 && probIf * prob1 > (1 - probIf) * prob2 = ((dim1, prob1), value1)
+  | otherwise = ((dim2, prob2), value2)
