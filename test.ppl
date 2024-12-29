@@ -19,9 +19,9 @@ replicate n value = if n <= 1 then
     else 
         (value, replicate (n-1) value)
 
-// An exponential distribution that counts the number of trial till success 
+// An geometric distribution that counts the number of trial till success 
 // of a bernoulli trial with the probability 'p' in [0,1] 
-exponential p = if (Uniform < p) then 1 else 1 + exponential p
+geometric p = if (Uniform < p) then 1 else 1 + exponential p
 
 // An binomial distribution that counts the number of 
 // successful trial of 'n' bernoulli trials with the probability 'p' in [0,1].
