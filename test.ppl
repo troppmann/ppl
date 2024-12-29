@@ -1,28 +1,43 @@
 // A normal distribution with a center at mean and and standard deviation of std
 // normal :: VFloat -> VFloat -> VFloat
-//normal mean std = std * Normal + mean
+normal mean std = std * Normal + mean
 
 // An uniform distribution with the range [a,b] 
 // 'a' does not need to be lower than 'b'
 // uniform :: VFloat -> VFloat -> VFloat
-//uniform a b = (b - a) * Uniform + a
+uniform a b = (b - a) * Uniform + a
 
 // A dice with 'n' equally random sites.
 // Through loop unrolling optimization will most of the function skipped entirely. 
 // dice :: VFloat -> VFloat 
-/*dice n = if n <= 1 then 
-        1 
-    else (
-        if Uniform < (1/n) then 
-            n 
-        else 
-            dice (n-1))
-*/
+dice n = if n <= 1 then 1 else ( if Uniform < (1/n) then n else dice (n-1))
+
 // Creates an n-tuple with a repetition of 'n'-times of the value.
 // replicate :: VFloat -> VFloat -> Value 
-/*replicate n value = if n <= 1 then
+replicate n value = if n <= 1 then
         value
     else 
         (value, replicate (n-1) value)
-*/
-tIn = 1; tMid x = (x,x); main = tMid (tIn)
+
+// An exponential distribution that counts the number of trial till success 
+// of a bernoulli trial with the probability 'p' in [0,1] 
+exponential p = if (Uniform < p) then 1 else 1 + exponential p
+
+// An binomial distribution that counts the number of 
+// successful trial of 'n' bernoulli trials with the probability 'p' in [0,1].
+// Use with optimization and be careful the program expands exponential!
+binomial p n = if n <= 0 then
+        0
+    else (
+        if Uniform < p then
+            1 + binomial p (n-1)
+        else
+            binomial p (n-1)
+    )
+
+//main = if 2 <= 1 then (Uniform + 1) else (Uniform + 1, if 1<= 1 then Uniform +1 else 0)
+//main = if Uniform < 0.5 then (Uniform + 1) else (Uniform + 1, Uniform + 1)
+//main = if Uniform < 0.3 then Normal else Uniform * 100
+//main = (0.25 + Uniform) + 3 + 3 - 7 -8
+//main = (Normal + 10, 20/3)
+main = binomial 0.3 15
