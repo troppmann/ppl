@@ -16,6 +16,7 @@ import Query
 import Representation
 import Sample
 import Spn
+import MaximumAPosteriori (mle)
 
 toFloat :: Value -> Double
 toFloat (VFloat f) = f
@@ -26,25 +27,20 @@ main = do
   s <- readFile "test.ppl"
   let parseOptions = ParseOptions {optimization = False, maxLoopUnroll = 0}
   let program = unwrapEither $ parseProgramWithOptions parseOptions s
-  -- let program = [("main", IfThenElse (LessThan Uniform (Const $ VFloat 0.2)) (Multiply Normal (Const $ VFloat 0.5))(Plus (Const $ VFloat 2.0) (FnCall "main" [])))]
-  -- let program = [("main", FnCall "factorial" [Const $ VFloat 5.0]),("factorial", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (Const $ VFloat 1.0) (Multiply (FnParameter 0) (FnCall "factorial" [Subtract (FnParameter 0)(Const $ VFloat 1.0)])))]
-  -- let program =
-  -- [ ("main", FnCall "middleMan" []),
-  -- ("dice", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (FnParameter 0) (IfThenElse (LessThan Uniform (Divide (Const $ VFloat 1.0) (FnParameter 0))) (FnParameter 0) (FnCall "dice" [Subtract (FnParameter 0) (Const $ VFloat 1.0)]))),
-  -- ("middleMan", Plus (Const $ VFloat 1.0) (FnCall "dice" [Const $ VFloat 20]))
-  -- ]
   print "------Program Unopt"
   print program
   let optProgram = optimize program
   print "------Program Optimize"
   print optProgram
+
   sample <- sampleProgram program
   print "------Sample Unopt"
   print sample
   optSample <- sampleProgram optProgram
   print "------Sample Optimize"
   print optSample
-  let inferSample = (VTuple (VFloat 1.0) (VFloat 1.0))
+
+  let inferSample = VFloat 0.0
   let prob = inferProgram program inferSample
   print "------Infer Unopt"
   print prob
@@ -52,8 +48,16 @@ main = do
   print "------Infer Optimize"
   print optProb
 
--- let numberOfSamples = 100000
--- plotMassToFile "pmf.svg" optProgram numberOfSamples
+  --let maxSample = mle program QAny
+  --print "------MLE Unopt"
+  --print maxSample
+  --let maxSampleOpt = mle optProgram QAny
+  --print "------MLE Optimize"
+  --print maxSampleOpt
+  let spacing = LinearSpacing {start = 0.5, end = 2.5, stepWidth = 0.01}
+  let numberOfSamples = 100000
+--  plotDensityToFile "pdf.svg" program spacing numberOfSamples
+  plotMassToFile "pmf.svg" optProgram numberOfSamples
 
 -- let program = [("main", FnCall "dice" [Const $ VFloat 6.0]),("dice", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (FnParameter 0) (IfThenElse (LessThan Uniform (Divide (Const $ VFloat 1.0) (FnParameter 0))) (FnParameter 0) (FnCall "dice" [Subtract (FnParameter 0) (Const $ VFloat 1.0)])))]
 -- print program

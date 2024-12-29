@@ -40,4 +40,4 @@ binomial p n = if n <= 0 then
 //main = if Uniform < 0.3 then Normal else Uniform * 100
 //main = (0.25 + Uniform) + 3 + 3 - 7 -8
 //main = (Normal + 10, 20/3)
-main = binomial 0.3 15
+main = binomial 0.3 4

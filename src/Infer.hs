@@ -99,11 +99,16 @@ infer rt (Exponent e1 e2) value@(VFloat _)
             _ -> return (1, prob * abs (overC * (v ** (overC - 1))))
   | otherwise = Left "Can only infer Exponent(**) with a one side Constant."
 infer rt (IfThenElse e1 e2 e3) value = do
-  dimProbTrue <- infer rt e1 (VBool True)
-  dimProbFalse <- infer rt e1 (VBool False) -- (0, 1.0) #-# dimProbTrue
-  dimProbBranchTrue <- infer rt e2 value
-  dimProbBranchFalse <- infer rt e3 value
-  return $ (dimProbTrue #*# dimProbBranchTrue) #+# (dimProbFalse #*# dimProbBranchFalse)
+  dimProbTrue@(dimTrue, _)<- infer rt e1 (VBool True)
+  dimProbFalse@(dimFalse, _) <- infer rt e1 (VBool False) -- (0, 1.0) #-# dimProbTrue
+  if dimProbTrue == (0,1.0) && dimFalse == 0 then do
+    infer rt e2 value
+  else if dimProbFalse == (0,1.0) && dimTrue == 0 then do
+    infer rt e3 value
+  else do
+    dimProbBranchTrue <- infer rt e2 value
+    dimProbBranchFalse <- infer rt e3 value
+    return $ (dimProbTrue #*# dimProbBranchTrue) #+# (dimProbFalse #*# dimProbBranchFalse)
 infer rt (Equal e1 e2) (VBool bool)
   | Right constant <- evalConstExpr rt e2 = do
       dimProb <- infer rt e1 constant
