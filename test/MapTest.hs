@@ -27,7 +27,7 @@ testMapExprWithName exprString testName queryString expectedValue = testCase tes
   expr <- assertRight $ parseExpr exprString
   query <- assertRight $ parseQuery queryString
   let program = wrapInMain expr
-  value <- assertRight $ mle program query
+  (_dimProb,value) <- assertRight $ mle program query
   value @?= expectedValue
   where
     testString = shorter testName <> ":Query " <> shorter queryString
@@ -64,6 +64,7 @@ tests =
           testMapExpr "(Normal, if Uniform > 0.7 then Normal else 0, 8)" "_" (VTuple (VFloat 0) (VTuple (VFloat 0) (VFloat 8))),
           testMapExpr "if (Uniform < 0.4) || (Uniform < 0.4) then (5,5) else (Normal + 10, 10)" "_" (VTuple (VFloat 5) (VFloat 5)),
           testMapExpr "if Uniform < 0.6 then Normal * 10 else 1 + (Normal * 0.0) " "_" (VFloat 1.0),
+          testMapExpr "if Uniform < 0.3 then Normal else Uniform * 100" "_" (VFloat 0.0),
           testMapExpr "if Normal != 0.0 then (if Uniform == 0.4 then 5 else 8, 5) else (10, 10)" "_" (VTuple (VFloat 8) (VFloat 5))
         ],
       testGroup
@@ -77,7 +78,7 @@ tests =
           testMapExpr "(Normal, Normal)" "(3, _)" (VTuple (VFloat 3) (VFloat 0)),
           testMapExpr "(Normal, Normal + 7)" "(3, _)" (VTuple (VFloat 3) (VFloat 7)),
           testMapExpr "if Uniform < 0.5 then (Normal + 3, 10) else (Normal + 7, 0)" "(_, 10)" (VTuple (VFloat 3) (VFloat 10)),
-          testMapExpr "if Uniform < 0.4 then (Normal + 3, 10) else (Normal + 7, 0)" "(3, _)" (VTuple (VFloat 3) (VFloat 0)),
+          testMapExpr "if Uniform < 0.4 then (Normal + 3, 10) else (Normal + 7, 0)" "(3, _)" (VTuple (VFloat 3) (VFloat 10)),
           testMapExpr "if Uniform < 0.5 then (Normal + 3, 10) else (3, 0)" "(3, _)" (VTuple (VFloat 3) (VFloat 0)),
           testMapExpr "if Uniform < 0.2 then (Uniform, Normal) else (Uniform + 3, Normal)" "(3.1, _)" (VTuple (VFloat 3.1) (VFloat 0.0)),
           testMapExpr "if Uniform < 0.8 then (Uniform, Normal) else (Uniform + 3, Normal)" "(_, _)" (VTuple (VFloat 0.5) (VFloat 0.0)),
