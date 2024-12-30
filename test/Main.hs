@@ -6,6 +6,7 @@ import InferTest
 import MapTest
 import ParserTest
 import QueryTest
+import OptimizeTest
 import SampleTest
 import Test.Tasty
 
@@ -19,7 +20,8 @@ tests =
       QueryTest.tests,
       DimProbTest.tests,
       MapTest.tests,
-      InferTest.tests
+      InferTest.tests,
+      OptimizeTest.tests
     ]
 
 main :: IO ()
