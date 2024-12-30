@@ -32,14 +32,15 @@ testMapExprWithName exprString testName queryString expectedValue = testCase tes
   where
     testString = shorter testName <> ":Query " <> shorter queryString
 
-testMapExprFail :: ExprString -> QueryString -> ErrorString -> TestTree
-testMapExprFail exprString queryString errorString = testCase testString $ do
+testMapExprFail :: ExprString -> QueryString -> DimensionalProbability -> TestTree
+testMapExprFail exprString queryString expected = testCase testString $ do
   expr <- assertRight $ parseExpr exprString
   query <- assertRight $ parseQuery queryString
   let program = wrapInMain expr
-  mle program query @?= Left errorString
+  (dimProb, _value) <- assertRight $ mle program query 
+  assertEqDimProb dimProb expected
   where
-    testString = shorter exprString <> ":Query " <> shorter queryString <> ":Expected Fail"
+    testString = shorter exprString <> ":Query " <> shorter queryString <> ":Expected 0.0 Prob"
 
 tests =
   testGroup
@@ -70,9 +71,9 @@ tests =
       testGroup
         "MAP with evidence p(q,e)"
         [ testMapExpr "(Normal, 3)" "(_, 3)" (VTuple (VFloat 0) (VFloat 3)),
-          testMapExprFail "(Normal, 3)" "(_, 4)" "Value is not possible.",
-          testMapExprFail "(Uniform + 4, 3)" "(3.5, _)" "Value is not possible.",
-          testMapExprFail "Uniform" "(4)" "Value is not possible.",
+          testMapExprFail "(Normal, 3)" "(_, 4)" (0,0.0),
+          testMapExprFail "(Uniform + 4, 3)" "(3.5, _)" (1,0.0),
+          testMapExprFail "Uniform" "(4)" (1,0.0),
           testMapExpr "Uniform + 3.5" "(4)" (VFloat 4),
           testMapExpr "(Normal, Normal)" "(_, 3)" (VTuple (VFloat 0) (VFloat 3)),
           testMapExpr "(Normal, Normal)" "(3, _)" (VTuple (VFloat 3) (VFloat 0)),
