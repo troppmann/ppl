@@ -96,18 +96,24 @@ optimizeExponent rt e1 e2 = do
 optimizeOr ::Runtime ->  Expr -> Expr -> Either ErrorString Expr
 optimizeOr rt e1 e2 = do
   opt1 <- optimizeExpr rt e1
-  case opt1 of
-    (Const (VBool True)) -> return $ Const (VBool True)
-    (Const (VBool False)) -> optimizeExpr rt e2
-    _ -> Or opt1 <$> optimizeExpr rt e2
+  opt2 <- optimizeExpr rt e2
+  case (opt1,opt2) of
+    (_, (Const (VBool True))) -> return $ Const (VBool True)
+    ((Const (VBool True)), _) -> return $ Const (VBool True)
+    (_,(Const (VBool False))) -> return opt1
+    ((Const (VBool False)),_) -> return opt2
+    (_,_) -> return $ Or opt1 opt2
 
 optimizeAnd ::Runtime ->  Expr -> Expr -> Either ErrorString Expr
 optimizeAnd rt e1 e2 = do
   opt1 <- optimizeExpr rt e1
-  case opt1 of
-    (Const (VBool True)) -> optimizeExpr rt e2
-    (Const (VBool False)) -> return $ Const (VBool False)
-    _ -> And opt1 <$> optimizeExpr rt e2
+  opt2 <- optimizeExpr rt e2
+  case (opt1,opt2) of
+    ((Const (VBool False)),_) -> return $ Const (VBool False)
+    (_,(Const (VBool False))) -> return $ Const (VBool False)
+    (_, (Const (VBool True))) -> return opt1
+    ((Const (VBool True)), _) -> return opt2
+    _ -> return $ And opt1 opt2
 
 optimizeCompareArithmetic ::Runtime ->  Expr -> Expr -> (Expr -> Expr -> Expr) -> (forall a. (Eq a, Ord a) => a -> a -> Bool) -> Either ErrorString Expr
 optimizeCompareArithmetic rt e1 e2 makeExpr f = do
