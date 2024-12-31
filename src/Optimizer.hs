@@ -9,6 +9,7 @@ where
 import Debug.Extended
 import Representation
 import Runtime
+import Representation (Expr(Multiply))
 
 optimize :: Program -> Program
 optimize = optimizeWithOption OptimizeOption {maxLoopUnroll = 30}
@@ -52,6 +53,10 @@ optimizePlus rt e1 e2 = do
     (_, Const (VFloat 0.0)) -> return opt1
     (Const (VFloat 0.0), _) -> return opt2
     (Const (VFloat v1), Const (VFloat v2)) -> return $ Const $ VFloat (v1 + v2)
+    ((Plus l (Const (VFloat vInner))), Const (VFloat v2)) -> return $ Plus l (Const $ VFloat (vInner + v2))
+    ((Plus (Const (VFloat vInner)) r), Const (VFloat v2)) -> return $ Plus r (Const $ VFloat (vInner + v2))
+    (Const (VFloat v1),(Plus l (Const (VFloat vInner)))) -> return $ Plus (Const $ VFloat (vInner + v1)) l
+    (Const (VFloat v1),(Plus (Const (VFloat vInner)) r)) -> return $ Plus (Const $ VFloat (vInner + v1)) r
     (_, _) -> return $ Plus opt1 opt2
 
 optimizeSubtract :: Runtime -> Expr -> Expr -> Either ErrorString Expr
@@ -73,6 +78,22 @@ optimizeMultiply rt e1 e2 = do
     (_, Const (VFloat 1.0)) -> return opt1
     (Const (VFloat 1.0), _) -> return opt2
     (Const (VFloat v1), Const (VFloat v2)) -> return $ Const $ VFloat (v1 * v2)
+    (Multiply l (Const (VFloat vInner)), Const (VFloat v2)) -> return $ Multiply l (Const $ VFloat (vInner * v2))
+    (Plus l (Const (VFloat vInner)), Const (VFloat v2)) -> do
+      optMult <- optimizeExpr rt $ Multiply l (Const (VFloat v2))
+      return $ Plus optMult (Const $ VFloat (vInner * v2))
+    (Multiply (Const (VFloat vInner)) r, Const (VFloat v2)) -> return $ Multiply r (Const $ VFloat (vInner * v2))
+    (Plus (Const (VFloat vInner)) r, Const (VFloat v2)) -> do
+      optMult <- optimizeExpr rt $ Multiply r (Const (VFloat v2))
+      return $ Plus optMult (Const $ VFloat (vInner * v2))
+    (Const (VFloat v1),Multiply l (Const (VFloat vInner))) -> return $ Multiply (Const $ VFloat (vInner * v1)) l
+    (Const (VFloat v1),Plus l (Const (VFloat vInner))) -> do
+      optMult <- optimizeExpr rt $ Multiply (Const $ VFloat v1) l
+      return $ Plus (Const $ VFloat (vInner * v1)) optMult
+    (Const (VFloat v1),Multiply (Const (VFloat vInner)) r) -> return $ Multiply (Const $ VFloat (vInner * v1)) r
+    (Const (VFloat v1),Plus (Const (VFloat vInner)) r) -> do 
+      optMult <- optimizeExpr rt $ Multiply (Const $ VFloat v1) r
+      return $ Plus (Const $ VFloat (vInner * v1)) optMult
     (_, _) -> return $ Multiply opt1 opt2
 
 optimizeDivide :: Runtime -> Expr -> Expr -> Either ErrorString Expr

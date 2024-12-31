@@ -42,4 +42,12 @@ tests =
       , testOptimize "main = (1 > 20) || (Uniform < 0.5)" "main = Uniform < 0.5"
       , testOptimize "main = linear 2 1 4;linear m x b= m*x+b" "main = 6"
       , testOptimize "main = (Uniform * 3) * 3" "main = Uniform * 9"
+      , testOptimize "main = 3 * (Uniform * 3) * (1 + 2) * 3" "main = Uniform * 81"
+      , testOptimize "main = 3 + (Uniform + 3) + (1 * 2) + 3" "main = Uniform + 11"
+      , testOptimize "main = (9 * Uniform + 3) * 10" "main = Uniform * 90 + 30 "
+      , testOptimize "main = (((9 * Uniform) * 10) + (3 * 10)) + 10" "main = Uniform * 90 + 40"
+      , testOptimize "main = (10 + ((((4 + 5) * Uniform) * 10) + (3 * 10))) * 2" "main = Uniform * 180 + 80"
+      , testOptimize "main = (10 + (((Uniform * (4 + 5)) * 10) + (3 * 10))) * 2" "main = Uniform * 180 + 80"
+      , testOptimize "main = (Uniform + 3) * 10" "main = Uniform * 10 + 30 "
+      , testOptimize "main = ((Uniform * 10) + (3 * 10))" "main = Uniform * 10 + 30 "
     ]
