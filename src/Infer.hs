@@ -180,7 +180,7 @@ infer rt (CreateTuple e1 e2) (VTuple v1 v2) = do
 infer rt (FnCall fnName arguments) val = do
   expr <- justOr (lookup fnName (program rt)) ("Fn '" ++ fnName ++ "' not found.")
   let newDepth = 1 + recursionDepth rt
-  args <- traverse (optimizeExpr rt <=< replaceFnParameterWithContent rt) arguments
+  args <- traverse (optimizeExpr rt{maxRecursionDepth = 0} <=< replaceFnParameterWithContent rt) arguments
   let newRt = rt {recursionDepth = newDepth, arguments = args}
   if recursionDepth rt >= maxRecursionDepth rt
     then
