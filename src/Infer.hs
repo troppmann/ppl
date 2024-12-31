@@ -351,9 +351,14 @@ compareFloatExpr rt (Exponent e1 e2) (ord, value)
 compareFloatExpr rt (IfThenElse e1 e2 e3) (ord, value) = do
   (_dim, probTrue) <- infer rt e1 (VBool True)
   let probFalse = 1 - probTrue
-  p2 <- compareFloatExpr rt e2 (ord, value)
-  p3 <- compareFloatExpr rt e3 (ord, value)
-  return $ probTrue * p2 + probFalse * p3
+  if probTrue == 1.0 then 
+    compareFloatExpr rt e2 (ord, value)
+  else if probFalse == 1.0 then
+    compareFloatExpr rt e3 (ord, value)
+  else do
+    p2 <- compareFloatExpr rt e2 (ord, value)
+    p3 <- compareFloatExpr rt e3 (ord, value)
+    return $ probTrue * p2 + probFalse * p3
 compareFloatExpr rt (FnCall fnName arguments) (ord, value) = do
   expr <- justOr (lookup fnName (program rt)) ("Fn '" ++ fnName ++ "' not found.")
   let newDepth = 1 + recursionDepth rt
