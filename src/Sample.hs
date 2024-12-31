@@ -8,6 +8,7 @@ where
 import Control.Monad.Random
 import Debug.Extended
 import Infer (replaceFnParameterWithContent)
+import Optimizer (optimizeExpr)
 import Representation
 import Runtime
 import Statistics.Distribution
@@ -49,7 +50,7 @@ sampleRand rt (FnCall fnName arguments) = do
   case lookup fnName (program rt) of
     (Just expr) -> do
       let newDepth = 1 + recursionDepth rt
-      let args = map (unwrapEither . replaceFnParameterWithContent rt) arguments
+      let args = map (unwrapEither . (optimizeExpr rt <=< replaceFnParameterWithContent rt)) arguments
       let newRt = rt {recursionDepth = newDepth, arguments = args}
       if newDepth > maxRecursionDepth rt
         then
