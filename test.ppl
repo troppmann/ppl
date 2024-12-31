@@ -19,9 +19,9 @@ replicate n value = if n <= 1 then
     else 
         (value, replicate (n-1) value)
 
-// An geometric distribution that counts the number of trial till success 
+// An geometric distribution that counts the number of trials till success 
 // of a bernoulli trial with the probability 'p' in [0,1] 
-geometric p = if (Uniform < p) then 1 else 1 + exponential p
+geometric p = if (Uniform < p) then 1 else 1 + geometric p
 
 // An binomial distribution that counts the number of 
 // successful trial of 'n' bernoulli trials with the probability 'p' in [0,1].
@@ -35,9 +35,21 @@ binomial p n = if n <= 0 then
             binomial p (n-1)
     )
 
+
+poisson tau = innerPoisson tau Uniform 0 (2.718281828 ** -tau) (2.718281828 ** -tau)
+
+innerPoisson tau u x p s = 
+    if u > s then 
+        innerPoisson tau (Uniform * (1 - s) +s) (x+1) (p*tau/ (x+1)) (s + (p*tau/ (x+1))) 
+    else 
+        x
+
 //main = if 2 <= 1 then (Uniform + 1) else (Uniform + 1, if 1<= 1 then Uniform +1 else 0)
 //main = if Uniform < 0.5 then (Uniform + 1) else (Uniform + 1, Uniform + 1)
 //main = if Uniform < 0.3 then Normal else Uniform * 100
 //main = (0.25 + Uniform) + 3 + 3 - 7 -8
 //main = (Normal + 10, 20/3)
-main = binomial 0.3 4
+
+
+//test a = if a < 0 then a else 0
+main = geometric 0.1 //geometric 0.4//replicate (dice 10) Uniform
