@@ -357,7 +357,8 @@ compareFloatExpr rt (IfThenElse e1 e2 e3) (ord, value) = do
 compareFloatExpr rt (FnCall fnName arguments) (ord, value) = do
   expr <- justOr (lookup fnName (program rt)) ("Fn '" ++ fnName ++ "' not found.")
   let newDepth = 1 + recursionDepth rt
-  let newRt = rt {recursionDepth = newDepth, arguments}
+  args <- traverse (optimizeExpr rt{maxRecursionDepth = 0} <=< replaceFnParameterWithContent rt) arguments
+  let newRt = rt {recursionDepth = newDepth, arguments=args}
   if recursionDepth rt >= maxRecursionDepth rt
     then
       return 0.0
