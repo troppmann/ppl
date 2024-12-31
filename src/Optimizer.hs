@@ -177,25 +177,29 @@ optimizeFnParameter rt index = do
 
 optimizeFnCall :: Runtime -> FnName -> [Expr] -> Either ErrorString Expr
 optimizeFnCall rt fnName args = do
-  optArgs <- traverse (optimizeExpr rt) args
-  let newExpr = lookup fnName (program rt)
-  case newExpr of
-    (Just e1) -> do
-      let oldDepth = recursionDepth rt
-      if oldDepth > maxRecursionDepth rt
-        then
-          Left "MaxRecursionDepth reached"
-        else do
-          let oldFnName = currentFnName rt
-          let newRt = rt {recursionDepth = oldDepth + 1, arguments = optArgs, currentFnName = fnName}
-          let fnCall = optimizeExpr newRt e1
-          case fnCall of
-            (Left _) ->
-              ( if fnName /= oldFnName || oldDepth <= 0
-                  then
-                    return $ FnCall fnName optArgs
-                  else Left "backTrack cause of MaxRecursionDepth"
-              )
-            (Right expr) -> return expr
-    Nothing ->
-      return $ FnCall fnName args
+  let newExpr =  lookup fnName (program rt)
+  if maxRecursionDepth rt == 0 then do
+    optArgs <- traverse (optimizeExpr rt) args
+    return $ FnCall fnName optArgs
+  else
+    case newExpr of
+      (Just e1) -> do
+        let oldDepth = recursionDepth rt
+        if oldDepth > maxRecursionDepth rt
+          then
+            Left "MaxRecursionDepth reached"
+          else do
+            let oldFnName = currentFnName rt
+            optArgs <- traverse (optimizeExpr rt) args
+            let newRt = rt {recursionDepth = oldDepth + 1, arguments = optArgs, currentFnName = fnName}
+            let fnCall = optimizeExpr newRt e1
+            case fnCall of
+              (Left _) ->
+                ( if fnName /= oldFnName || oldDepth <= 0
+                    then
+                      return $ FnCall fnName optArgs
+                    else Left "backTrack cause of MaxRecursionDepth"
+                )
+              (Right expr) -> return expr
+      Nothing ->
+        return $ FnCall fnName args
