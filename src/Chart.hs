@@ -4,10 +4,11 @@ module Chart
   ( createPoints,
     plotDensityToFile,
     plotMassToFile,
+    plotCumulativeToFile,
   )
 where
 
-import ApproximateIntegration (LinearSpacing (..), convertProgramToFunction, trapezTwoPoints)
+import ApproximateIntegration (LinearSpacing (..), convertProgramToFunction, convertCumulativeToFunction, trapezTwoPoints)
 import ApproximateIntegration qualified as LinearSpacing
 import Control.Monad.Random
 import Debug.Extended
@@ -103,3 +104,17 @@ pointsWithSize title size values = liftEC $ do
   plot_points_style . point_radius .= size
   plot_points_style . point_border_color .= color
   plot_points_style . point_border_width .= 1
+
+plotCumulativeToFile :: FileName -> Program -> LinearSpacing -> NumberOfSamples -> IO ()
+plotCumulativeToFile filename program spacing numberOfSamples = do
+  let inferredLine = createCumulativePoints program spacing
+  sampledLine <- evalRandIO (sampleCumulative program SampleInfo {start = LinearSpacing.start spacing, stepWidth = LinearSpacing.stepWidth spacing, numberOfSamples})
+
+  toFile def filename $ do
+    layout_title .= "CDF"
+    setColors [opaque blue, opaque red]
+    plot (line "Sampled" [sampledLine])
+    plot (line "Inferred" [inferredLine])
+
+createCumulativePoints :: Program -> LinearSpacing -> [Point2D]
+createCumulativePoints program spacing = addYValues (convertCumulativeToFunction program) (xValues spacing)

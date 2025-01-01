@@ -52,4 +52,4 @@ innerPoisson tau u x p s =
 
 
 //test a = if a < 0 then a else 0
-main = replicate (dice 1) 1 //geometric 0.4//replicate (dice 10) Uniform
+main = poisson 4//replicate (dice 10) Uniform

@@ -2,6 +2,7 @@ module DistributionSampler
   ( SampledDensity (..),
     SampleInfo (..),
     sampleMass,
+    sampleCumulative,
     convertToList,
     sampleDensity,
     density,
@@ -79,3 +80,32 @@ sampleMass program numberOfSamples = do
           . map (,1)
           $ samples
   return masses
+
+sampleCumulative :: (MonadRandom m) => Program -> SampleInfo -> m [(Double, Double)]
+sampleCumulative program info = do
+  let mainExpr = unwrapMaybe $ lookup "main" program
+  let rt = Runtime {program, currentFnName = "main", arguments = [], recursionDepth = 0, maxRecursionDepth = 10000}
+  samples <- fmap (fmap convertToFloat) (replicateM (numberOfSamples info) $ sampleRand rt mainExpr)
+  let indices = map (toBucketIndex info) samples
+  let probabilities =
+        convertToCDF info 0
+          . Map.toList
+          . Map.fromListWith (+)
+          . map (,1)
+          $ indices
+  let (firstX,_) = head probabilities 
+  let addFirst = (firstX - stepWidth info,0.0) : probabilities
+  return $ makeRectangles addFirst
+
+makeRectangles :: [(Double, Double)] -> [(Double, Double)]
+makeRectangles (p1@(_,y1):p2@(x2,_):rest) = p1 : (x2,y1) : makeRectangles (p2 : rest)
+makeRectangles list = list
+
+convertToCDF :: SampleInfo -> Int -> [(BucketIndex, Int)] -> [(Double, Double)]
+convertToCDF _ _ [] = []
+convertToCDF info seenSamples ((x, count) : rest) =
+  (fromBucketIndex info x + stepWidth info, amount / samples)
+    : convertToCDF info (seenSamples + count) rest
+  where
+    amount = fromIntegral (seenSamples + count)
+    samples = fromIntegral (numberOfSamples info)

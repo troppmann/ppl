@@ -3,6 +3,7 @@
 module ApproximateIntegration
   ( LinearSpacing (..),
     convertProgramToFunction,
+    convertCumulativeToFunction,
     approxProgram,
     approxFunc,
     trapezTwoPoints,
@@ -11,6 +12,7 @@ where
 
 import Infer
 import Representation
+import Query
 
 data LinearSpacing = LinearSpacing
   { start :: Double,
@@ -30,6 +32,12 @@ convertProgramToFunction :: Program -> (Double -> Double)
 convertProgramToFunction program =  dimProbToDouble . inferProgram program . doubleToValue
   where
     doubleToValue = VFloat
+    dimProbToDouble = replaceForNanOrInf . either (const 0.0) snd
+
+convertCumulativeToFunction :: Program -> (Double -> Double)
+convertCumulativeToFunction program =  dimProbToDouble . qInferProgram program . doubleToQuery
+  where
+    doubleToQuery = QLe 
     dimProbToDouble = replaceForNanOrInf . either (const 0.0) snd
 
 replaceForNanOrInf :: Double -> Double
