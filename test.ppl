@@ -45,6 +45,8 @@ innerPoisson tau u x p s =
     else 
         x
 
+logNormal = exp Normal
+
 //main = if 2 <= 1 then (Uniform + 1) else (Uniform + 1, if 1<= 1 then Uniform +1 else 0)
 //main = if Uniform < 0.5 then (Uniform + 1) else (Uniform + 1, Uniform + 1)
 //main = if Uniform < 0.3 then Normal else Uniform * 100
@@ -53,4 +55,4 @@ innerPoisson tau u x p s =
 
 
 //test a = if a < 0 then a else 0
-main = poisson 4//replicate (dice 10) Uniform
+main = logNormal //replicate (dice 10) Uniform
