@@ -33,20 +33,21 @@ main = do
   print "------Program Optimize"
   print optProgram
 
-  sample <- replicateM 10 (sampleProgram program)
+  sample <- sampleProgram program
   print "------Sample Unopt"
-  print sample
+  --print sample
   optSample <- sampleProgram optProgram
   print "------Sample Optimize"
-  print optSample
+  --print optSample
 
-  let inferSample = VTuple (VFloat 1.0) (VTuple (VFloat 1.0) (VFloat 1.0))
-  let prob = inferProgram program inferSample
+  let inferSample = QTuple (QAt 5.0) (QTuple (QAt 3.10) QAny)
+  let prob = qInferProgram program inferSample
   print "------Infer Unopt"
   print prob
-  let optProb = inferProgram optProgram inferSample
+  let optProb = qInferProgram optProgram inferSample
   print "------Infer Optimize"
   print optProb
+
 
   --let maxSample = mle program QAny
   --print "------MLE Unopt"
@@ -54,9 +55,9 @@ main = do
   --let maxSampleOpt = mle optProgram QAny
   --print "------MLE Optimize"
   --print maxSampleOpt
-  let spacing = LinearSpacing {start = -10, end = 10, stepWidth = 0.05}
-  let numberOfSamples = 100000
-  plotCumulativeToFile "cdf.svg" program spacing numberOfSamples
+--  let spacing = LinearSpacing {start = -10, end = 10, stepWidth = 0.05}
+--  let numberOfSamples = 100000
+--  plotCumulativeToFile "cdf.svg" program spacing numberOfSamples
 -- plotDensityToFile "pdf.svg" program spacing numberOfSamples
 -- plotMassToFile "pmf.svg" optProgram numberOfSamples
 

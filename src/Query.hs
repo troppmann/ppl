@@ -9,6 +9,8 @@ import Debug.Extended
 import Infer
 import Representation
 import Runtime
+import Optimizer
+import Control.Monad
 
 data QueryType
   = QAny -- other names: undefined anything unspecified blank uncertain
@@ -48,4 +50,14 @@ qInfer rt (IfThenElse boolExpr e1 e2) query@(QTuple _ _) = do
   dimProbBranchTrue <- qInfer rt e1 query
   dimProbBranchFalse <- qInfer rt e2 query
   return $ (dimProbTrue #*# dimProbBranchTrue) #+# (dimProbFalse #*# dimProbBranchFalse)
+qInfer rt (FnCall fnName arguments) query = do
+  expr <- justOr (lookup fnName (program rt)) ("Fn '" ++ fnName ++ "' not found.")
+  let newDepth = 1 + recursionDepth rt
+  args <- traverse (optimizeExpr rt {maxRecursionDepth = 0} <=< replaceFnParameterWithContent rt) arguments
+  let newRt = rt {recursionDepth = newDepth, arguments = args}
+  if recursionDepth rt >= maxRecursionDepth rt
+    then
+      return (0, 0.0)
+    else
+      qInfer newRt expr query
 qInfer _ _ (QTuple _ _) = return (0, 0.0)

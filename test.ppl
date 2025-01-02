@@ -19,6 +19,9 @@ replicate n value = if n <= 1 then
     else 
         (value, replicate (n-1) value)
 
+
+repeat value = (value, repeat value)
+
 // An geometric distribution that counts the number of trials till success 
 // of a bernoulli trial with the probability 'p' in [0,1] 
 geometric p = if (Uniform < p) then 1 else 1 + geometric p
@@ -55,7 +58,4 @@ logNormal mean std = exp (normal mean std)
 
 
 //test a = if a < 0 then a else 0
-main = if Uniform < 0.5 then
-        abs (Normal) + 2
-    else 
-        -(abs (Normal) + 2)
+main = repeat (dice 6)
