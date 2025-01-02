@@ -46,14 +46,13 @@ infer rt (Subtract e1 e2) value@(VFloat _)
       newValue <- evalArithmetic (+) value constant
       infer rt e1 newValue
   | otherwise = Left "Can only infer Subtract(-) with a one side Constant."
-infer rt (Multiply e1 e2) value@(VFloat _)
+infer rt (Multiply e1 e2) value@(VFloat v)
   | Right constant <- evalConstExpr rt e1 = do
       c <- evalAsFloat constant
       if c == 0.0
         then
           infer rt (Const $ VFloat 0.0) value
         else do
-          v <- evalAsFloat value
           (dim, prob) <- infer rt e2 (VFloat $ v / c)
           case dim of
             0 -> return (0, prob)
@@ -64,16 +63,14 @@ infer rt (Multiply e1 e2) value@(VFloat _)
         then
           infer rt (Const $ VFloat 0.0) value
         else do
-          v <- evalAsFloat value
           (dim, prob) <- infer rt e1 (VFloat $ v / c)
           case dim of
             0 -> return (0, prob)
             _ -> return (1, prob / abs c)
   | otherwise = Left "Can only infer Multiply(*) with a one side Constant."
-infer rt (Divide e1 e2) value@(VFloat _)
+infer rt (Divide e1 e2) (VFloat v)
   | Right constant <- evalConstExpr rt e2 = do
       c <- evalAsFloat constant
-      v <- evalAsFloat value
       (dim, prob) <- infer rt e1 (VFloat $ v * c)
       case dim of
         0 -> return (0, prob)
@@ -81,24 +78,32 @@ infer rt (Divide e1 e2) value@(VFloat _)
   | Right constant <- evalConstExpr rt e1 = do
       -- TODO works only on monotone functions and c != 0.0 and v != 0.0
       c <- evalAsFloat constant
-      v <- evalAsFloat value
       (dim, prob) <- infer rt e2 (VFloat $ c / v)
       return (dim, prob * abs ((-c) / (v * v)))
   | otherwise = Left "Can only infer Divide(/) with a one side Constant."
-infer rt (Exponent e1 e2) value@(VFloat _)
+infer rt (Exponent e1 e2) value@(VFloat v)
   | Right constant <- evalConstExpr rt e2 = do
       c <- evalAsFloat constant
       if c == 0.0
         then
           infer rt (Const $ VFloat 1.0) value
         else do
-          v <- evalAsFloat value
           let overC = 1 / c
           let sign = if v < 0 then (-1.0) else 1.0
           (dim, prob) <- infer rt e1 (VFloat $ sign * (v ** overC))
           case dim of
             0 -> return (0, prob)
             _ -> return (1, prob * abs (overC * (v ** (overC - 1))))
+  | Right constant <- evalConstExpr rt e1 = do
+      c <- evalAsFloat constant
+      case c of 
+        1.0 -> infer rt (Const $ VFloat 1.0) value
+        0.0 -> infer rt (Const $ VFloat 0.0) value
+        _ -> do
+          (dim, prob) <- infer rt e2 (VFloat $ logBase c v)
+          case dim of
+            0 -> return (0, prob)
+            _ -> return (1, prob * abs (1/(v * log c)))
   | otherwise = Left "Can only infer Exponent(**) with a one side Constant."
 infer rt (IfThenElse e1 e2 e3) value = do
   dimProbTrue@(dimTrue, _)<- infer rt e1 (VBool True)
@@ -347,6 +352,9 @@ compareFloatExpr rt (Exponent e1 e2) (ord, value)
   | Right constant <- evalConstExpr rt e2 = do
       c <- evalAsFloat constant
       compareFloatExpr rt e1 (ord, value ** (1 / c))
+  | Right constant <- evalConstExpr rt e1 = do
+      c <- evalAsFloat constant
+      compareFloatExpr rt e2 (ord, logBase c value)
   | otherwise = Left "Can only infer Exponent(**) with a Constant."
 compareFloatExpr rt (IfThenElse e1 e2 e3) (ord, value) = do
   (_dim, probTrue) <- infer rt e1 (VBool True)

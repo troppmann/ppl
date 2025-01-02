@@ -153,6 +153,7 @@ tests =
           testInferProgram "main = pair (Uniform); pair x = (x,x)" (VTuple (VFloat 0.5) (VFloat 0.5)) (2, 1.0),
           testInferProgram "main = tMid (tIn);tIn = 1; tMid x = (x,x)" (VTuple (VFloat 1.0) (VFloat 1.0)) (1, 1.0),
           testInferProgram "main = replicate 2 (dice 6);dice n = if n <= 1 then 1 else ( if Uniform < (1/n) then n else dice (n-1));replicate n value = if n <= 1 then value else (value, replicate (n-1) value);" (VTuple (VFloat 3) (VFloat 2)) (0, 1.0/(6.0 * 6.0)),
+          testInferProgram "main = replicate (dice 3) 2;dice n = if n <= 1 then 1 else ( if Uniform < (1/n) then n else dice (n-1));replicate n value = if n <= 1 then value else (value, replicate (n-1) value);" (VTuple (VFloat 2) (VFloat 2)) (0, (2/3) * (2/3)),
           testInferProgram "main = (Uniform, Uniform, Uniform)" (VTuple (VFloat 0.5) (VTuple (VFloat 0.5) (VFloat 0.5))) (3, 1.0)
         ]
     ]
