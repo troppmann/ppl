@@ -45,7 +45,7 @@ innerPoisson tau u x p s =
     else 
         x
 
-logNormal = exp Normal
+logNormal mean std = exp (normal mean std)
 
 //main = if 2 <= 1 then (Uniform + 1) else (Uniform + 1, if 1<= 1 then Uniform +1 else 0)
 //main = if Uniform < 0.5 then (Uniform + 1) else (Uniform + 1, Uniform + 1)
@@ -55,4 +55,4 @@ logNormal = exp Normal
 
 
 //test a = if a < 0 then a else 0
-main = logNormal //replicate (dice 10) Uniform
+main = logNormal 4 0.25//replicate (dice 10) Uniform
