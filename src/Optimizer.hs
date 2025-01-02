@@ -111,7 +111,7 @@ optimizeExponent rt e1 e2 = do
   case (opt1, opt2) of
     (_, Const (VFloat 1.0)) -> return opt1
     (Const (VFloat v1), Const (VFloat v2)) -> return $ Const $ VFloat (v1 ** v2)
-    (_, _) -> return $ Divide opt1 opt2
+    (_, _) -> return $ Exponent opt1 opt2
 
 optimizeOr :: Runtime -> Expr -> Expr -> Either ErrorString Expr
 optimizeOr rt e1 e2 = do

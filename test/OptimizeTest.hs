@@ -50,4 +50,6 @@ tests =
       , testOptimize "main = (10 + (((Uniform * (4 + 5)) * 10) + (3 * 10))) * 2" "main = Uniform * 180 + 80"
       , testOptimize "main = (Uniform + 3) * 10" "main = Uniform * 10 + 30 "
       , testOptimize "main = ((Uniform * 10) + (3 * 10))" "main = Uniform * 10 + 30 "
+      , testOptimize "main = 4 ** Uniform" "main = 4 ** Uniform"
+      , testOptimize "main = Uniform ** 4" "main = Uniform ** 4"
     ]
