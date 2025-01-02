@@ -73,6 +73,7 @@ tests =
           testParseExpr "True && False" $ And (Const (VBool True)) (Const (VBool False)),
           testParseExpr "True || False" $ Or (Const (VBool True)) (Const (VBool False)),
           testParseExpr "Uniform ** 3" $ Exponent Uniform (Const (VFloat 3.0)),
+          testParseExpr "abs Uniform ** 3" $ Exponent (Abs Uniform) (Const (VFloat 3.0)),
           testParseExpr "! False" $ Not (Const (VBool False)),
           testParseExpr "True && !False && False" $ And (And (Const (VBool True)) (Not (Const (VBool False)))) (Const (VBool False))
         ],

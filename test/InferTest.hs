@@ -97,6 +97,11 @@ tests =
           testInferExprEq "Uniform ** 2" (VFloat 2.0) (1, 0.0),
           testInferExprEq "Uniform ** 2" (VFloat 0.5) (1, 0.7071067811865),
           testInferExprEq "Uniform ** 0.5 <= 0.5" (VBool True) (0, 0.25),
+          testInferExprEq "4 ** Uniform <= 4" (VBool True) (0, 1.0),
+          testInferExprEq "2 ** Normal < -0.5" (VBool True) (0, 0.0),
+          testInferExprEq "2 ** Normal" (VFloat 2) (1,0.1745),
+          testInferExprEq "abs (Uniform - 0.5) > 0.25" (VBool True) (0, 0.5),
+          testInferExprEq "-(abs (Uniform - 0.5)) > 0.25" (VBool True) (0, 0.0),
           testInferExprEq "True || 3" (VBool True) (0, 1.0),
           testInferExprEq "False || 3" (VBool True) (0, 0.0)
         ],
