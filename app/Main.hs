@@ -54,10 +54,10 @@ main = do
   --let maxSampleOpt = mle optProgram QAny
   --print "------MLE Optimize"
   --print maxSampleOpt
-  let spacing = LinearSpacing {start = 10, end = 125, stepWidth = 0.5}
+  let spacing = LinearSpacing {start = -10, end = 10, stepWidth = 0.05}
   let numberOfSamples = 100000
--- plotCumulativeToFile "cdf.svg" program spacing numberOfSamples
-  plotDensityToFile "pdf.svg" program spacing numberOfSamples
+  plotCumulativeToFile "cdf.svg" program spacing numberOfSamples
+-- plotDensityToFile "pdf.svg" program spacing numberOfSamples
 -- plotMassToFile "pmf.svg" optProgram numberOfSamples
 
 -- let program = [("main", FnCall "dice" [Const $ VFloat 6.0]),("dice", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (FnParameter 0) (IfThenElse (LessThan Uniform (Divide (Const $ VFloat 1.0) (FnParameter 0))) (FnParameter 0) (FnCall "dice" [Subtract (FnParameter 0) (Const $ VFloat 1.0)])))]

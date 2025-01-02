@@ -23,6 +23,7 @@ data Expr
   | Normal
   | And Expr Expr
   | Not Expr
+  | Abs Expr
   | Or Expr Expr
   | Equal Expr Expr
   | Unequal Expr Expr

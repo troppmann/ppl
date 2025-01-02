@@ -55,4 +55,7 @@ logNormal mean std = exp (normal mean std)
 
 
 //test a = if a < 0 then a else 0
-main = logNormal 4 0.25//replicate (dice 10) Uniform
+main = if Uniform < 0.5 then
+        abs (Normal) + 2
+    else 
+        -(abs (Normal) + 2)

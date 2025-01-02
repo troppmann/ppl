@@ -5,16 +5,16 @@ module Infer
   )
 where
 
+import Control.Monad ((<=<))
 import Debug.Extended
 import Evaluate
+import Optimizer (optimizeExpr)
 import Representation
 import Runtime
 import Statistics.Distribution
 import Statistics.Distribution.Normal (normalDistr)
 import Statistics.Distribution.Uniform
 import Prelude hiding (EQ, GT, LT)
-import Optimizer (optimizeExpr)
-import Control.Monad ((<=<))
 
 type ErrorString = String
 
@@ -96,26 +96,37 @@ infer rt (Exponent e1 e2) value@(VFloat v)
             _ -> return (1, prob * abs (overC * (v ** (overC - 1))))
   | Right constant <- evalConstExpr rt e1 = do
       c <- evalAsFloat constant
-      case c of 
+      case c of
         1.0 -> infer rt (Const $ VFloat 1.0) value
         0.0 -> infer rt (Const $ VFloat 0.0) value
         _ -> do
           (dim, prob) <- infer rt e2 (VFloat $ logBase c v)
           case dim of
             0 -> return (0, prob)
-            _ -> return (1, prob * abs (1/(v * log c)))
+            _ -> return (1, prob * abs (1 / (v * log c)))
   | otherwise = Left "Can only infer Exponent(**) with a one side Constant."
+infer rt (Abs expr) value@(VFloat v) =
+  if v < 0
+    then
+      return (0, 0.0)
+    else do
+      plus <- infer rt expr value
+      minus <- infer rt expr (VFloat (-v))
+      return $ plus #+# minus
 infer rt (IfThenElse e1 e2 e3) value = do
-  dimProbTrue@(dimTrue, _)<- infer rt e1 (VBool True)
+  dimProbTrue@(dimTrue, _) <- infer rt e1 (VBool True)
   dimProbFalse@(dimFalse, _) <- infer rt e1 (VBool False) -- (0, 1.0) #-# dimProbTrue
-  if dimProbTrue == (0,1.0) && dimFalse == 0 then do
-    infer rt e2 value
-  else if dimProbFalse == (0,1.0) && dimTrue == 0 then do
-    infer rt e3 value
-  else do
-    dimProbBranchTrue <- infer rt e2 value
-    dimProbBranchFalse <- infer rt e3 value
-    return $ (dimProbTrue #*# dimProbBranchTrue) #+# (dimProbFalse #*# dimProbBranchFalse)
+  if dimProbTrue == (0, 1.0) && dimFalse == 0
+    then do
+      infer rt e2 value
+    else
+      if dimProbFalse == (0, 1.0) && dimTrue == 0
+        then do
+          infer rt e3 value
+        else do
+          dimProbBranchTrue <- infer rt e2 value
+          dimProbBranchFalse <- infer rt e3 value
+          return $ (dimProbTrue #*# dimProbBranchTrue) #+# (dimProbFalse #*# dimProbBranchFalse)
 infer rt (Equal e1 e2) (VBool bool)
   | Right constant <- evalConstExpr rt e2 = do
       dimProb <- infer rt e1 constant
@@ -185,7 +196,7 @@ infer rt (CreateTuple e1 e2) (VTuple v1 v2) = do
 infer rt (FnCall fnName arguments) val = do
   expr <- justOr (lookup fnName (program rt)) ("Fn '" ++ fnName ++ "' not found.")
   let newDepth = 1 + recursionDepth rt
-  args <- traverse (optimizeExpr rt{maxRecursionDepth = 0} <=< replaceFnParameterWithContent rt) arguments
+  args <- traverse (optimizeExpr rt {maxRecursionDepth = 0} <=< replaceFnParameterWithContent rt) arguments
   let newRt = rt {recursionDepth = newDepth, arguments = args}
   if recursionDepth rt >= maxRecursionDepth rt
     then
@@ -206,6 +217,7 @@ infer _ (Multiply _ _) (VBool _) = return (0, 0.0)
 infer _ (Divide _ _) (VBool _) = return (0, 0.0)
 infer _ (Exponent _ _) (VBool _) = return (0, 0.0)
 infer _ (CreateTuple _ _) (VBool _) = return (0, 0.0)
+infer _ (Abs _) (VBool _) = return (0, 0.0)
 infer _ (Not _) (VFloat _) = return (0, 0.0)
 infer _ (And _ _) (VFloat _) = return (0, 0.0)
 infer _ (Or _ _) (VFloat _) = return (0, 0.0)
@@ -223,6 +235,7 @@ infer _ (Subtract _ _) (VTuple _ _) = return (0, 0.0)
 infer _ (Multiply _ _) (VTuple _ _) = return (0, 0.0)
 infer _ (Divide _ _) (VTuple _ _) = return (0, 0.0)
 infer _ (Exponent _ _) (VTuple _ _) = return (0, 0.0)
+infer _ (Abs _) (VTuple _ _) = return (0, 0.0)
 infer _ (Not _) (VTuple _ _) = return (0, 0.0)
 infer _ (And _ _) (VTuple _ _) = return (0, 0.0)
 infer _ (Or _ _) (VTuple _ _) = return (0, 0.0)
@@ -356,22 +369,42 @@ compareFloatExpr rt (Exponent e1 e2) (ord, value)
       c <- evalAsFloat constant
       compareFloatExpr rt e2 (ord, logBase c value)
   | otherwise = Left "Can only infer Exponent(**) with a Constant."
+compareFloatExpr rt (Abs expr) (ord, value) = do
+  case ord of 
+    lt | lt `elem` [LT, LE] -> do
+      if value < 0 then
+        return 0
+      else do
+        prob1 <- compareFloatExpr rt expr (ord, value)
+        prob2 <- compareFloatExpr rt expr (ord, -value)
+        return (prob1 - prob2)
+    gt | gt `elem` [GT, GE] -> do
+      if value < 0 then
+        return 1
+      else do
+        prob1 <- compareFloatExpr rt expr (swap ord, -value)
+        prob2 <- compareFloatExpr rt expr (ord, value)
+        return (prob1 + prob2)
+    _ -> undefined
 compareFloatExpr rt (IfThenElse e1 e2 e3) (ord, value) = do
   (_dim, probTrue) <- infer rt e1 (VBool True)
   let probFalse = 1 - probTrue
-  if probTrue == 1.0 then 
-    compareFloatExpr rt e2 (ord, value)
-  else if probFalse == 1.0 then
-    compareFloatExpr rt e3 (ord, value)
-  else do
-    p2 <- compareFloatExpr rt e2 (ord, value)
-    p3 <- compareFloatExpr rt e3 (ord, value)
-    return $ probTrue * p2 + probFalse * p3
+  if probTrue == 1.0
+    then
+      compareFloatExpr rt e2 (ord, value)
+    else
+      if probFalse == 1.0
+        then
+          compareFloatExpr rt e3 (ord, value)
+        else do
+          p2 <- compareFloatExpr rt e2 (ord, value)
+          p3 <- compareFloatExpr rt e3 (ord, value)
+          return $ probTrue * p2 + probFalse * p3
 compareFloatExpr rt (FnCall fnName arguments) (ord, value) = do
   expr <- justOr (lookup fnName (program rt)) ("Fn '" ++ fnName ++ "' not found.")
   let newDepth = 1 + recursionDepth rt
-  args <- traverse (optimizeExpr rt{maxRecursionDepth = 0} <=< replaceFnParameterWithContent rt) arguments
-  let newRt = rt {recursionDepth = newDepth, arguments=args}
+  args <- traverse (optimizeExpr rt {maxRecursionDepth = 0} <=< replaceFnParameterWithContent rt) arguments
+  let newRt = rt {recursionDepth = newDepth, arguments = args}
   if recursionDepth rt >= maxRecursionDepth rt
     then
       return 0.0

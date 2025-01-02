@@ -134,7 +134,7 @@ isInfixFunction :: Symbol -> Bool
 isInfixFunction = flip elem ["+", "-", "*", "/", "==", "!=", "<", "<=", ">", ">=", "&&", "||", "**"]
 
 isFunction :: Symbol -> Bool
-isFunction = flip elem ["!"]
+isFunction = flip elem ["!", "abs"]
 
 combineFunction :: Expr -> Symbol -> Expr -> Either ErrorString Expr
 combineFunction e1 "+" e2 = return $ Plus e1 e2
@@ -154,6 +154,7 @@ combineFunction _ f _ = Left $ "Unknown Function '" <> f <> "'"
 
 applyFunction :: Symbol -> Expr -> Either ErrorString Expr
 applyFunction "!" expr = return $ Not expr
+applyFunction "abs" expr = return $ Abs expr
 applyFunction f _ = Left $ "Unknown Function '" <> f <> "'"
 
 tryConvertToLiteral :: Symbol -> Maybe Expr

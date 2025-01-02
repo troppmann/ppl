@@ -35,6 +35,7 @@ sampleRand rt (Exponent e1 e2) = apply rt (evaluateArithmetic (**)) e1 e2
 sampleRand rt (Multiply e1 e2) = apply rt (evaluateArithmetic (*)) e1 e2
 sampleRand rt (Subtract e1 e2) = apply rt (evaluateArithmetic (-)) e1 e2
 sampleRand rt (Divide e1 e2) = apply rt (evaluateArithmetic (/)) e1 e2
+sampleRand rt (Abs expr) = sampleAbs rt expr
 sampleRand rt (And e1 e2) = sampleAnd rt e1 e2
 sampleRand rt (Or e1 e2) = sampleOr rt e1 e2
 sampleRand rt (Not expr) = sampleNot rt expr
@@ -102,6 +103,12 @@ sampleNot rt expr = do
   value <- sampleRand rt expr
   return $ VBool $ not $ evaluateAsBool value
 
+
+sampleAbs :: (MonadRandom m) => Runtime -> Expr -> m Value
+sampleAbs rt expr = do
+  value <- sampleRand rt expr
+  return $ VFloat $ abs $ evaluateAsFloat value
+
 sampleTuple :: (MonadRandom m) => Runtime -> Expr -> Expr -> m Value
 sampleTuple rt e1 e2 = do
   v1 <- sampleRand rt e1
@@ -111,6 +118,10 @@ sampleTuple rt e1 e2 = do
 evaluateAsBool :: Value -> Bool
 evaluateAsBool (VBool b) = b
 evaluateAsBool v1 = error $ "Error: Expected Bool got " <> show v1 <> " ."
+
+evaluateAsFloat :: Value -> Double
+evaluateAsFloat (VFloat v) = v
+evaluateAsFloat v1 = error $ "Error: Expected Float got " <> show v1 <> " ."
 
 evaluateArithmetic :: (Double -> Double -> Double) -> Value -> Value -> Value
 evaluateArithmetic f (VFloat x) (VFloat y) = VFloat $ f x y

@@ -27,6 +27,7 @@ evalConstExpr rt (Exponent e1 e2) = apply rt (evalArithmetic (**)) e1 e2
 evalConstExpr rt (And e1 e2) = evalAnd rt e1 e2
 evalConstExpr rt (Or e1 e2) = evalOr rt e1 e2
 evalConstExpr rt (Not expr) = evalNot rt expr
+evalConstExpr rt (Abs expr) = evalAbs rt expr
 evalConstExpr rt (Equal e1 e2) = apply rt (evalCompare (==)) e1 e2
 evalConstExpr rt (Unequal e1 e2) = apply rt (evalCompare (/=)) e1 e2
 evalConstExpr rt (LessThan e1 e2) = apply rt (evalCompare (<)) e1 e2
@@ -75,6 +76,12 @@ evalNot rt expr = do
   value <- evalConstExpr rt expr
   bool <- evalAsBool value
   return $ VBool $ not bool
+
+evalAbs :: Runtime -> Expr -> ResultValue
+evalAbs rt expr = do
+  value <- evalConstExpr rt expr
+  v <- evalAsFloat value
+  return $ VFloat $ abs v
 
 evalIfThenElse :: Runtime -> Expr -> Expr -> Expr -> ResultValue
 evalIfThenElse rt e1 e2 e3 = do
