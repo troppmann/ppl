@@ -35,8 +35,9 @@ binomial p n = if n <= 0 then
             binomial p (n-1)
     )
 
+exp v = 2.718281828 ** v
 
-poisson tau = innerPoisson tau Uniform 0 (2.718281828 ** -tau) (2.718281828 ** -tau)
+poisson tau = innerPoisson tau Uniform 0 (exp (-tau)) (exp (-tau))
 
 innerPoisson tau u x p s = 
     if u > s then 
