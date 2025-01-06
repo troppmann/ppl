@@ -9,6 +9,7 @@ import Data.List
 import Debug.Extended
 import DistributionSampler
 import Infer
+import MaximumAPosteriori (mle)
 import Mean
 import Optimizer
 import Parser
@@ -16,7 +17,9 @@ import Query
 import Representation
 import Sample
 import Spn
-import MaximumAPosteriori (mle)
+import Control.Monad.Random.Class
+import Statistics.Distribution.StudentT (studentT)
+import Statistics.Distribution
 
 toFloat :: Value -> Double
 toFloat (VFloat f) = f
@@ -26,7 +29,15 @@ main :: IO ()
 main = do
   s <- readFile "test.ppl"
   let parseOptions = ParseOptions {optimization = False, maxLoopUnroll = 0}
-  let program = unwrapEither $ parseProgramWithOptions parseOptions s
+  let programOld = unwrapEither $ parseProgramWithOptions parseOptions s
+  let program =
+        addCustomFnToProgram
+          "studentT"
+          inferStudentT
+          cumulativeStudentT
+          sampleStudentT
+          programOld
+
   print "------Program Unopt"
   print program
   let optProgram = optimize program
@@ -35,31 +46,31 @@ main = do
 
   sample <- sampleProgram program
   print "------Sample Unopt"
-  --print sample
+  print sample
   optSample <- sampleProgram optProgram
   print "------Sample Optimize"
-  --print optSample
+  print optSample
 
-  let inferSample = QTuple (QAt 5.0) (QTuple (QAt 3.10) QAny)
-  let prob = qInferProgram program inferSample
+  -- let inferSample = QTuple (QAt 5.0) (QTuple (QAt 3.10) QAny)
+  let inferSample = optSample
+  let prob = inferProgram program inferSample
   print "------Infer Unopt"
   print prob
-  let optProb = qInferProgram optProgram inferSample
+  let optProb = inferProgram optProgram inferSample
   print "------Infer Optimize"
   print optProb
 
-
-  --let maxSample = mle program QAny
-  --print "------MLE Unopt"
-  --print maxSample
-  --let maxSampleOpt = mle optProgram QAny
-  --print "------MLE Optimize"
-  --print maxSampleOpt
---  let spacing = LinearSpacing {start = -10, end = 10, stepWidth = 0.05}
---  let numberOfSamples = 100000
---  plotCumulativeToFile "cdf.svg" program spacing numberOfSamples
--- plotDensityToFile "pdf.svg" program spacing numberOfSamples
--- plotMassToFile "pmf.svg" optProgram numberOfSamples
+  -- let maxSample = mle program QAny
+  -- print "------MLE Unopt"
+  -- print maxSample
+  -- let maxSampleOpt = mle optProgram QAny
+  -- print "------MLE Optimize"
+  -- print maxSampleOpt
+  let spacing = LinearSpacing {start = -9, end = 9, stepWidth = 0.01}
+  let numberOfSamples = 100000
+  --  plotCumulativeToFile "cdf.svg" program spacing numberOfSamples
+  plotDensityToFile "pdf.svg" program spacing numberOfSamples
+  --  plotMassToFile "pmf.svg" optProgram numberOfSamples
 
 -- let program = [("main", FnCall "dice" [Const $ VFloat 6.0]),("dice", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (FnParameter 0) (IfThenElse (LessThan Uniform (Divide (Const $ VFloat 1.0) (FnParameter 0))) (FnParameter 0) (FnCall "dice" [Subtract (FnParameter 0) (Const $ VFloat 1.0)])))]
 -- print program
@@ -67,7 +78,7 @@ main = do
 -- print sample
 -- sampledDis <- evalRandIO (sampleDistr expr SampleInfo {start = 0, stepWidth = 0.05, numberOfSamples = 100000})
 -- print sampledDis
--- print $ density sampledDis 2.0
+-- print $ getDensity sampledDis 2.0
 -- let integral = validateExpr LinearSpacing {start = -10, end = 10, stepWidth = 0.10} expr
 -- print $ "Validate: " ++ show integral
 -- let spacing = LinearSpacing {start = -4, end = 60, stepWidth = 0.1}
@@ -78,6 +89,25 @@ main = do
 -- let prob = infer expr value
 -- print ("Test: " <> show value <> " -> " <> showFloatN (snd $ unwrapEither prob) 5)
 -- print $ "Mean: " <> show (meanExpr expr)
+
+sampleStudentT :: (MonadRandom m) => m Value
+sampleStudentT = do
+  rValue <- getRandomR (0, 1)
+  let normal = studentT 10.0
+  let nValue = quantile normal rValue
+  return $ VFloat nValue
+
+inferStudentT :: Value -> DimensionalProbability
+inferStudentT (VFloat v) = (1, density distr v)
+  where
+    distr = studentT 10.0
+inferStudentT _ = (0, 0.0)
+
+cumulativeStudentT :: Double -> Probability
+cumulativeStudentT = cumulative distr
+  where
+    distr = studentT 1.0
+
 
 calculateX0TrueGivenX1False :: Float
 calculateX0TrueGivenX1False = calculate ([1, 0], [0, 1]) spn / calculate ([1, 0], [1, 1]) spn

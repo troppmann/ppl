@@ -40,7 +40,7 @@ evalConstExpr _ (FnCall _ _) = Left "FnCall could be not a constant."
 evalConstExpr rt (FnParameter index)
   | Just ele <- getElem (arguments rt) index = evalConstExpr rt ele
   | otherwise = error $ "Could not find Parameter with index: " ++ show index
-
+evalConstExpr _ (Custom {}) = Left "CustomFn could be not a constant."
 apply :: Runtime -> (Value -> Value -> ResultValue) -> Expr -> Expr -> ResultValue
 apply rt f e1 e2 = do
   v1 <- evalConstExpr rt e1

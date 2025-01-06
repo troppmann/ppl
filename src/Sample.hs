@@ -62,6 +62,8 @@ sampleRand rt (FnCall fnName arguments) = do
 sampleRand rt (FnParameter index)
   | Just ele <- getElem (arguments rt) index = sampleRand rt ele
   | otherwise = error $ "Could not find Parameter with index: " ++ show index
+sampleRand _ (Custom _ _ (SampleFn fn)) = 
+  fn
 
 apply :: (MonadRandom m) => Runtime -> (Value -> Value -> Value) -> Expr -> Expr -> m Value
 apply rt f e1 e2 = do

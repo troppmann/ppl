@@ -5,7 +5,7 @@ module DistributionSampler
     sampleCumulative,
     convertToList,
     sampleDensity,
-    density,
+    getDensity,
   )
 where
 
@@ -60,8 +60,8 @@ toBucketIndex info sample = index
 fromBucketIndex :: SampleInfo -> BucketIndex -> Double
 fromBucketIndex info index = start info + fromIntegral index * stepWidth info
 
-density :: SampledDensity -> Double -> Double
-density d value = fromMaybe 0.0 $ Map.lookup index $ buckets d
+getDensity :: SampledDensity -> Double -> Double
+getDensity d value = fromMaybe 0.0 $ Map.lookup index $ buckets d
   where
     index = toBucketIndex (info d) value
 
