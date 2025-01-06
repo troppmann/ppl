@@ -40,7 +40,7 @@ plotDensityToFile filename program spacing numberOfSamples = do
   let inferedLine = createPoints program spacing
   let approx = approxDensity (tail inferedLine) (head inferedLine)
   sampledLine <- evalRandIO (sampleDensity program SampleInfo {start = LinearSpacing.start spacing, stepWidth = LinearSpacing.stepWidth spacing, numberOfSamples})
-  let sampledBars = map (\(x, y) -> (x + 0.5 * LinearSpacing.stepWidth spacing, [y])) sampledLine
+  let sampledBars = filter (\(x,_) -> LinearSpacing.start spacing < x && x < LinearSpacing.end spacing) $ map (\(x, y) -> (x + 0.5 * LinearSpacing.stepWidth spacing, [y])) sampledLine
 
   toFile def filename $ do
     layout_title .= "PDF"
