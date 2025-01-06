@@ -5,7 +5,7 @@ module MaximumAPosteriori
 where
 
 import Debug.Extended
-import Evaluate (evalArithmetic, evalAsFloat, evalConstExpr)
+import Evaluate (evalAsFloat, evalConstExpr)
 import Infer
 import Query
 import Representation
