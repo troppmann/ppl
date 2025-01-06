@@ -206,6 +206,7 @@ infer rt (FnCall fnName arguments) val = do
 infer rt (FnParameter index) val
   | Just ele <- getElem (arguments rt) index = infer rt ele val
   | otherwise = error $ "Could not find Parameter with index: " ++ show index
+infer _ (Custom (InferFn fn) _ _) val = return $ fn val
 -- In all other cases is the requested value not the right output.
 -- The catch all case _ is not used.
 -- This is explicit so that not all new Expr are auto implemented.
@@ -413,6 +414,11 @@ compareFloatExpr rt (FnCall fnName arguments) (ord, value) = do
 compareFloatExpr rt (FnParameter index) (ord, value)
   | Just ele <- getElem (arguments rt) index = compareFloatExpr rt ele (ord, value)
   | otherwise = error $ "Could not find Parameter with index: " ++ show index
+compareFloatExpr _ (Custom _ (CumulativeFn cumulativeFn) _) (ord, value) = return $ case ord of
+  LT -> cumulativeFn value
+  LE -> cumulativeFn value
+  GT -> 1 - cumulativeFn value
+  GE -> 1 - cumulativeFn value
 compareFloatExpr _ expr _ = case expr of
   (CreateTuple _ _) -> msgTuple
   (Const (VTuple _ _)) -> msgTuple

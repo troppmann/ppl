@@ -4,6 +4,10 @@ module Representation
     FnName,
     Program,
     wrapInMain,
+    addCustomFnToProgram,
+    SampleFn (..),
+    CumulativeFn (..),
+    InferFn (..),
     DimensionalProbability,
     Dimension,
     Probability,
@@ -12,6 +16,8 @@ module Representation
     (#-#),
   )
 where
+
+import Control.Monad.Random
 
 data Expr
   = Const Value
@@ -36,6 +42,7 @@ data Expr
   | Exponent Expr Expr
   | FnCall FnName [Expr]
   | FnParameter Int
+  | Custom InferFn CumulativeFn SampleFn
   deriving (Show, Read, Eq)
 
 type FnName = String
@@ -50,6 +57,12 @@ type Program = [(FnName, Expr)]
 
 wrapInMain :: Expr -> Program
 wrapInMain expr = [("main", expr)]
+
+addCustomFnToProgram :: FnName -> (Value -> DimensionalProbability) -> (Double -> Probability) -> (forall m. (MonadRandom m) => m Value) -> Program -> Program
+addCustomFnToProgram fnName inferFn cumulativeFn sampleFn program =
+  (fnName, customNode) : program
+  where
+    customNode = Custom (InferFn inferFn) (CumulativeFn cumulativeFn) (SampleFn sampleFn)
 
 type Probability = Double
 
@@ -86,3 +99,36 @@ infixl 6 #-#
   | dimA > dimB = (dimB, 0.0)
   -- TODO 18.11.24 could also just be an assert
   | otherwise = (dimA, max (probA - probB) 0)
+
+newtype InferFn = InferFn (Value -> DimensionalProbability)
+
+instance Show InferFn where
+  show _ = "InferFn"
+
+instance Read InferFn where
+  readsPrec _ = error "Can't read Custom."
+
+instance Eq InferFn where
+  (==) = error "Can't compare Custom."
+
+newtype CumulativeFn = CumulativeFn (Double -> Probability)
+
+instance Show CumulativeFn where
+  show _ = "CumulativeFn"
+
+instance Read CumulativeFn where
+  readsPrec _ = error "Can't read Custom."
+
+instance Eq CumulativeFn where
+  (==) = error "Can't compare Custom."
+
+newtype SampleFn = SampleFn (forall m. (MonadRandom m) => m Value)
+
+instance Show SampleFn where
+  show _ = "SampleFn"
+
+instance Read SampleFn where
+  readsPrec _ = error "Can't read"
+
+instance Eq SampleFn where
+  (==) = error "Can't compare Custom."

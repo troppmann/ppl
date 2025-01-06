@@ -58,4 +58,4 @@ logNormal mean std = exp (normal mean std)
 
 
 //test a = if a < 0 then a else 0
-main = repeat (dice 6)
+main = (studentT) * 4
