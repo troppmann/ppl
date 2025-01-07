@@ -37,7 +37,7 @@ convertProgramToFunction program =  dimProbToDouble . inferProgram program . dou
 convertCumulativeToFunction :: Program -> (Double -> Double)
 convertCumulativeToFunction program =  dimProbToDouble . qInferProgram program . doubleToQuery
   where
-    doubleToQuery = QLe 
+    doubleToQuery = QLe NormalMode
     dimProbToDouble = replaceForNanOrInf . either (const 0.0) snd
 
 replaceForNanOrInf :: Double -> Double

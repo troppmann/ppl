@@ -19,7 +19,10 @@ mle :: Program -> QueryType -> Either ErrorString (DimensionalProbability, Value
 mle program query = do
   mainExpr <- justOr (lookup "main" program) "main-Func not found."
   let rt = Runtime {program, arguments = [], currentFnName = "main", recursionDepth = 0, maxRecursionDepth = 100}
-  maxAPost rt mainExpr query
+  ((dim, prob), value) <- maxAPost rt mainExpr query
+  (_dimCon, probCon) <- qInfer rt mainExpr Given query
+  return ((dim, prob ), value)
+
 
 -- TODO 19.11.24 maybe rename to mle
 maxAPost :: Runtime -> Expr -> QueryType -> Either ErrorString (DimensionalProbability, Value)
@@ -106,7 +109,7 @@ maxAPost rt (IfThenElse e1 e2 e3) query = do
           return ((dim, probFalse * prob), value)
         else
           maxAPostIfThenElse dimProbTrue <$> maxAPost rt e2 query <*> maxAPost rt e3 query
-maxAPost rt expr (QFloat v) = do
+maxAPost rt expr (QFloat _ v) = do
   (dim, prob) <- infer rt expr (VFloat v)
   return ((dim, prob), VFloat v)
 maxAPost rt (FnCall fnName arguments) query = do

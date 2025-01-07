@@ -24,10 +24,10 @@ instance Shorter Value where
 
 instance Shorter QueryType where
   shorter QAny = "_"
-  shorter (QBool bool) = show bool
-  shorter (QFloat float) = show float
-  shorter (QLt float) = "_ < " ++ show float
-  shorter (QLe float) = "_ <= " ++ show float
-  shorter (QGt float) = "_ > " ++ show float
-  shorter (QGe float) = "_ >= " ++ show float
+  shorter (QBool _ bool) = show bool
+  shorter (QFloat _ float) = show float
+  shorter (QLt _ float) = "_ < " ++ show float
+  shorter (QLe _ float) = "_ <= " ++ show float
+  shorter (QGt _ float) = "_ > " ++ show float
+  shorter (QGe _ float) = "_ >= " ++ show float
   shorter (QTuple v1 v2) = "(" <> shorter v1 <> "," <> shorter v2 <> ")"

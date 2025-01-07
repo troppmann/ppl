@@ -26,7 +26,7 @@ testMapProgram :: ExprString -> QueryString -> Value -> DimensionalProbability -
 testMapProgram programString queryString expectedValue expectedDimProb = testCase testString $ do
   program <- assertRight $ parseProgram programString
   query <- assertRight $ parseQuery queryString
-  (dimProb,value) <- assertRight $ mle program query
+  (dimProb, value) <- assertRight $ mle program query
   value @?= expectedValue
   assertEqDimProb dimProb expectedDimProb
   where
@@ -37,7 +37,7 @@ testMapExprWithName programString testName queryString expectedValue = testCase 
   expr <- assertRight $ parseExpr programString
   query <- assertRight $ parseQuery queryString
   let program = wrapInMain expr
-  (_dimProb,value) <- assertRight $ mle program query
+  (_dimProb, value) <- assertRight $ mle program query
   value @?= expectedValue
   where
     testString = shorter testName <> ":Query " <> shorter queryString
@@ -47,7 +47,7 @@ testMapExprFail exprString queryString expected = testCase testString $ do
   expr <- assertRight $ parseExpr exprString
   query <- assertRight $ parseQuery queryString
   let program = wrapInMain expr
-  (dimProb, _value) <- assertRight $ mle program query 
+  (dimProb, _value) <- assertRight $ mle program query
   assertEqDimProb dimProb expected
   where
     testString = shorter exprString <> ":Query " <> shorter queryString <> ":Expected 0.0 Prob"
@@ -81,9 +81,9 @@ tests =
       testGroup
         "MAP with evidence p(q,e)"
         [ testMapExpr "(Normal, 3)" "(_, 3)" (VTuple (VFloat 0) (VFloat 3)),
-          testMapExprFail "(Normal, 3)" "(_, 4)" (0,0.0),
-          testMapExprFail "(Uniform + 4, 3)" "(3.5, _)" (1,0.0),
-          testMapExprFail "Uniform" "(4)" (1,0.0),
+          testMapExprFail "(Normal, 3)" "(_, 4)" (0, 0.0),
+          testMapExprFail "(Uniform + 4, 3)" "(3.5, _)" (1, 0.0),
+          testMapExprFail "Uniform" "(4)" (1, 0.0),
           testMapExpr "Uniform + 3.5" "(4)" (VFloat 4),
           testMapExpr "(Normal, Normal)" "(_, 3)" (VTuple (VFloat 0) (VFloat 3)),
           testMapExpr "(Normal, Normal)" "(3, _)" (VTuple (VFloat 3) (VFloat 0)),
@@ -94,6 +94,6 @@ tests =
           testMapExpr "if Uniform < 0.2 then (Uniform, Normal) else (Uniform + 3, Normal)" "(3.1, _)" (VTuple (VFloat 3.1) (VFloat 0.0)),
           testMapExpr "if Uniform < 0.8 then (Uniform, Normal) else (Uniform + 3, Normal)" "(_, _)" (VTuple (VFloat 0.5) (VFloat 0.0)),
           testMapExpr "if Uniform < 0.2 then Uniform else Uniform + 3" "(_)" (VFloat 3.5),
-          testMapProgram "main = if Uniform < (5/7) then (0,poisson 10) else (1,poisson 3);exp v = 2.718281828 ** v; poisson tau = innerPoisson tau Uniform 0 (exp (-tau)) (exp (-tau)); innerPoisson tau u x p s = if u > s then innerPoisson tau (Uniform * (1 - s) +s) (x+1) (p*tau/ (x+1)) (s + (p*tau/ (x+1))) else x" "(_, 4)" (VTuple (VFloat 1.0) (VFloat 4.0)) (0,0.048)
+          testMapProgram "main = if Uniform < (5/7) then (0,poisson 10) else (1,poisson 3);exp v = 2.718281828 ** v; poisson tau = innerPoisson tau Uniform 0 (exp (-tau)) (exp (-tau)); innerPoisson tau u x p s = if u > s then innerPoisson tau (Uniform * (1 - s) +s) (x+1) (p*tau/ (x+1)) (s + (p*tau/ (x+1))) else x" "(_, 4)" (VTuple (VFloat 1.0) (VFloat 4.0)) (0, 0.048)
         ]
     ]

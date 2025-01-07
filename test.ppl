@@ -58,4 +58,4 @@ busProblem = if Uniform < (5/7) then
         (1,poisson 3)
 
 
-main = busProblem
+main = (binomial 0.5 10)
