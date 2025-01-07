@@ -7,6 +7,7 @@ module Debug.Extended
     unwrapMaybe,
     justOr,
     showFloatN,
+    trace,
   )
 where
 
