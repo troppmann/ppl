@@ -22,9 +22,19 @@ type ErrorString = String
 testMapExpr :: TestName -> QueryString -> Value -> TestTree
 testMapExpr testName = testMapExprWithName testName testName
 
+testMapProgram :: ExprString -> QueryString -> Value -> DimensionalProbability -> TestTree
+testMapProgram programString queryString expectedValue expectedDimProb = testCase testString $ do
+  program <- assertRight $ parseProgram programString
+  query <- assertRight $ parseQuery queryString
+  (dimProb,value) <- assertRight $ mle program query
+  value @?= expectedValue
+  assertEqDimProb dimProb expectedDimProb
+  where
+    testString = shorter programString <> ":Query " <> shorter queryString
+
 testMapExprWithName :: ExprString -> TestName -> QueryString -> Value -> TestTree
-testMapExprWithName exprString testName queryString expectedValue = testCase testString $ do
-  expr <- assertRight $ parseExpr exprString
+testMapExprWithName programString testName queryString expectedValue = testCase testString $ do
+  expr <- assertRight $ parseExpr programString
   query <- assertRight $ parseQuery queryString
   let program = wrapInMain expr
   (_dimProb,value) <- assertRight $ mle program query
@@ -83,6 +93,7 @@ tests =
           testMapExpr "if Uniform < 0.5 then (Normal + 3, 10) else (3, 0)" "(3, _)" (VTuple (VFloat 3) (VFloat 0)),
           testMapExpr "if Uniform < 0.2 then (Uniform, Normal) else (Uniform + 3, Normal)" "(3.1, _)" (VTuple (VFloat 3.1) (VFloat 0.0)),
           testMapExpr "if Uniform < 0.8 then (Uniform, Normal) else (Uniform + 3, Normal)" "(_, _)" (VTuple (VFloat 0.5) (VFloat 0.0)),
-          testMapExpr "if Uniform < 0.2 then Uniform else Uniform + 3" "(_)" (VFloat 3.5)
+          testMapExpr "if Uniform < 0.2 then Uniform else Uniform + 3" "(_)" (VFloat 3.5),
+          testMapProgram "main = if Uniform < (5/7) then (0,poisson 10) else (1,poisson 3);exp v = 2.718281828 ** v; poisson tau = innerPoisson tau Uniform 0 (exp (-tau)) (exp (-tau)); innerPoisson tau u x p s = if u > s then innerPoisson tau (Uniform * (1 - s) +s) (x+1) (p*tau/ (x+1)) (s + (p*tau/ (x+1))) else x" "(_, 4)" (VTuple (VFloat 1.0) (VFloat 4.0)) (0,0.048)
         ]
     ]

@@ -96,12 +96,14 @@ maxAPost rt (IfThenElse e1 e2 e3) query = do
   dimProbTrue@(dimTrue, probTrue) <- infer rt e1 (VBool True)
   dimProbFalse@(dimFalse, probFalse) <- infer rt e1 (VBool False)
   if dimTrue < dimFalse && probTrue > 0 || (0, 1.0) == dimProbTrue
-    then
-      maxAPost rt e2 query
+    then do 
+      ((dim,prob), value) <- maxAPost rt e2 query
+      return ((dim, probTrue * prob), value)
     else
       if dimFalse < dimTrue && probFalse > 0 || (0, 1.0) == dimProbFalse
-        then
-          maxAPost rt e3 query
+        then do 
+          ((dim,prob), value) <- maxAPost rt e3 query
+          return ((dim, probFalse * prob), value)
         else
           maxAPostIfThenElse dimProbTrue <$> maxAPost rt e2 query <*> maxAPost rt e3 query
 maxAPost rt expr (QAt v) = do
@@ -123,8 +125,10 @@ maxAPost rt (FnParameter index) query
 maxAPost _ e q = todo $ "Missing case" <> show e <> show q
 
 maxAPostIfThenElse :: DimensionalProbability -> (DimensionalProbability, Value) -> (DimensionalProbability, Value) -> (DimensionalProbability, Value)
-maxAPostIfThenElse (dimIf, probIf) ((dim1, prob1), value1) ((dim2, prob2), value2)
-  | dim1 < dim2 = ((dim1, prob1), value1)
-  | dim2 < dim1 = ((dim2, prob2), value2)
-  | dimIf == 0 && probIf * prob1 > (1 - probIf) * prob2 = ((dim1, prob1), value1)
-  | otherwise = ((dim2, prob2), value2)
+maxAPostIfThenElse (dimIf, probTrue) ((dim1, prob1), value1) ((dim2, prob2), value2)
+  | dim1 < dim2 = ((dim1, probTrue * prob1), value1)
+  | dim2 < dim1 = ((dim2, probFalse * prob2), value2)
+  | dimIf == 0 && probTrue * prob1 > probFalse * prob2 = ((dim1, probTrue * prob1), value1)
+  | otherwise = ((dim2, probFalse *prob2), value2)
+  where
+    probFalse = 1 - probTrue
