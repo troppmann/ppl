@@ -21,8 +21,8 @@ parseUntil Nothing Nothing s (x : xs)
       (q, rest) <- parseUntil Nothing Nothing (Just ")") xs
       parseUntil (Just q) Nothing s rest
   | x == "_" = parseUntil (Just QAny) Nothing s xs
-  | x == "True" = parseUntil (Just $ QIs True) Nothing s xs
-  | x == "False" = parseUntil (Just $ QIs False) Nothing s xs
+  | x == "True" = parseUntil (Just $ QBool True) Nothing s xs
+  | x == "False" = parseUntil (Just $ QBool False) Nothing s xs
   | Just float <- readMaybe x :: Maybe Double = parseUntil (Just $ QFloat float) Nothing s xs
 parseUntil q@(Just QAny) Nothing s (x : xs)
   | isInfixComp x = parseUntil q (Just x) s xs

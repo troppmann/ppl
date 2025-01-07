@@ -122,8 +122,8 @@ tests =
       testGroup
         "Query"
         [ testParseQuery "_" QAny,
-          testParseQuery "True" (QIs True),
-          testParseQuery "False" (QIs False),
+          testParseQuery "True" (QBool True),
+          testParseQuery "False" (QBool False),
           testParseQuery "3.1" (QFloat 3.1),
           testParseQuery "_ > 3" (QGt 3),
           testParseQuery "3 < _" (QGt 3),

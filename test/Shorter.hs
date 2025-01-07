@@ -24,7 +24,7 @@ instance Shorter Value where
 
 instance Shorter QueryType where
   shorter QAny = "_"
-  shorter (QIs bool) = show bool
+  shorter (QBool bool) = show bool
   shorter (QFloat float) = show float
   shorter (QLt float) = "_ < " ++ show float
   shorter (QLe float) = "_ <= " ++ show float
