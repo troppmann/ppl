@@ -116,7 +116,7 @@ maxAPost rt (FnCall fnName arguments) query = do
   let newRt = rt {recursionDepth = newDepth, arguments = args}
   if recursionDepth rt >= maxRecursionDepth rt
     then
-      Left "MaxRecursionDepth reached"
+      return ((0,0.0), VFloat (0/0))
     else
       maxAPost newRt expr query
 maxAPost rt (FnParameter index) query
