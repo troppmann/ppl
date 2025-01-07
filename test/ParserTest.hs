@@ -12,6 +12,7 @@ import Shorter
 import Test.Tasty
 import Test.Tasty.ExpectedFailure
 import Test.Tasty.HUnit
+import Parser.String (ErrorString)
 
 testParseExpr :: String -> Expr -> TestTree
 testParseExpr exprString = testParseExprWithName exprString exprString
@@ -37,6 +38,11 @@ testParseQuery queryString expectedQuery = testCase msg $ do
   where
     msg = shorter queryString
 
+testParseProgram:: String -> Either ErrorString Program -> TestTree
+testParseProgram programString expected = testCase msg $ do
+  expected @?= parseProgram programString
+  where
+    msg = shorter programString
 tests =
   testGroup
     "Parser"
@@ -146,5 +152,12 @@ tests =
           testParseExpr "randomFunc (3 + 4) 2 " (FnCall "randomFunc" [Plus (Const (VFloat 3.0)) (Const (VFloat 4.0)), Const (VFloat 2.0)]),
           testParseExpr "3 * randomFunc (3 + dice 3) 2 " (Multiply (Const (VFloat 3.0)) (FnCall "randomFunc" [Plus (Const (VFloat 3.0)) (FnCall "dice" [Const (VFloat 3.0)]), Const (VFloat 2.0)])),
           testParseExpr "if randomFunc (3 + dice 3) 2 then 2 else 3" (IfThenElse (FnCall "randomFunc" [Plus (Const (VFloat 3.0)) (FnCall "dice" [Const (VFloat 3.0)]), Const (VFloat 2.0)]) (Const (VFloat 2.0)) (Const (VFloat 3.0)))
-        ]
+        ],
+      testGroup
+      "ProgramsWithOpt"
+      [
+          testParseProgram "main = 3 + Uniform" (Right [("main", Plus (Const (VFloat 3)) Uniform)]),
+          testParseProgram "main = 3 + 7" (Right [("main", Const (VFloat 10))]),
+          testParseProgram "main = 3 + 7; test = Uniform; test = 7" (Left "Function 'test' is already defined.")
+      ]
     ]

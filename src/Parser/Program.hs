@@ -9,6 +9,7 @@ import Optimizer (OptimizeOption (OptimizeOption), optimizeWithOption)
 import Parser.Expr
 import Parser.String
 import Representation
+import Data.Maybe
 
 parseProgram :: String -> Either ErrorString Program
 parseProgram = parseProgramWithOptions ParseOptions {optimization = True, maxLoopUnroll = 30}
@@ -31,7 +32,10 @@ parseProgramUntil vs Nothing (x : xs)
 parseProgramUntil vs (Just fnName) ("=" : xs) = do
   (expr, r1) <- parseUntil vs Nothing Nothing (Nothing, Just ";") xs
   (program, r2) <- parseProgramUntil [] Nothing r1
-  return ((fnName, expr) : program, r2)
+  if isNothing (lookup fnName program) then
+    return ((fnName, expr) : program, r2)
+  else
+    Left $ "Function '" ++ fnName ++ "' is already defined."
 parseProgramUntil vs (Just fnName) (x : xs)
   | x == ";" = Left "Expected Variable name or '='."
   | isViableName x = parseProgramUntil (vs ++ [x]) (Just fnName) xs
