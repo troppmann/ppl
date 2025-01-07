@@ -106,7 +106,7 @@ maxAPost rt (IfThenElse e1 e2 e3) query = do
           return ((dim, probFalse * prob), value)
         else
           maxAPostIfThenElse dimProbTrue <$> maxAPost rt e2 query <*> maxAPost rt e3 query
-maxAPost rt expr (QAt v) = do
+maxAPost rt expr (QFloat v) = do
   (dim, prob) <- infer rt expr (VFloat v)
   return ((dim, prob), VFloat v)
 maxAPost rt (FnCall fnName arguments) query = do

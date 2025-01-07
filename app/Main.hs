@@ -51,7 +51,7 @@ main = do
   print "------Sample Optimize"
   print optSample
 
-  let inferSample = (QAt 19.0)
+  let inferSample = (QFloat 19.0)
   -- let inferSample = optSample
   let prob = qInferProgram program inferSample
   print "------Infer Unopt"
@@ -60,7 +60,7 @@ main = do
   print "------Infer Optimize"
   print optProb
 
-  let query = QTuple QAny (QAt 4.0)
+  let query = QTuple QAny (QFloat 4.0)
   print "------MLE Unopt"
   let maxSample = mle program query
   print maxSample

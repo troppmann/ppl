@@ -23,12 +23,12 @@ parseUntil Nothing Nothing s (x : xs)
   | x == "_" = parseUntil (Just QAny) Nothing s xs
   | x == "True" = parseUntil (Just $ QIs True) Nothing s xs
   | x == "False" = parseUntil (Just $ QIs False) Nothing s xs
-  | Just float <- readMaybe x :: Maybe Double = parseUntil (Just $ QAt float) Nothing s xs
+  | Just float <- readMaybe x :: Maybe Double = parseUntil (Just $ QFloat float) Nothing s xs
 parseUntil q@(Just QAny) Nothing s (x : xs)
   | isInfixComp x = parseUntil q (Just x) s xs
-parseUntil q@(Just (QAt _)) Nothing s (x : xs)
+parseUntil q@(Just (QFloat _)) Nothing s (x : xs)
   | isInfixComp x = parseUntil q (Just x) s xs
-parseUntil (Just (QAt float)) (Just func) s ("_" : xs)
+parseUntil (Just (QFloat float)) (Just func) s ("_" : xs)
   | func == "<" = parseUntil (Just $ QGt float) Nothing s xs
   | func == "<=" = parseUntil (Just $ QGe float) Nothing s xs
   | func == ">" = parseUntil (Just $ QLt float) Nothing s xs

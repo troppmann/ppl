@@ -16,7 +16,7 @@ import Runtime
 data QueryType
   = QAny -- other names: undefined anything unspecified blank uncertain
   | QIs Bool
-  | QAt Double
+  | QFloat Double
   | QLt Double
   | QLe Double
   | QGt Double
@@ -36,7 +36,7 @@ qInfer :: Runtime -> Expr -> QueryType -> Either ErrorString DimensionalProbabil
 -- assumes only normalized distributions
 qInfer _ _ QAny = return (0, 1.0)
 qInfer rt expr (QIs bool) = infer rt expr (VBool bool)
-qInfer rt expr (QAt float) = infer rt expr (VFloat float)
+qInfer rt expr (QFloat float) = infer rt expr (VFloat float)
 qInfer rt expr (QLt float) = infer rt (LessThan expr (Const $ VFloat float)) (VBool True)
 qInfer rt expr (QLe float) = infer rt (LessThanOrEqual expr (Const $ VFloat float)) (VBool True)
 qInfer rt expr (QGt float) = infer rt (GreaterThan expr (Const $ VFloat float)) (VBool True)
