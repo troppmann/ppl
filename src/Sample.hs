@@ -7,12 +7,12 @@ where
 
 import Control.Monad.Random
 import Debug.Extended
-import Infer (replaceFnParameterWithContent)
 import Optimizer (optimizeExpr)
 import Representation
 import Runtime
 import Statistics.Distribution
 import Statistics.Distribution.Normal (normalDistr)
+import Evaluate
 
 sampleProgram :: Program -> IO Value
 sampleProgram program = evalRandIO $ sampleRand rt mainExpr

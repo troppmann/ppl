@@ -5,12 +5,13 @@ module Query
   )
 where
 
+import Control.Monad
 import Debug.Extended
+import Evaluate
 import Infer
+import Optimizer
 import Representation
 import Runtime
-import Optimizer
-import Control.Monad
 
 data QueryType
   = QAny -- other names: undefined anything unspecified blank uncertain
@@ -53,7 +54,7 @@ qInfer rt (IfThenElse boolExpr e1 e2) query@(QTuple _ _) = do
 qInfer rt (FnCall fnName arguments) query = do
   expr <- justOr (lookup fnName (program rt)) ("Fn '" ++ fnName ++ "' not found.")
   let newDepth = 1 + recursionDepth rt
-  args <- traverse (optimizeExpr rt {maxRecursionDepth = 0} <=< replaceFnParameterWithContent rt) arguments
+  args <- traverse (optimizeExpr rt {recursionDepth = 0, maxRecursionDepth = 1} <=< replaceFnParameterWithContent rt) arguments
   let newRt = rt {recursionDepth = newDepth, arguments = args}
   if recursionDepth rt >= maxRecursionDepth rt
     then

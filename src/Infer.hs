@@ -1,7 +1,6 @@
 module Infer
   ( inferProgram,
     infer,
-    replaceFnParameterWithContent,
   )
 where
 
@@ -175,7 +174,7 @@ infer rt (GreaterThanOrEqual e1 e2) (VBool bool)
       c <- evalAsFloat constant
       x <- compareFloatExpr rt e2 (LE, c)
       return (0, if bool then x else 1 - x)
-  | otherwise = Left "Can only infer > with a one side Constant."
+  | otherwise = Left "Can only infer >= with a one side Constant."
 infer rt (Or e1 e2) (VBool bool) = do
   dimProb1True <- infer rt e1 (VBool bool)
   let dimProb1False = (0, 1.0) #-# dimProb1True
@@ -196,7 +195,7 @@ infer rt (CreateTuple e1 e2) (VTuple v1 v2) = do
 infer rt (FnCall fnName arguments) val = do
   expr <- justOr (lookup fnName (program rt)) ("Fn '" ++ fnName ++ "' not found.")
   let newDepth = 1 + recursionDepth rt
-  args <- traverse (optimizeExpr rt {maxRecursionDepth = 0} <=< replaceFnParameterWithContent rt) arguments
+  args <- traverse (optimizeExpr rt {recursionDepth= 0,maxRecursionDepth = 1} <=< replaceFnParameterWithContent rt) arguments
   let newRt = rt {recursionDepth = newDepth, arguments = args}
   if recursionDepth rt >= maxRecursionDepth rt
     then
@@ -247,32 +246,7 @@ infer _ (LessThanOrEqual _ _) (VTuple _ _) = return (0, 0.0)
 infer _ (GreaterThan _ _) (VTuple _ _) = return (0, 0.0)
 infer _ (GreaterThanOrEqual _ _) (VTuple _ _) = return (0, 0.0)
 
-replaceFnParameterWithContent :: Runtime -> Expr -> Either ErrorString Expr
-replaceFnParameterWithContent rt (FnParameter index)
-  | Just ele <- getElem (arguments rt) index = return ele
-  | otherwise = error $ "Could not find Parameter with index: " ++ show index
-replaceFnParameterWithContent rt (Plus e1 e2) = checkBothBranches rt Plus e1 e2
-replaceFnParameterWithContent rt (Subtract e1 e2) = checkBothBranches rt Subtract e1 e2
-replaceFnParameterWithContent rt (Multiply e1 e2) = checkBothBranches rt Multiply e1 e2
-replaceFnParameterWithContent rt (Divide e1 e2) = checkBothBranches rt Divide e1 e2
-replaceFnParameterWithContent rt (And e1 e2) = checkBothBranches rt And e1 e2
-replaceFnParameterWithContent rt (Or e1 e2) = checkBothBranches rt Or e1 e2
-replaceFnParameterWithContent rt (LessThan e1 e2) = checkBothBranches rt LessThan e1 e2
-replaceFnParameterWithContent rt (LessThanOrEqual e1 e2) = checkBothBranches rt LessThanOrEqual e1 e2
-replaceFnParameterWithContent rt (GreaterThan e1 e2) = checkBothBranches rt GreaterThan e1 e2
-replaceFnParameterWithContent rt (GreaterThanOrEqual e1 e2) = checkBothBranches rt GreaterThanOrEqual e1 e2
-replaceFnParameterWithContent rt (Equal e1 e2) = checkBothBranches rt Equal e1 e2
-replaceFnParameterWithContent rt (Unequal e1 e2) = checkBothBranches rt Unequal e1 e2
-replaceFnParameterWithContent rt (Not e1) = do
-  r1 <- replaceFnParameterWithContent rt e1
-  return $ Not r1
-replaceFnParameterWithContent _ expr = return expr
 
-checkBothBranches :: Runtime -> (Expr -> Expr -> Expr) -> Expr -> Expr -> Either ErrorString Expr
-checkBothBranches rt exprF e1 e2 = do
-  r1 <- replaceFnParameterWithContent rt e1
-  r2 <- replaceFnParameterWithContent rt e2
-  return $ exprF r1 r2
 
 data CompareCase = LT | LE | GE | GT deriving (Ord, Enum, Show, Eq)
 

@@ -5,10 +5,12 @@ module MaximumAPosteriori
 where
 
 import Debug.Extended
-import Evaluate (evalAsFloat, evalConstExpr)
 import Infer
 import Query
+import Evaluate
 import Representation
+import Optimizer
+import Control.Monad
 import Runtime
 
 type ErrorString = String
@@ -105,6 +107,19 @@ maxAPost rt (IfThenElse e1 e2 e3) query = do
 maxAPost rt expr (QAt v) = do
   (dim, prob) <- infer rt expr (VFloat v)
   return ((dim, prob), VFloat v)
+maxAPost rt (FnCall fnName arguments) query = do
+  expr <- justOr (lookup fnName (program rt)) ("Fn '" ++ fnName ++ "' not found.")
+  let newDepth = 1 + recursionDepth rt
+  args <- traverse (optimizeExpr rt {recursionDepth= 0,maxRecursionDepth = 1} <=< replaceFnParameterWithContent rt) arguments
+  let newRt = rt {recursionDepth = newDepth, arguments = args}
+  if recursionDepth rt >= maxRecursionDepth rt
+    then
+      Left "MaxRecursionDepth reached"
+    else
+      maxAPost newRt expr query
+maxAPost rt (FnParameter index) query
+  | Just expr <- getElem (arguments rt) index = maxAPost rt expr query
+  | otherwise = error $ "Could not find Parameter with index: " ++ show index
 maxAPost _ e q = todo $ "Missing case" <> show e <> show q
 
 maxAPostIfThenElse :: DimensionalProbability -> (DimensionalProbability, Value) -> (DimensionalProbability, Value) -> (DimensionalProbability, Value)
