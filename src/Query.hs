@@ -18,6 +18,7 @@ data QueryMode = NormalMode | Given deriving (Show, Read, Eq)
 
 data QueryType
   = QAny 
+  | QMar -- naming could also be (QWanted, QAny) or (QExplanation, QAny)   
   | QBool QueryMode Bool
   | QFloat QueryMode Double
   | QLt QueryMode Double
@@ -40,6 +41,7 @@ qInferProgram program query = do
 qInfer :: Runtime -> Expr -> QueryMode -> QueryType -> Either ErrorString DimensionalProbability
 -- assumes only normalized distributions
 qInfer _ _ _ QAny = return (0, 1.0)
+qInfer _ _ _ QMar = return (0, 1.0)
 qInfer rt expr Given (QBool NormalMode bool) = return (0, 1.0)
 qInfer rt expr _ (QBool _ bool) = infer rt expr (VBool bool)
 qInfer rt expr Given (QFloat NormalMode float) = return (0, 1.0)
