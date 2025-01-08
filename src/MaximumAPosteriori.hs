@@ -21,7 +21,7 @@ mle program query = do
   let rt = Runtime {program, arguments = [], currentFnName = "main", recursionDepth = 0, maxRecursionDepth = 100}
   ((dim, prob), value) <- maxAPost rt mainExpr query
   (_dimCon, probCon) <- qInfer rt mainExpr Given query
-  return ((dim, prob ), value)
+  return ((dim, prob / probCon), value)
 
 
 -- TODO 19.11.24 maybe rename to mle
