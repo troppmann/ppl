@@ -48,7 +48,7 @@ evalConstExpr rt (FnCall fnName arguments) = do
     then
       Left "MaxRecursionDepth1 reached"
     else
-      evalConstExpr newRt (dbg' (show newDepth) expr)
+      evalConstExpr newRt expr
 evalConstExpr rt (FnParameter index)
   | Just ele <- getElem (arguments rt) index = evalConstExpr rt ele
   | otherwise = error $ "Could not find Parameter with index: " ++ show index
