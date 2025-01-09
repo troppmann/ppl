@@ -46,12 +46,12 @@ main = do
 
   sample <- sampleProgram program
   print "------Sample Unopt"
-  print sample
+  --print sample
   optSample <- sampleProgram optProgram
   print "------Sample Optimize"
-  print optSample
+  --print optSample
 
-  let query = QAny--QTuple (QFloat NormalMode 1.0) (QFloat Given 4.0)
+  let query = QTuple (QBool NormalMode False)(QTuple (QBool NormalMode True) (QTuple (QBool NormalMode True) (QTuple (QBool NormalMode False) (QTuple (QBool NormalMode True) QAny))))
   -- let inferSample = optSample
   let prob = qInferProgram program query
   print "------Infer Unopt"
@@ -60,17 +60,17 @@ main = do
   print "------Infer Optimize"
   print optProb
 
-  let query = QTuple QAny (QTuple QAny QMar)
+  let query = (QTuple QAny (QFloat NormalMode 4))
   print "------MLE Unopt"
   let maxSample = mle program query
   print maxSample
   print "------MLE Optimize"
   let maxSampleOpt = mle optProgram query
   print maxSampleOpt
-  -- let spacing = LinearSpacing {start = -9, end = 9, stepWidth = 0.01}
-  -- let numberOfSamples = 100000
-  --  plotCumulativeToFile "cdf.svg" program spacing numberOfSamples
-  --  plotDensityToFile "pdf.svg" optProgram spacing numberOfSamples
+  let spacing = LinearSpacing {start = -9, end = 9, stepWidth = 0.01}
+  let numberOfSamples = 100000
+  -- plotCumulativeToFile "cdf.svg" program spacing numberOfSamples
+  plotDensityToFile "pdf.svg" optProgram spacing numberOfSamples
   -- plotMassToFile "pmf.svg" optProgram numberOfSamples
 
 -- let program = [("main", FnCall "dice" [Const $ VFloat 6.0]),("dice", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (FnParameter 0) (IfThenElse (LessThan Uniform (Divide (Const $ VFloat 1.0) (FnParameter 0))) (FnParameter 0) (FnCall "dice" [Subtract (FnParameter 0) (Const $ VFloat 1.0)])))]
@@ -94,14 +94,14 @@ main = do
 sampleStudentT :: (MonadRandom m) => m Value
 sampleStudentT = do
   rValue <- getRandomR (0, 1)
-  let normal = studentT 10.0
+  let normal = studentT 1.0
   let nValue = quantile normal rValue
   return $ VFloat nValue
 
 inferStudentT :: Value -> DimensionalProbability
 inferStudentT (VFloat v) = (1, density distr v)
   where
-    distr = studentT 10.0
+    distr = studentT 1.0
 inferStudentT _ = (0, 0.0)
 
 cumulativeStudentT :: Double -> Probability

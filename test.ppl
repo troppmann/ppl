@@ -67,4 +67,10 @@ testMLE = if Uniform < (1/3) then
             (2, Uniform * 3 - 10, Uniform)
         )
 
-main = testMLE
+ill = if Uniform < (1/1000) then
+        (True, repeat (Uniform < 0.99))
+    else
+        (False, repeat (Uniform < 0.05))
+
+
+main = ill 
