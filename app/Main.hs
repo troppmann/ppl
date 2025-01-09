@@ -51,7 +51,7 @@ main = do
   print "------Sample Optimize"
   print optSample
 
-  let query = QAny -- QTuple (QBool NormalMode False)(QTuple (QBool NormalMode True) (QTuple (QBool NormalMode True) (QTuple (QBool NormalMode False) (QTuple (QBool NormalMode True) QAny))))
+  let query = QTuple (QFloat Given 4.0) (QTuple (QBool NormalMode True) (QFloat Given 3.0)) -- QTuple (QBool NormalMode False)(QTuple (QBool NormalMode True) (QTuple (QBool NormalMode True) (QTuple (QBool NormalMode False) (QTuple (QBool NormalMode True) QAny))))
   -- let inferSample = optSample
   let prob = qInferProgram program query
   print "------Infer Unopt"
@@ -65,7 +65,7 @@ main = do
   -- print maxSample
   print "------MLE Optimize"
   let maxSampleOpt = mle optProgram query
-  --print maxSampleOpt
+  print maxSampleOpt
   let spacing = LinearSpacing {start = -9, end = 9, stepWidth = 0.01}
   let numberOfSamples = 1000
   -- plotCumulativeToFile "cdf.svg" program spacing numberOfSamples

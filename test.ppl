@@ -72,6 +72,20 @@ ill = if Uniform < (1/1000) then
     else
         (False, repeat (Uniform < 0.05))
 
+ill2 n = if Uniform < (1/1000) then
+        (True, binomialD 0.99 n)
+    else
+        (False, binomialD 0.05 n)
+
+ill3 n = 
+    if n < 10 then
+    (if (Uniform < 0.5) then 
+        (n, ill2 n)
+    else 
+        ill3 (n+1))
+    else 
+        0
+
 factorial n = if n <= 1 then
                 1
             else
@@ -114,4 +128,4 @@ negativeBinomialIntern p r k mass=
 
 negativeBinomialPmfFormula p r k = (binomialCoefficient (k + r - 1) k) * (p ** r) * ((1 - p) ** k)
 
-main = negativeBinomialD 0.6 3 
+main = ill3 0
