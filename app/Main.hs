@@ -62,12 +62,12 @@ main = do
 
   print "------MLE Unopt"
   let maxSample = mle program query
-  print maxSample
+  -- print maxSample
   print "------MLE Optimize"
   let maxSampleOpt = mle optProgram query
-  print maxSampleOpt
+  --print maxSampleOpt
   let spacing = LinearSpacing {start = -9, end = 9, stepWidth = 0.01}
-  let numberOfSamples = 100000
+  let numberOfSamples = 1000
   -- plotCumulativeToFile "cdf.svg" program spacing numberOfSamples
   -- plotDensityToFile "pdf.svg" optProgram spacing numberOfSamples
   plotMassToFile "pmf.svg" optProgram numberOfSamples

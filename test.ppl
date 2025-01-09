@@ -83,7 +83,7 @@ binomialCoefficient n k =
 binomialPmfFormula p n k = (binomialCoefficient n k) * (p ** k) * ((1 - p) ** (n - k))
 
 
-binomialDeterministic p n = binomialIntern p n n 1
+binomialD p n = binomialIntern p n n 1
 
 binomialIntern p n k mass = 
     if k <= 0 then 
@@ -94,4 +94,24 @@ binomialIntern p n k mass =
         else 
             binomialIntern p n (k-1)  (mass - ((binomialPmfFormula p n k)))) 
 
-main = binomialDeterministic 0.3 8 
+negativeBinomial p r = 
+    if r <= 0 then
+        0
+    else 
+        (if Uniform < p then
+                0 + (negativeBinomial p (r-1))
+            else
+                1 + (negativeBinomial p r)
+        )
+
+negativeBinomialD p r = negativeBinomialIntern p r 0 1
+
+negativeBinomialIntern p r k mass= 
+    if Uniform < ((negativeBinomialPmfFormula p r k) / mass) then
+        k
+    else
+        negativeBinomialIntern p r (k + 1) (mass - (negativeBinomialPmfFormula p r k))
+
+negativeBinomialPmfFormula p r k = (binomialCoefficient (k + r - 1) k) * (p ** r) * ((1 - p) ** k)
+
+main = negativeBinomialD 0.6 3 
