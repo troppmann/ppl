@@ -46,12 +46,12 @@ main = do
 
   sample <- sampleProgram program
   print "------Sample Unopt"
-  --print sample
+  print sample
   optSample <- sampleProgram optProgram
   print "------Sample Optimize"
-  --print optSample
+  print optSample
 
-  let query = QTuple (QBool NormalMode False)(QTuple (QBool NormalMode True) (QTuple (QBool NormalMode True) (QTuple (QBool NormalMode False) (QTuple (QBool NormalMode True) QAny))))
+  let query = QAny -- QTuple (QBool NormalMode False)(QTuple (QBool NormalMode True) (QTuple (QBool NormalMode True) (QTuple (QBool NormalMode False) (QTuple (QBool NormalMode True) QAny))))
   -- let inferSample = optSample
   let prob = qInferProgram program query
   print "------Infer Unopt"
@@ -60,7 +60,6 @@ main = do
   print "------Infer Optimize"
   print optProb
 
-  let query = (QTuple QAny (QFloat NormalMode 4))
   print "------MLE Unopt"
   let maxSample = mle program query
   print maxSample
@@ -70,8 +69,8 @@ main = do
   let spacing = LinearSpacing {start = -9, end = 9, stepWidth = 0.01}
   let numberOfSamples = 100000
   -- plotCumulativeToFile "cdf.svg" program spacing numberOfSamples
-  plotDensityToFile "pdf.svg" optProgram spacing numberOfSamples
-  -- plotMassToFile "pmf.svg" optProgram numberOfSamples
+  -- plotDensityToFile "pdf.svg" optProgram spacing numberOfSamples
+  plotMassToFile "pmf.svg" optProgram numberOfSamples
 
 -- let program = [("main", FnCall "dice" [Const $ VFloat 6.0]),("dice", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (FnParameter 0) (IfThenElse (LessThan Uniform (Divide (Const $ VFloat 1.0) (FnParameter 0))) (FnParameter 0) (FnCall "dice" [Subtract (FnParameter 0) (Const $ VFloat 1.0)])))]
 -- print program

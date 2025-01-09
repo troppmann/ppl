@@ -72,5 +72,26 @@ ill = if Uniform < (1/1000) then
     else
         (False, repeat (Uniform < 0.05))
 
+factorial n = if n <= 1 then
+                1
+            else
+                n * factorial (n-1)
 
-main = ill 
+binomialCoefficient n k =
+    (factorial n)/((factorial k) * (factorial (n-k)))
+
+binomialPmfFormula p n k = (binomialCoefficient n k) * (p ** k) * ((1 - p) ** (n - k))
+
+
+binomialDeterministic p n = binomialIntern p n n 1
+
+binomialIntern p n k mass = 
+    if k <= 0 then 
+        0 
+    else 
+        ( if Uniform < ((binomialPmfFormula p n k )/mass) then 
+            k
+        else 
+            binomialIntern p n (k-1)  (mass - ((binomialPmfFormula p n k)))) 
+
+main = binomialDeterministic 0.3 8 
