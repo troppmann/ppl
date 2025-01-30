@@ -78,7 +78,9 @@ infer rt (Divide e1 e2) (VFloat v)
       -- TODO works only on monotone functions and c != 0.0 and v != 0.0
       c <- evalAsFloat constant
       (dim, prob) <- infer rt e2 (VFloat $ c / v)
-      return (dim, prob * abs ((-c) / (v * v)))
+      case dim of
+        0 -> return (0, prob)
+        _ -> return (1, prob * abs (c / (v * v)))
   | otherwise = Left "Can only infer Divide(/) with a one side Constant."
 infer rt (Exponent e1 e2) value@(VFloat v)
   | Right constant <- evalConstExpr rt e2 = do
@@ -342,7 +344,7 @@ compareFloatExpr rt (Exponent e1 e2) (ord, value)
       compareFloatExpr rt e1 (ord, value ** (1 / c))
   | Right constant <- evalConstExpr rt e1 = do
       c <- evalAsFloat constant
-      compareFloatExpr rt e2 (ord, logBase c value)
+      compareFloatExpr rt e2 (if c < 1 then swap ord else ord, logBase c value)
   | otherwise = Left "Can only infer Exponent(**) with a Constant."
 compareFloatExpr rt (Abs expr) (ord, value) = do
   case ord of 
