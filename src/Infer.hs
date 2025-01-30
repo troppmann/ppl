@@ -90,8 +90,7 @@ infer rt (Exponent e1 e2) value@(VFloat v)
           infer rt (Const $ VFloat 1.0) value
         else do
           let overC = 1 / c
-          let sign = if v < 0 then (-1.0) else 1.0
-          (dim, prob) <- infer rt e1 (VFloat $ sign * (v ** overC))
+          (dim, prob) <- infer rt e1 (VFloat $ signum v * (v ** overC))
           case dim of
             0 -> return (0, prob)
             _ -> return (1, prob * abs (overC * (v ** (overC - 1))))
@@ -344,7 +343,10 @@ compareFloatExpr rt (Exponent e1 e2) (ord, value)
       compareFloatExpr rt e1 (ord, value ** (1 / c))
   | Right constant <- evalConstExpr rt e1 = do
       c <- evalAsFloat constant
-      compareFloatExpr rt e2 (if c < 1 then swap ord else ord, logBase c value)
+      if value < 0 then 
+        return 0.0
+      else 
+        compareFloatExpr rt e2 (if c < 1 then swap ord else ord, logBase c value)
   | otherwise = Left "Can only infer Exponent(**) with a Constant."
 compareFloatExpr rt (Abs expr) (ord, value) = do
   case ord of 
