@@ -344,7 +344,10 @@ compareFloatExpr rt (Exponent e1 e2) (ord, value)
   | Right constant <- evalConstExpr rt e1 = do
       c <- evalAsFloat constant
       if value < 0 then 
-        return 0.0
+        case ord of 
+          lt | lt `elem` [LT, LE] -> return 0.0
+          gt | gt `elem` [GT, GE] -> return 1.0
+          _ -> undefined
       else 
         compareFloatExpr rt e2 (if c < 1 then swap ord else ord, logBase c value)
   | otherwise = Left "Can only infer Exponent(**) with a Constant."
