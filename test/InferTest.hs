@@ -86,6 +86,7 @@ tests =
           testInferExprEq "if Uniform > 0.5 then Uniform else 2.0" (VFloat 2.0) (0, 0.5),
           testInferExprEq "if Uniform < 0.5 then Normal else 2.0" (VFloat 2.0) (0, 0.5),
           testInferExprEq "(if Uniform > 0.5 then 3 else Normal) > 0" (VBool True) (0, 0.75),
+          testInferExprEq "(if Uniform == 0.3 then 3 else Normal) > 0" (VBool True) (0, 0.5),
           testInferExprEq "Normal * -0.000 <= 0.0" (VBool True) (0, 1.0),
           testInferExprEq "(Uniform <= 0.2) || (Uniform <= 0.2)" (VBool True) (0, 0.36),
           testInferExprEq "!(Uniform <= (1 / 6))" (VBool True) (0, 5 / 6),
