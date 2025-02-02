@@ -14,6 +14,7 @@ import Statistics.Distribution
 import Statistics.Distribution.Normal (normalDistr)
 import Statistics.Distribution.Uniform
 import Prelude hiding (EQ, GT, LT)
+import Control.Exception (assert)
 
 type ErrorString = String
 
@@ -369,19 +370,20 @@ compareFloatExpr rt (Abs expr) (ord, value) = do
         return (prob1 + prob2)
     _ -> undefined
 compareFloatExpr rt (IfThenElse e1 e2 e3) (ord, value) = do
-  (_dim, probTrue) <- infer rt e1 (VBool True)
-  let probFalse = 1 - probTrue
-  if probTrue == 1.0
+  dimProbTrue <- infer rt e1 (VBool True)
+  dimProbFalse <- infer rt e1 (VBool False)
+  if dimProbTrue == (0, 1.0)
     then
       compareFloatExpr rt e2 (ord, value)
     else
-      if probFalse == 1.0
+      if dimProbFalse == (0, 1.0)
         then
           compareFloatExpr rt e3 (ord, value)
         else do
           p2 <- compareFloatExpr rt e2 (ord, value)
           p3 <- compareFloatExpr rt e3 (ord, value)
-          return $ probTrue * p2 + probFalse * p3
+          let (dim, prob) = dimProbTrue #*# (0, p2) #+# dimProbFalse #*# (0, p3)
+          return $ assert (dim == 0) prob
 compareFloatExpr rt (FnCall fnName arguments) (ord, value) = do
   expr <- justOr (lookup fnName (program rt)) ("Fn '" ++ fnName ++ "' not found.")
   let newDepth = 1 + recursionDepth rt
