@@ -88,6 +88,7 @@ maxAPost rt (Divide e1 e2) QAny
         0 -> return ((0, prob), VFloat (v / c))
         _ -> return ((1, prob * abs c), VFloat (v / c))
   | otherwise = Left "Can only infer Divide(/) with a one side Constant."
+-- this is only a shortcut to not write many QAny in a query
 maxAPost rt (CreateTuple e1 e2) QAny = do
   (dimProb1, v1) <- maxAPost rt e1 QAny
   (dimProb2, v2) <- maxAPost rt e2 QAny
@@ -126,6 +127,15 @@ maxAPost rt (FnCall fnName arguments) query = do
 maxAPost rt (FnParameter index) query
   | Just expr <- getElem (arguments rt) index = maxAPost rt expr query
   | otherwise = error $ "Could not find Parameter with index: " ++ show index
+maxAPost rt expr@(LessThan _ _) QAny = maxAPostBooleanExpr rt expr
+maxAPost rt expr@(LessThanOrEqual _ _) QAny = maxAPostBooleanExpr rt expr
+maxAPost rt expr@(GreaterThan _ _) QAny = maxAPostBooleanExpr rt expr
+maxAPost rt expr@(GreaterThanOrEqual _ _) QAny = maxAPostBooleanExpr rt expr
+maxAPost rt expr@(Equal _ _) QAny = maxAPostBooleanExpr rt expr
+maxAPost rt expr@(Unequal _ _) QAny = maxAPostBooleanExpr rt expr
+maxAPost rt expr@(Or _ _) QAny = maxAPostBooleanExpr rt expr
+maxAPost rt expr@(And _ _) QAny = maxAPostBooleanExpr rt expr
+maxAPost rt expr@(Not _) QAny = maxAPostBooleanExpr rt expr
 maxAPost _ e q = todo $ "Missing case" <> show e <> show q
 
 maxAPostIfThenElse :: DimensionalProbability -> (DimensionalProbability, Value) -> (DimensionalProbability, Value) -> (DimensionalProbability, Value)
@@ -136,3 +146,13 @@ maxAPostIfThenElse (dimIf, probTrue) ((dim1, prob1), value1) ((dim2, prob2), val
   | otherwise = ((dim2, probFalse *prob2), value2)
   where
     probFalse = 1 - probTrue
+
+maxAPostBooleanExpr :: Runtime -> Expr -> Either ErrorString (DimensionalProbability, Value) 
+maxAPostBooleanExpr rt expr = do
+  (dim, prob) <- infer rt expr (VBool True)
+  if dim > 0 then
+    return ((0, 1.0), VBool False)
+  else if prob < 0.5 then
+        return ((0, 1 - prob), VBool False)
+      else 
+        return ((0, prob), VBool True)
