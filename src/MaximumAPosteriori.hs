@@ -98,19 +98,13 @@ maxAPost rt (CreateTuple e1 e2) (QTuple q1 q2) = do
   (dimProb2, v2) <- maxAPost rt e2 q2
   return (dimProb1 #*# dimProb2, VTuple v1 v2)
 maxAPost rt (IfThenElse e1 e2 e3) query = do
-  dimProbTrue@(dimTrue, probTrue) <- infer rt e1 (VBool True)
-  dimProbFalse@(dimFalse, probFalse) <- infer rt e1 (VBool False)
-  if dimTrue < dimFalse && probTrue > 0 || (0, 1.0) == dimProbTrue
-    then do 
-      ((dim,prob), value) <- maxAPost rt e2 query
-      return ((dim, probTrue * prob), value)
-    else
-      if dimFalse < dimTrue && probFalse > 0 || (0, 1.0) == dimProbFalse
-        then do 
-          ((dim,prob), value) <- maxAPost rt e3 query
-          return ((dim, probFalse * prob), value)
-        else
-          maxAPostIfThenElse dimProbTrue <$> maxAPost rt e2 query <*> maxAPost rt e3 query
+  dimProbTrue <- infer rt e1 (VBool True)
+  dimProbFalse <- infer rt e1 (VBool False)
+  (dimProbValueThen, valueThen) <- maxAPost rt e2 query
+  (dimProbValueElse, valueElse) <- maxAPost rt e3 query
+  let dimProbThen = dimProbTrue #*# dimProbValueThen
+  let dimProbElse = dimProbFalse #*# dimProbValueElse
+  return $ maxAPostIfThenElse (dimProbThen, valueThen) (dimProbElse, valueElse)
 maxAPost rt expr (QFloat _ v) = do
   (dim, prob) <- infer rt expr (VFloat v)
   return ((dim, prob), VFloat v)
@@ -138,14 +132,12 @@ maxAPost rt expr@(And _ _) QAny = maxAPostBooleanExpr rt expr
 maxAPost rt expr@(Not _) QAny = maxAPostBooleanExpr rt expr
 maxAPost _ e q = todo $ "Missing case" <> show e <> show q
 
-maxAPostIfThenElse :: DimensionalProbability -> (DimensionalProbability, Value) -> (DimensionalProbability, Value) -> (DimensionalProbability, Value)
-maxAPostIfThenElse (dimIf, probTrue) ((dim1, prob1), value1) ((dim2, prob2), value2)
-  | dim1 < dim2 = ((dim1, probTrue * prob1), value1)
-  | dim2 < dim1 = ((dim2, probFalse * prob2), value2)
-  | dimIf == 0 && probTrue * prob1 > probFalse * prob2 = ((dim1, probTrue * prob1), value1)
-  | otherwise = ((dim2, probFalse *prob2), value2)
-  where
-    probFalse = 1 - probTrue
+maxAPostIfThenElse :: (DimensionalProbability, Value) -> (DimensionalProbability, Value) -> (DimensionalProbability, Value)
+maxAPostIfThenElse ((dim1, prob1), value1) ((dim2, prob2), value2)
+  | dim1 < dim2 = ((dim1, prob1), value1)
+  | dim2 < dim1 = ((dim2, prob2), value2)
+  | prob1 > prob2 = ((dim1, prob1), value1)
+  | otherwise = ((dim2, prob2), value2)
 
 maxAPostBooleanExpr :: Runtime -> Expr -> Either ErrorString (DimensionalProbability, Value) 
 maxAPostBooleanExpr rt expr = do

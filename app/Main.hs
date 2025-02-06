@@ -37,12 +37,13 @@ main = do
           cumulativeStudentT
           sampleStudentT
           programOld
+  --let program = wrapInMain $ unwrapEither $ parseExpr "if Uniform < 0.5 then (if Uniform < 0.01 then 4 else Uniform * 4) else (if Uniform < 0.01 then 10 else Uniform * 10)"
 
   print "------Program Unopt"
   print program
   let optProgram = optimize program
   print "------Program Optimize"
-  print optProgram
+  --print optProgram
 
   sample <- sampleProgram program
   print "------Sample Unopt"
@@ -51,7 +52,7 @@ main = do
   print "------Sample Optimize"
   print optSample
 
-  let query = QTuple (QFloat Given 4.0) (QTuple (QBool NormalMode True) (QFloat Given 3.0)) -- QTuple (QBool NormalMode False)(QTuple (QBool NormalMode True) (QTuple (QBool NormalMode True) (QTuple (QBool NormalMode False) (QTuple (QBool NormalMode True) QAny))))
+  let query = (QAny) --QTuple (QFloat Given 4.0) (QTuple (QBool NormalMode True) (QFloat Given 3.0)) -- QTuple (QBool NormalMode False)(QTuple (QBool NormalMode True) (QTuple (QBool NormalMode True) (QTuple (QBool NormalMode False) (QTuple (QBool NormalMode True) QAny))))
   -- let inferSample = optSample
   let prob = qInferProgram program query
   print "------Infer Unopt"
@@ -66,11 +67,12 @@ main = do
   print "------MLE Optimize"
   let maxSampleOpt = mle optProgram query
   print maxSampleOpt
-  let spacing = LinearSpacing {start = -9, end = 9, stepWidth = 0.01}
-  let numberOfSamples = 1000
+  let spacing = LinearSpacing {start = -10, end = 10, stepWidth = 0.01}
+  let numberOfSamples = 100000
   -- plotCumulativeToFile "cdf.svg" program spacing numberOfSamples
   -- plotDensityToFile "pdf.svg" optProgram spacing numberOfSamples
-  plotMassToFile "pmf.svg" optProgram numberOfSamples
+  -- plotMassToFile "pmf.svg" optProgram numberOfSamples
+  print ""
 
 -- let program = [("main", FnCall "dice" [Const $ VFloat 6.0]),("dice", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (FnParameter 0) (IfThenElse (LessThan Uniform (Divide (Const $ VFloat 1.0) (FnParameter 0))) (FnParameter 0) (FnCall "dice" [Subtract (FnParameter 0) (Const $ VFloat 1.0)])))]
 -- print program
