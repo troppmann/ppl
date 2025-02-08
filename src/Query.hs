@@ -3,6 +3,7 @@ module Query
     QueryMode(..),
     qInfer,
     qInferProgram,
+    qInferProgramArgs,
   )
 where
 
@@ -34,6 +35,14 @@ qInferProgram :: Program -> QueryType -> Either ErrorString DimensionalProbabili
 qInferProgram program query = do
   mainExpr <- justOr (lookup "main" program) "main-Func not found."
   let rt = Runtime {program, arguments = [], currentFnName = "main", recursionDepth = 0, maxRecursionDepth = 100}
+  (dimNormal, probNormal) <- qInfer rt mainExpr NormalMode query 
+  (_dimCon, probCon) <- qInfer rt mainExpr Given query
+  return (dimNormal, probNormal / probCon)
+
+qInferProgramArgs :: Program -> [Expr] -> QueryType -> Either ErrorString DimensionalProbability
+qInferProgramArgs program arguments query = do
+  mainExpr <- justOr (lookup "main" program) "main-Func not found."
+  let rt = Runtime {program, arguments, currentFnName = "main", recursionDepth = 0, maxRecursionDepth = 100}
   (dimNormal, probNormal) <- qInfer rt mainExpr NormalMode query 
   (_dimCon, probCon) <- qInfer rt mainExpr Given query
   return (dimNormal, probNormal / probCon)

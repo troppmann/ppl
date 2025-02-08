@@ -55,7 +55,9 @@ executable compiler
                       statistics, 
                       MonadRandom, 
                       Chart,
+                      colour,
                       Chart-diagrams,
+                      raw-strings-qq,
                       compiler:lib
     hs-source-dirs:   app
     default-language: GHC2021

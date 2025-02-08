@@ -1,6 +1,7 @@
 module Infer
   ( inferProgram,
     infer,
+    inferProgramArgs,
   )
 where
 
@@ -22,6 +23,12 @@ inferProgram :: Program -> Value -> Either ErrorString DimensionalProbability
 inferProgram program value = do
   mainExpr <- justOr (lookup "main" program) "main-Func not found."
   let runTime = Runtime {program, arguments = [], currentFnName = "main", recursionDepth = 0, maxRecursionDepth = 100}
+  infer runTime mainExpr value
+
+inferProgramArgs :: Program -> [Expr] -> Value -> Either ErrorString DimensionalProbability
+inferProgramArgs program arguments value = do
+  mainExpr <- justOr (lookup "main" program) "main-Func not found."
+  let runTime = Runtime {program, arguments, currentFnName = "main", recursionDepth = 0, maxRecursionDepth = 100}
   infer runTime mainExpr value
 
 infer :: Runtime -> Expr -> Value -> Either String DimensionalProbability
