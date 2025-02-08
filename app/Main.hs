@@ -23,12 +23,14 @@ import Statistics.Distribution.Geometric
 import Statistics.Distribution.StudentT (studentT)
 import Text.RawString.QQ
 import Graphics.Rendering.Chart.Easy
+import Statistics.Distribution.Lognormal
 
 main :: IO ()
 main = do
   -- evaluateBinomial
-  evaluateGeometric
-  putStrLn "Done"
+  -- evaluateGeometric
+  -- evaluateLogNormal
+  putStrLn "Finish"
 
 evaluateBinomial :: IO ()
 evaluateBinomial = do
@@ -43,7 +45,6 @@ evaluateBinomial = do
   printCdf "Cerulean" (binomial 15 0.5) [0 .. 20]
   let binomialProgram =
         [r|
-
   binomial p n = if n <= 0 then
         0
                 else (
@@ -53,23 +54,23 @@ evaluateBinomial = do
             binomial p (n-1)
     );
   main p n = binomial p n|]
-  putStrLn "Generate binomial_pmf.svg ..."
-  let bounds = BoundsRect 0 20.0 0 0.2
   let program = unwrapEither $ parseProgram binomialProgram
+  putStrLn "Generate binomial_pmf.svg ..."
+  let boundsPmf = BoundsRect 0 20.0 0 0.2
   let dataPmf =
         [ (dandelion, programPmf program [0.5, 20.0] [0 .. 20]),
           (forestGreen, programPmf program [0.7, 20.0] [0 .. 20]),
           (cerulean, programPmf program [0.5, 15.0] [0 .. 20])
         ]
-  plotProgramPmfToFile "binomial_pmf.svg" dataPmf bounds
+  plotProgramPmfToFile "binomial_pmf.svg" dataPmf boundsPmf
   putStrLn "Generate binomial_cdf.svg ..."
-  let bounds = BoundsRect 0 20.0 0 1.0
+  let boundsCdf = BoundsRect 0 20.0 0 1.0
   let dataCdf =
         [ (dandelion, programMassCdf program [0.5, 20.0] [0 .. 20]),
           (forestGreen, programMassCdf program [0.7, 20.0] [0 .. 20]),
           (cerulean, programMassCdf program [0.5, 15.0] [0 .. 20])
         ]
-  plotProgramMassCdfToFile "binomial_cdf.svg" dataCdf bounds
+  plotProgramMassCdfToFile "binomial_cdf.svg" dataCdf boundsCdf
   putStrLn "Done"
 
 evaluateGeometric :: IO ()
@@ -88,30 +89,71 @@ evaluateGeometric = do
   geometric p = if bernoulli p then 1 else 1 + geometric p;
   main p = geometric p
   |]
-  putStrLn "Generate geometric_pmf.svg ..."
-  let bounds = BoundsRect 0 20.0 0 0.8
   let program = unwrapEither $ parseProgram geometricProgram
+  putStrLn "Generate geometric_pmf.svg ..."
+  let boundsPmf = BoundsRect 0 20.0 0 0.8
   let dataPmf =
         [ (dandelion, programPmf program [0.3] [1 .. 20]),
           (forestGreen, programPmf program [0.5] [1 .. 20]),
           (cerulean, programPmf program [0.7] [1 .. 20])
         ]
-  plotProgramPmfToFile "geometric_pmf.svg" dataPmf bounds
+  plotProgramPmfToFile "geometric_pmf.svg" dataPmf boundsPmf
   putStrLn "Generate geometric_cdf.svg ..."
-  let bounds = BoundsRect 0 20.0 0 1.0
+  let boundsCdf = BoundsRect 0 20.0 0 1.0
   let dataCdf =
         [ (dandelion, programMassCdf program [0.3] [1 .. 20]),
           (forestGreen, programMassCdf program [0.5] [1 .. 20]),
           (cerulean, programMassCdf program [0.7] [1 .. 20])
         ]
-  plotProgramMassCdfToFile "geometric_cdf.svg" dataCdf bounds
+  plotProgramMassCdfToFile "geometric_cdf.svg" dataCdf boundsCdf
   putStrLn "Done"
+
+
+evaluateLogNormal :: IO ()
+evaluateLogNormal = do
+  let range = 0.0001 : [0.05,0.10 .. 10];
+  putStrLn "--- Evaluate lognormalDistr distribution ---"
+  putStrLn "PMF lognormalDistr"
+  printPdf "Dandelion" (lognormalDistr 0 1) range
+  printPdf "ForestGreen" (lognormalDistr 0 0.4) range
+  printPdf "Cerulean" (lognormalDistr 1.5 1) range
+  putStrLn "CDF lognormalDistr"
+  printCdf "Dandelion" (lognormalDistr 0 1) range
+  printCdf "ForestGreen" (lognormalDistr 0 0.4) range
+  printCdf "Cerulean" (lognormalDistr 1.5 1) range
+  let lognormalProgram =
+        [r|
+  normal mean std = std * Normal + mean;
+  exp v = 2.718281828 ** v;
+  logNormal mean std = exp (normal mean std);
+  main mean std = logNormal mean std
+|]
+  let program = unwrapEither $ parseProgram lognormalProgram
+  putStrLn "Generate lognormal_pdf.svg ..."
+  let boundsPdf = BoundsRect 0 10.0 0 1.25
+  let dataPdf =
+        [ (dandelion, programPmf program [0, 1] range),
+          (forestGreen, programPmf program [0, 0.4] range),
+          (cerulean, programPmf program [1.5, 1] range)
+        ]
+  putStrLn "Generate lognormal_cdf.svg ..."
+  plotProgramPdfToFile "lognormal_pdf.svg" dataPdf boundsPdf
+  let boundsCdf = BoundsRect 0 10.0 0 1.0
+  let dataCdf =
+        [ (dandelion, programMassCdf program [0, 1] range),
+          (forestGreen, programMassCdf program [0, 0.4] range),
+          (cerulean, programMassCdf program [1.5, 1] range)
+        ]
+  plotProgramDensityCdfToFile "lognormal_cdf.svg" dataCdf boundsCdf
+  putStrLn "Done"
+
+
 
 formatFloatN :: (RealFloat a) => a -> Int -> String
 formatFloatN floatNum numOfDecimals = showFFloat (Just numOfDecimals) floatNum ""
 
 showF :: (RealFloat a) => a -> String
-showF float = formatFloatN float 20
+showF float = formatFloatN float 10
 
 generatePmf :: (DiscreteDistr d) => d -> [Int] -> [Char]
 generatePmf distribution listOfNumbers = intercalate "" (map ((\(x, y) -> "(" ++ show x ++ "," ++ showF y ++ ")") . (\x -> (x, probability distribution x))) listOfNumbers)
@@ -128,6 +170,16 @@ printCdf :: (Show d, Distribution d) => String -> d -> [Double] -> IO ()
 printCdf colorString distribution listOfNumbers = do
   putStrLn $ "CDF :: " ++ colorString ++ " :: " ++ show distribution
   putStrLn $ generateCdf distribution listOfNumbers
+
+
+generatePdf :: (ContDistr d) => d -> [Double] -> [Char]
+generatePdf distribution listOfNumbers = intercalate "" (map ((\(x, y) -> "(" ++ show x ++ "," ++ showF y ++ ")") . (\x -> (x, density distribution x))) listOfNumbers)
+
+
+printPdf :: (Show d, ContDistr d) => String -> d -> [Double] -> IO ()
+printPdf colorString distribution listOfNumbers = do
+  putStrLn $ "PDF :: " ++ colorString ++ " :: " ++ show distribution
+  putStrLn $ generatePdf distribution listOfNumbers
 
 programPmf :: Program -> [Double] -> [Double] -> [(Double, Probability)]
 programPmf program doubleArgs = map (\x -> (x, prob x))
@@ -171,17 +223,6 @@ plotProgramPmfToFile filename plotData rect = do
     setShapes $ repeat PointShapeCircle
     mapM_ ((plot . pointsWithSize "" 2) . snd) plotData
 
-pointsWithSize :: String -> Double -> [(x, y)] -> EC l (PlotPoints x y)
-pointsWithSize title size values = liftEC $ do
-  color <- takeColor
-  shape <- takeShape
-  plot_points_values .= values
-  plot_points_title .= title
-  plot_points_style . point_color .= color
-  plot_points_style . point_shape .= shape
-  plot_points_style . point_radius .= size
-  plot_points_style . point_border_color .= color
-  plot_points_style . point_border_width .= 1
 
 plotProgramMassCdfToFile :: String -> [(Colour Double, [(Double, Double)])] -> BoundsRect -> IO ()
 plotProgramMassCdfToFile filename plotData rect = do
@@ -197,6 +238,56 @@ plotProgramMassCdfToFile filename plotData rect = do
     setColors $ map (opaque . fst) plotData
     setShapes $ repeat PointShapeCircle
     mapM_ ((plot . pointsWithSize "" 2) . snd) plotData
+
+
+plotProgramPdfToFile :: String -> [(Colour Double, [(Double, Double)])] -> BoundsRect -> IO ()
+plotProgramPdfToFile filename plotData rect = do
+  let fileOptions = FileOptions (160, 126) SVG loadSansSerifFonts
+  toFile fileOptions filename $ do
+    layout_margin .= 2
+    layout_y_axis . laxis_generate .= scaledAxis def (yMin rect, yMax rect)
+    layout_y_axis . laxis_title .= "PDF"
+    layout_y_axis . laxis_style . axis_label_gap .= 4
+    layout_x_axis . laxis_generate .= scaledAxis def (xMin rect, xMax rect)
+    layout_x_axis . laxis_style . axis_label_gap .= 1
+    layout_x_axis . laxis_title .= "x"
+    setColors $ map (opaque . fst) plotData
+    let cords = map snd plotData
+    mapM_ (plot . plotLine "" . (: [])) cords
+
+
+plotProgramDensityCdfToFile :: String -> [(Colour Double, [(Double, Double)])] -> BoundsRect -> IO ()
+plotProgramDensityCdfToFile filename plotData rect = do
+  let fileOptions = FileOptions (160, 126) SVG loadSansSerifFonts
+  toFile fileOptions filename $ do
+    layout_margin .= 2
+    layout_y_axis . laxis_generate .= scaledAxis def (yMin rect, yMax rect)
+    layout_y_axis . laxis_title .= "CDF"
+    layout_y_axis . laxis_style . axis_label_gap .= 4
+    layout_x_axis . laxis_generate .= scaledAxis def (xMin rect, xMax rect)
+    layout_x_axis . laxis_style . axis_label_gap .= 1
+    layout_x_axis . laxis_title .= "x"
+    setColors $ map (opaque . fst) plotData
+    mapM_ ((plot . plotLine "") . (: []). snd) plotData
+
+pointsWithSize :: String -> Double -> [(x, y)] -> EC l (PlotPoints x y)
+pointsWithSize title size values = liftEC $ do
+  color <- takeColor
+  shape <- takeShape
+  plot_points_values .= values
+  plot_points_title .= title
+  plot_points_style . point_color .= color
+  plot_points_style . point_shape .= shape
+  plot_points_style . point_radius .= size
+  plot_points_style . point_border_color .= opaque black
+  plot_points_style . point_border_width .= 0.2
+
+plotLine :: String -> [[(x,y)]]  -> EC l (PlotLines x y)
+plotLine title values = liftEC $ do
+    color <- takeColor
+    plot_lines_title .= title
+    plot_lines_values .= values
+    plot_lines_style . line_color .= color
 
 playground :: IO ()
 playground = do
