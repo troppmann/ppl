@@ -9,7 +9,7 @@ import Data.List
 import Debug.Extended
 import DistributionSampler
 import Infer
-import MaximumAPosteriori (mle)
+import MaximumAPosteriori (mmap)
 import Mean
 import Optimizer
 import Parser
@@ -75,10 +75,10 @@ playground = do
   print optProb
 
   print "------MLE Unopt"
-  let maxSample = mle program query
+  let maxSample = mmap program query
   -- print maxSample
   print "------MLE Optimize"
-  let maxSampleOpt = mle optProgram query
+  let maxSampleOpt = mmap optProgram query
   --print maxSampleOpt
   let spacing = LinearSpacing {start = -10, end = 10, stepWidth = 0.01}
   let numberOfSamples = 100000

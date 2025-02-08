@@ -1,6 +1,6 @@
 module MaximumAPosteriori
   ( maxAPost,
-    mle,
+    mmap,
   )
 where
 
@@ -15,8 +15,8 @@ import Runtime
 
 type ErrorString = String
 
-mle :: Program -> QueryType -> Either ErrorString (DimensionalProbability, Value)
-mle program query = do
+mmap :: Program -> QueryType -> Either ErrorString (DimensionalProbability, Value)
+mmap program query = do
   mainExpr <- justOr (lookup "main" program) "main-Func not found."
   let rt = Runtime {program, arguments = [], currentFnName = "main", recursionDepth = 0, maxRecursionDepth = 100}
   ((dim, prob), value) <- maxAPost rt mainExpr query
@@ -24,7 +24,6 @@ mle program query = do
   return ((dim, prob / probCon), value)
 
 
--- TODO 19.11.24 maybe rename to mle
 maxAPost :: Runtime -> Expr -> QueryType -> Either ErrorString (DimensionalProbability, Value)
 maxAPost _ _ QMar = return ((0, 1.0), VFloat (0/0))
 maxAPost _ (Const c) QAny = return ((0, 1.0), c)
@@ -42,7 +41,7 @@ maxAPost rt (Plus e1 e2) QAny
       (dimProb, value) <- maxAPost rt e1 QAny
       v <- evalAsFloat value
       return (dimProb, VFloat (v + c))
-  | otherwise = Left "Can only mle Plus(+) with a one side Constant."
+  | otherwise = Left "Can only mmap Plus(+) with a one side Constant."
 maxAPost rt (Subtract e1 e2) QAny
   | Right constant <- evalConstExpr rt e1 = do
       c <- evalAsFloat constant
@@ -54,7 +53,7 @@ maxAPost rt (Subtract e1 e2) QAny
       (dimProb, value) <- maxAPost rt e1 QAny
       v <- evalAsFloat value
       return (dimProb, VFloat (v - c))
-  | otherwise = Left "Can only mle Plus(+) with a one side Constant."
+  | otherwise = Left "Can only mmap Plus(+) with a one side Constant."
 maxAPost rt (Multiply e1 e2) QAny
   | Right constant <- evalConstExpr rt e1 = do
       c <- evalAsFloat constant

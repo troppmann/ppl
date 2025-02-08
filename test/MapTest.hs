@@ -26,7 +26,7 @@ testMapProgram :: ExprString -> QueryString -> Value -> DimensionalProbability -
 testMapProgram programString queryString expectedValue expectedDimProb = testCase testString $ do
   program <- assertRight $ parseProgram programString
   query <- assertRight $ parseQuery queryString
-  (dimProb, value) <- assertRight $ mle program query
+  (dimProb, value) <- assertRight $ mmap program query
   value @?= expectedValue
   assertEqDimProb dimProb expectedDimProb
   where
@@ -37,7 +37,7 @@ testMapExprWithName programString testName queryString expectedValue = testCase 
   expr <- assertRight $ parseExpr programString
   query <- assertRight $ parseQuery queryString
   let program = wrapInMain expr
-  (_dimProb, value) <- assertRight $ mle program query
+  (_dimProb, value) <- assertRight $ mmap program query
   value @?= expectedValue
   where
     testString = shorter testName <> ":Query " <> shorter queryString
@@ -47,7 +47,7 @@ testMapExprFail exprString queryString expected = testCase testString $ do
   expr <- assertRight $ parseExpr exprString
   query <- assertRight $ parseQuery queryString
   let program = wrapInMain expr
-  (dimProb, _value) <- assertRight $ mle program query
+  (dimProb, _value) <- assertRight $ mmap program query
   assertEqDimProb dimProb expected
   where
     testString = shorter exprString <> ":Query " <> shorter queryString <> ":Expected 0.0 Prob"
