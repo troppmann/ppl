@@ -27,7 +27,7 @@ import Graphics.Rendering.Chart.Easy
 main :: IO ()
 main = do
   -- evaluateBinomial
-  -- evaluateGeometric
+  evaluateGeometric
   putStrLn "Done"
 
 evaluateBinomial :: IO ()
@@ -83,6 +83,29 @@ evaluateGeometric = do
   printCdf "Dandelion" (geometric 0.3) [1 .. 20]
   printCdf "ForestGreen" (geometric 0.5) [1 .. 20]
   printCdf "Cerulean" (geometric 0.7) [1 .. 20]
+  let geometricProgram = [r|
+  bernoulli p = Uniform < p;
+  geometric p = if bernoulli p then 1 else 1 + geometric p;
+  main p = geometric p
+  |]
+  putStrLn "Generate geometric_pmf.svg ..."
+  let bounds = BoundsRect 0 20.0 0 0.8
+  let program = unwrapEither $ parseProgram geometricProgram
+  let dataPmf =
+        [ (dandelion, programPmf program [0.3] [1 .. 20]),
+          (forestGreen, programPmf program [0.5] [1 .. 20]),
+          (cerulean, programPmf program [0.7] [1 .. 20])
+        ]
+  plotProgramPmfToFile "geometric_pmf.svg" dataPmf bounds
+  putStrLn "Generate geometric_cdf.svg ..."
+  let bounds = BoundsRect 0 20.0 0 1.0
+  let dataCdf =
+        [ (dandelion, programMassCdf program [0.3] [1 .. 20]),
+          (forestGreen, programMassCdf program [0.5] [1 .. 20]),
+          (cerulean, programMassCdf program [0.7] [1 .. 20])
+        ]
+  plotProgramMassCdfToFile "geometric_cdf.svg" dataCdf bounds
+  putStrLn "Done"
 
 formatFloatN :: (RealFloat a) => a -> Int -> String
 formatFloatN floatNum numOfDecimals = showFFloat (Just numOfDecimals) floatNum ""
