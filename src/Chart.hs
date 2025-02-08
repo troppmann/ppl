@@ -112,6 +112,7 @@ plotCumulativeToFile filename program spacing numberOfSamples = do
 
   toFile def filename $ do
     layout_title .= "CDF"
+    layout_all_font_styles . font_size %= (*4)
     setColors [opaque blue, opaque red]
     plot (line "Sampled" [sampledLine])
     plot (line "Inferred" [inferredLine])

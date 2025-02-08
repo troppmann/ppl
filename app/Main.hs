@@ -16,17 +16,31 @@ import Parser
 import Query
 import Representation
 import Sample
-import Spn
 import Control.Monad.Random.Class
 import Statistics.Distribution.StudentT (studentT)
 import Statistics.Distribution
 
-toFloat :: Value -> Double
-toFloat (VFloat f) = f
-toFloat _ = -1
 
 main :: IO ()
-main = do
+main = do 
+  putStrLn "Clean Up"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+playground :: IO ()
+playground = do
   s <- readFile "test.ppl"
   let parseOptions = ParseOptions {optimization = False, maxLoopUnroll = 0}
   let programOld = unwrapEither $ parseProgramWithOptions parseOptions s
@@ -51,7 +65,6 @@ main = do
   optSample <- sampleProgram optProgram
   print "------Sample Optimize"
   print optSample
-
   let query = (QAny) --QTuple (QFloat Given 4.0) (QTuple (QBool NormalMode True) (QFloat Given 3.0)) -- QTuple (QBool NormalMode False)(QTuple (QBool NormalMode True) (QTuple (QBool NormalMode True) (QTuple (QBool NormalMode False) (QTuple (QBool NormalMode True) QAny))))
   -- let inferSample = optSample
   let prob = qInferProgram program query
@@ -66,12 +79,12 @@ main = do
   -- print maxSample
   print "------MLE Optimize"
   let maxSampleOpt = mle optProgram query
-  print maxSampleOpt
+  --print maxSampleOpt
   let spacing = LinearSpacing {start = -10, end = 10, stepWidth = 0.01}
   let numberOfSamples = 100000
   -- plotCumulativeToFile "cdf.svg" program spacing numberOfSamples
   -- plotDensityToFile "pdf.svg" optProgram spacing numberOfSamples
-  -- plotMassToFile "pmf.svg" optProgram numberOfSamples
+  plotMassToFile "pmf.svg" optProgram numberOfSamples
   print ""
 
 -- let program = [("main", FnCall "dice" [Const $ VFloat 6.0]),("dice", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (FnParameter 0) (IfThenElse (LessThan Uniform (Divide (Const $ VFloat 1.0) (FnParameter 0))) (FnParameter 0) (FnCall "dice" [Subtract (FnParameter 0) (Const $ VFloat 1.0)])))]
@@ -109,26 +122,3 @@ cumulativeStudentT :: Double -> Probability
 cumulativeStudentT = cumulative distr
   where
     distr = studentT 1.0
-
-
-calculateX0TrueGivenX1False :: Float
-calculateX0TrueGivenX1False = calculate ([1, 0], [0, 1]) spn / calculate ([1, 0], [1, 1]) spn
-  where
-    spn = createSpn
-
-createSpn :: Spn
-createSpn =
-  Sum
-    [ ( 0.7,
-        Product
-          [ Sum [(0.6, Leaf $ Index 0), (0.4, Leaf $ NegIndex 0)],
-            Sum [(0.3, Leaf $ Index 1), (0.7, Leaf $ NegIndex 1)]
-          ]
-      ),
-      ( 0.3,
-        Product
-          [ Sum [(0.9, Leaf $ Index 0), (0.1, Leaf $ NegIndex 0)],
-            Sum [(0.2, Leaf $ Index 1), (0.8, Leaf $ NegIndex 1)]
-          ]
-      )
-    ]

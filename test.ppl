@@ -145,5 +145,18 @@ gamble value n = if n == 0 then
         else
             (0.7 * value) + gamble (value * 0.3 * 0.5) (n-1)
 
+poisson2 tau = innerPoisson2 tau 0 1
+
+innerPoisson2 tau k mass = if Uniform < ((poissonPmfFormula tau k)/ mass) then   
+                                k
+                            else 
+                                innerPoisson2 tau (k+1) (mass - (poissonPmfFormula tau k))
+
+poissonPmfFormula tau k = (tau ** k) * (exp (-tau)) / (factorial k)
+
+pareto xm alpha = xm * ((1 - Uniform) ** (-1 / alpha))
+
+
 //main = if (0.1) ** (Normal) > -0.2 then Uniform else Uniform + 3
-main = if Uniform == 0.2 then 1 else Normal
+main = binomial 0.5 15
+
