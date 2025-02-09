@@ -24,13 +24,15 @@ import Statistics.Distribution.StudentT (studentT)
 import Text.RawString.QQ
 import Graphics.Rendering.Chart.Easy
 import Statistics.Distribution.Lognormal
+import ApproximateIntegration
 
 main :: IO ()
 main = do
   -- evaluateBinomial
   -- evaluateGeometric
   -- evaluateLogNormal
-  putStrLn "Finish"
+  evaluatePareto
+  -- playground
 
 evaluateBinomial :: IO ()
 evaluateBinomial = do
@@ -71,7 +73,6 @@ evaluateBinomial = do
           (cerulean, programMassCdf program [0.5, 15.0] [0 .. 20])
         ]
   plotProgramMassCdfToFile "binomial_cdf.svg" dataCdf boundsCdf
-  putStrLn "Done"
 
 evaluateGeometric :: IO ()
 evaluateGeometric = do
@@ -106,7 +107,6 @@ evaluateGeometric = do
           (cerulean, programMassCdf program [0.7] [1 .. 20])
         ]
   plotProgramMassCdfToFile "geometric_cdf.svg" dataCdf boundsCdf
-  putStrLn "Done"
 
 
 evaluateLogNormal :: IO ()
@@ -145,8 +145,68 @@ evaluateLogNormal = do
           (cerulean, programMassCdf program [1.5, 1] range)
         ]
   plotProgramDensityCdfToFile "lognormal_cdf.svg" dataCdf boundsCdf
-  putStrLn "Done"
 
+
+
+evaluatePareto :: IO ()
+evaluatePareto = do
+  let range = 0.0001 : [0.05,0.10 .. 10];
+  -- statistics does not include pareto
+  putStrLn "--- Evaluate lognormalDistr distribution ---"
+  putStrLn "PMF lognormalDistr"
+  printParetoPdf 2 1 "Dandelion"  range
+  printParetoPdf 2 2 "ForestGreen"  range
+  printParetoPdf 2 3 "Cerulean" range
+  putStrLn "CDF lognormalDistr"
+  printParetoCdf 2 1 "Dandelion"  range
+  printParetoCdf 2 2 "ForestGreen"  range
+  printParetoCdf 2 3 "Cerulean"  range
+  let paretoProgram = [r|
+  pareto xm alpha = xm * ((1 - Uniform) ** (-1 * (1 / alpha)));
+  main xm alpha = pareto xm alpha
+|]
+  let program = unwrapEither $ parseProgram paretoProgram
+  putStrLn "Generate pareto_pdf.svg ..."
+  let boundsPdf = BoundsRect 0 10.0 0 1.5
+  let dataPdf =
+        [ (dandelion, programPmf program [2, 1] range),
+          (forestGreen, programPmf program [2, 2] range),
+          (cerulean, programPmf program [2, 3] range)
+        ]
+  putStrLn "Generate pareto_cdf.svg ..."
+  plotProgramPdfToFile "pareto_pdf.svg" dataPdf boundsPdf
+  let boundsCdf = BoundsRect 0 10.0 0 1.0
+  let dataCdf =
+        [ (dandelion, programMassCdf program [2, 1] range),
+          (forestGreen, programMassCdf program [2, 2] range),
+          (cerulean, programMassCdf program [2, 3] range)
+        ]
+  plotProgramDensityCdfToFile "pareto_cdf.svg" dataCdf boundsCdf
+
+
+
+
+
+
+generateParetoPdf :: Double -> Double -> [Double] -> [Char]
+generateParetoPdf xm alpha listOfNumbers = intercalate "" (map ((\(x, y) -> "(" ++ show x ++ "," ++ showF y ++ ")") . (\x -> (x, dens x))) listOfNumbers)
+  where
+    dens x = alpha * (xm ** alpha) / (x ** (alpha + 1))
+
+generateParetoCdf :: Double -> Double -> [Double] -> [Char]
+generateParetoCdf xm alpha listOfNumbers = intercalate "" (map ((\(x, y) -> "(" ++ show x ++ "," ++ showF y ++ ")") . (\x -> (x, prob x))) listOfNumbers)
+  where
+    prob x = 1 - ((xm / x) ** alpha)
+
+printParetoPdf ::  Double -> Double ->String -> [Double] -> IO ()
+printParetoPdf xm alpha colorString listOfNumbers = do
+  putStrLn $ "PDF :: " ++ colorString ++ " :: Pareto " ++ show xm ++ " " ++ show alpha
+  putStrLn $ generateParetoPdf xm alpha listOfNumbers
+
+printParetoCdf :: Double -> Double -> String -> [Double] -> IO ()
+printParetoCdf xm alpha colorString listOfNumbers = do
+  putStrLn $ "PCF :: " ++ colorString ++ " :: Pareto " ++ show xm ++ " " ++ show alpha
+  putStrLn $ generateParetoPdf xm alpha listOfNumbers
 
 
 formatFloatN :: (RealFloat a) => a -> Int -> String
@@ -330,11 +390,11 @@ playground = do
   print "------MMAP Optimize"
   --let maxSampleOpt = mmap optProgram query
   -- print maxSampleOpt
-  --let spacing = LinearSpacing {start = -10, end = 10, stepWidth = 0.01}
+  let spacing = LinearSpacing {start = -10, end = 10, stepWidth = 0.01}
   let numberOfSamples = 100000
-  -- plotCumulativeToFile "cdf.svg" program spacing numberOfSamples
-  -- plotDensityToFile "pdf.svg" optProgram spacing numberOfSamples
-  plotMassToFile "pmf.svg" optProgram numberOfSamples
+  plotCumulativeToFile "cdf.svg" program spacing numberOfSamples
+  plotDensityToFile "pdf.svg" optProgram spacing numberOfSamples
+  -- plotMassToFile "pmf.svg" optProgram numberOfSamples
   print ""
 
 -- let program = [("main", FnCall "dice" [Const $ VFloat 6.0]),("dice", IfThenElse (LessThanOrEqual (FnParameter 0) (Const $ VFloat 1.0)) (FnParameter 0) (IfThenElse (LessThan Uniform (Divide (Const $ VFloat 1.0) (FnParameter 0))) (FnParameter 0) (FnCall "dice" [Subtract (FnParameter 0) (Const $ VFloat 1.0)])))]
