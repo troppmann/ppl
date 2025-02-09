@@ -332,9 +332,10 @@ compareFloatExpr rt (Divide e1 e2) (ord, value)
           case ord of
             -- Two Ranges either ([-∞, 0] and [bound, +∞]) or ([-∞, bound] and [0, +∞])
             lt | lt `elem` [LT, LE] -> do
-              firstRange <- compareFloatExpr rt e2 (if bound < 0 then ord else swap ord, bound)
-              secondRange <- compareFloatExpr rt e2 (if bound < 0 then swap ord else ord, 0)
-              return $ firstRange + secondRange
+              let secondSwap = if value < 0 then swap ord else ord
+              firstRange <- compareFloatExpr rt e2 (if bound < 0 then secondSwap else swap secondSwap, bound)
+              secondRange <- compareFloatExpr rt e2 (if bound < 0 then swap secondSwap else secondSwap, 0)
+              return $ firstRange + secondRange + if value < 0 then -1 else 0
             -- One Range between Bound and 0 could either been [0, Bound] or [Bound,0]
             gt | gt `elem` [GT, GE] -> do
               lower <- compareFloatExpr rt e2 (swap ord, min bound 0)
@@ -348,7 +349,13 @@ compareFloatExpr rt (Divide e1 e2) (ord, value)
 compareFloatExpr rt (Exponent e1 e2) (ord, value)
   | Right constant <- evalConstExpr rt e2 = do
       c <- evalAsFloat constant
-      compareFloatExpr rt e1 (ord, value ** (1 / c))
+      if not (isInteger c) && value < 0 then
+        case ord of 
+          lt | lt `elem` [LT, LE] -> return 0.0
+          gt | gt `elem` [GT, GE] -> return 1.0
+          _ -> undefined
+      else 
+        compareFloatExpr rt e1 (if c < 0 then swap ord else ord, value ** (1 / c))
   | Right constant <- evalConstExpr rt e1 = do
       c <- evalAsFloat constant
       if value < 0 then 
@@ -425,3 +432,6 @@ compareFloatExpr _ expr _ = case expr of
     msg = "Expected Float got " <> show expr <> " that evaluates to a"
     msgBool = Left $ msg <> "Bool."
     msgTuple = Left $ msg <> "Tuple."
+
+isInteger :: Double -> Bool
+isInteger x = snd (properFraction x :: (Integer, Double)) == 0
