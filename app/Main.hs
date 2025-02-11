@@ -32,8 +32,8 @@ import Statistics.Sample
 main :: IO ()
 main = do
   -- evaluateBinomial
-  evaluateGeometric
-  -- evaluateLogNormal
+  -- evaluateGeometric
+  evaluateLogNormal
   -- evaluatePareto
   -- playground
 
@@ -82,6 +82,38 @@ evaluateBinomial = do
   plotProgramMassCdfToFile "binomial_cdf.svg" dataCdf boundsCdf
   writeStats "binomial_pmf_stats.csv" analyticalPmf dataPmf
   writeStats "binomial_cdf_stats.csv" analyticalCdf dataCdf
+  let binomialSelectiveProgram =
+        [r|
+factorial n = if n <= 1 then 1 else n * factorial (n-1);
+binomialCoefficient n k = (factorial n)/((factorial k) * (factorial (n-k)));
+binomialPmf p n k = (binomialCoefficient n k) * (p ** k) * ((1 - p) ** (n - k));
+bernoulli p = Uniform < p;
+binomialIntern p n k mass = if k <= 0 then 
+	0 
+else 
+	( if bernoulli ((binomialPmf p n k )/mass) then 
+		k
+	else 
+		binomialIntern p n (k-1)  (mass - ((binomialPmf p n k))));
+binomialSelective p n = binomialIntern p n n 1.0;
+main p n = binomialSelective p n|]
+  let programS = unwrapEither $ parseProgram binomialSelectiveProgram
+  putStrLn "Generate binomial_selective_pmf.svg ..."
+  let dataPmfS =
+        [ (dandelion, programPmf programS [0.5, 20.0] [0 .. 20]),
+          (forestGreen, programPmf programS [0.7, 20.0] [0 .. 20]),
+          (cerulean, programPmf programS [0.5, 15.0] [0 .. 20])
+        ]
+  plotProgramPmfToFile "binomial_selective_pmf.svg" dataPmfS boundsPmf
+  putStrLn "Generate binomial_selective_cdf.svg ..."
+  let dataCdfS =
+        [ (dandelion, programMassCdf programS [0.5, 20.0] [0 .. 20]),
+          (forestGreen, programMassCdf programS [0.7, 20.0] [0 .. 20]),
+          (cerulean, programMassCdf programS [0.5, 15.0] [0 .. 20])
+        ]
+  plotProgramMassCdfToFile "binomial_selective_cdf.svg" dataCdfS boundsCdf
+  writeStats "binomial_selective_pmf_stats.csv" analyticalPmf dataPmfS
+  writeStats "binomial_selective_cdf_stats.csv" analyticalCdf dataCdfS
 
 evaluateGeometric :: IO ()
 evaluateGeometric = do
