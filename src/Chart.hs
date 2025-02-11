@@ -109,12 +109,12 @@ plotCumulativeToFile :: FileName -> Program -> LinearSpacing -> NumberOfSamples 
 plotCumulativeToFile filename program spacing numberOfSamples = do
   let inferredLine = createCumulativePoints program spacing
   sampledLine <- evalRandIO (sampleCumulative program SampleInfo {start = LinearSpacing.start spacing, stepWidth = LinearSpacing.stepWidth spacing, numberOfSamples})
-
+  let sampledLine2 = filter (\(x, _) -> x < 10 && x > -10  ) sampledLine
   toFile def filename $ do
     layout_title .= "CDF"
     layout_all_font_styles . font_size %= (*4)
     setColors [opaque blue, opaque red]
-    plot (line "Sampled" [sampledLine])
+    plot (line "Sampled" [sampledLine2])
     plot (line "Inferred" [inferredLine])
 
 createCumulativePoints :: Program -> LinearSpacing -> [Point2D]

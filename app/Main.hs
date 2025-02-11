@@ -3,13 +3,16 @@
 
 module Main where
 
+import ApproximateIntegration
 import Chart
 import Control.Monad.Random.Class
 import Data.Colour.SRGB
 import Data.List
+import Data.Vector qualified as Vector
 import Debug.Extended
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Backend.Diagrams
+import Graphics.Rendering.Chart.Easy
 import Infer
 import Numeric
 import Optimizer
@@ -20,31 +23,35 @@ import Sample
 import Statistics.Distribution
 import Statistics.Distribution.Binomial
 import Statistics.Distribution.Geometric
+import Statistics.Distribution.Lognormal
 import Statistics.Distribution.StudentT (studentT)
 import Text.RawString.QQ
-import Graphics.Rendering.Chart.Easy
-import Statistics.Distribution.Lognormal
-import ApproximateIntegration
+import Control.Exception (assert)
+import Statistics.Sample
 
 main :: IO ()
 main = do
   -- evaluateBinomial
-  -- evaluateGeometric
+  evaluateGeometric
   -- evaluateLogNormal
-  evaluatePareto
+  -- evaluatePareto
   -- playground
 
 evaluateBinomial :: IO ()
 evaluateBinomial = do
   putStrLn "--- Evaluate binomial distribution ---"
-  putStrLn "PMF binomial"
-  printPmf "Dandelion" (binomial 20 0.5) [0 .. 20]
-  printPmf "ForestGreen" (binomial 20 0.7) [0 .. 20]
-  printPmf "Cerulean" (binomial 15 0.5) [0 .. 20]
-  putStrLn "CDF binomial"
-  printCdf "Dandelion" (binomial 20 0.5) [0 .. 20]
-  printCdf "ForestGreen" (binomial 20 0.7) [0 .. 20]
-  printCdf "Cerulean" (binomial 15 0.5) [0 .. 20]
+  let analyticalPmf =
+        [ generateAnalyticalPmf "Dandelion" (binomial 20 0.5) [0 .. 20],
+          generateAnalyticalPmf "ForestGreen" (binomial 20 0.7) [0 .. 20],
+          generateAnalyticalPmf "Cerulean" (binomial 15 0.5) [0 .. 20]
+        ]
+  printAnalyticalCords analyticalPmf
+  let analyticalCdf =
+        [ generateAnalyticalCdf "Dandelion" (binomial 20 0.5) [0 .. 20],
+          generateAnalyticalCdf "ForestGreen" (binomial 20 0.7) [0 .. 20],
+          generateAnalyticalCdf "Cerulean" (binomial 15 0.5) [0 .. 20]
+        ]
+  printAnalyticalCords analyticalCdf
   let binomialProgram =
         [r|
   binomial p n = if n <= 0 then
@@ -73,19 +80,27 @@ evaluateBinomial = do
           (cerulean, programMassCdf program [0.5, 15.0] [0 .. 20])
         ]
   plotProgramMassCdfToFile "binomial_cdf.svg" dataCdf boundsCdf
+  writeStats "binomial_pmf_stats.csv" analyticalPmf dataPmf
+  writeStats "binomial_cdf_stats.csv" analyticalCdf dataCdf
 
 evaluateGeometric :: IO ()
 evaluateGeometric = do
   putStrLn "--- Evaluate geometric distribution ---"
-  putStrLn "PMF geometric"
-  printPmf "Dandelion" (geometric 0.3) [1 .. 20]
-  printPmf "ForestGreen" (geometric 0.5) [1 .. 20]
-  printPmf "Cerulean" (geometric 0.7) [1 .. 20]
-  putStrLn "CDF geometric"
-  printCdf "Dandelion" (geometric 0.3) [1 .. 20]
-  printCdf "ForestGreen" (geometric 0.5) [1 .. 20]
-  printCdf "Cerulean" (geometric 0.7) [1 .. 20]
-  let geometricProgram = [r|
+  let analyticalPmf =
+        [ generateAnalyticalPmf "Dandelion" (geometric 0.3) [1 .. 20],
+          generateAnalyticalPmf "ForestGreen" (geometric 0.5) [1 .. 20],
+          generateAnalyticalPmf "Cerulean" (geometric 0.7) [1 .. 20]
+        ]
+  printAnalyticalCords analyticalPmf
+  let analyticalCdf =
+        [ generateAnalyticalCdf "Dandelion" (geometric 0.3) [1 .. 20],
+          generateAnalyticalCdf "ForestGreen" (geometric 0.5) [1 .. 20],
+          generateAnalyticalCdf "Cerulean" (geometric 0.7) [1 .. 20]
+        ]
+  printAnalyticalCords analyticalCdf
+  let geometricProgram =
+        [r|
+
   bernoulli p = Uniform < p;
   geometric p = if bernoulli p then 1 else 1 + geometric p;
   main p = geometric p
@@ -107,20 +122,25 @@ evaluateGeometric = do
           (cerulean, programMassCdf program [0.7] [1 .. 20])
         ]
   plotProgramMassCdfToFile "geometric_cdf.svg" dataCdf boundsCdf
-
+  writeStats "geometric_pmf_stats.csv" analyticalPmf dataPmf
+  writeStats "geometric_cdf_stats.csv" analyticalCdf dataCdf
 
 evaluateLogNormal :: IO ()
 evaluateLogNormal = do
-  let range = 0.0001 : [0.05,0.10 .. 10];
+  let range = 0.0001 : [0.05, 0.10 .. 10]
   putStrLn "--- Evaluate lognormalDistr distribution ---"
-  putStrLn "PMF lognormalDistr"
-  printPdf "Dandelion" (lognormalDistr 0 1) range
-  printPdf "ForestGreen" (lognormalDistr 0 0.4) range
-  printPdf "Cerulean" (lognormalDistr 1.5 1) range
-  putStrLn "CDF lognormalDistr"
-  printCdf "Dandelion" (lognormalDistr 0 1) range
-  printCdf "ForestGreen" (lognormalDistr 0 0.4) range
-  printCdf "Cerulean" (lognormalDistr 1.5 1) range
+  let analyticalPdf =
+        [ generateAnalyticalPdf "Dandelion" (lognormalDistr 0 1) range,
+          generateAnalyticalPdf "ForestGreen" (lognormalDistr 0 0.4) range,
+          generateAnalyticalPdf "Cerulean" (lognormalDistr 1.5 1) range
+        ]
+  printAnalyticalCords analyticalPdf
+  let analyticalCdf =
+        [ generateAnalyticalCdf "Dandelion" (lognormalDistr 0 1) range,
+          generateAnalyticalCdf "ForestGreen" (lognormalDistr 0 0.4) range,
+          generateAnalyticalCdf "Cerulean" (lognormalDistr 1.5 1) range
+        ]
+  printAnalyticalCords analyticalCdf
   let lognormalProgram =
         [r|
   normal mean std = std * Normal + mean;
@@ -145,24 +165,28 @@ evaluateLogNormal = do
           (cerulean, programMassCdf program [1.5, 1] range)
         ]
   plotProgramDensityCdfToFile "lognormal_cdf.svg" dataCdf boundsCdf
-
-
+  writeStats "lognormal_pdf_stats.csv" analyticalPdf dataPdf
+  writeStats "lognormal_cdf_stats.csv" analyticalCdf dataCdf
 
 evaluatePareto :: IO ()
 evaluatePareto = do
-  let range = 0.0001 : [0.05,0.10 .. 10];
-  -- statistics does not include pareto
+  let range = 0.0001 : [0.05, 0.10 .. 10.0]
   putStrLn "--- Evaluate lognormalDistr distribution ---"
-  putStrLn "PMF lognormalDistr"
-  printParetoPdf 2 1 "Dandelion"  range
-  printParetoPdf 2 2 "ForestGreen"  range
-  printParetoPdf 2 3 "Cerulean" range
-  putStrLn "CDF lognormalDistr"
-  printParetoCdf 2 1 "Dandelion"  range
-  printParetoCdf 2 2 "ForestGreen"  range
-  printParetoCdf 2 3 "Cerulean"  range
-  let paretoProgram = [r|
-  pareto xm alpha = xm * ((1 - Uniform) ** (-1 * (1 / alpha)));
+  let analyticalPdf =
+        [ generateAnalyticalPdf "Dandelion" (Pareto 2 1) range,
+          generateAnalyticalPdf "ForestGreen" (Pareto 2 2) range,
+          generateAnalyticalPdf "Cerulean" (Pareto 2 3) range
+        ]
+  printAnalyticalCords analyticalPdf
+  let analyticalCdf =
+        [ generateAnalyticalCdf "Dandelion" (Pareto 2 1) range,
+          generateAnalyticalCdf "ForestGreen" (Pareto 2 2) range,
+          generateAnalyticalCdf "Cerulean" (Pareto 2 3) range
+        ]
+  printAnalyticalCords analyticalCdf
+  let paretoProgram =
+        [r|
+  pareto xm alpha = xm * (Uniform ** (-1 / alpha));
   main xm alpha = pareto xm alpha
 |]
   let program = unwrapEither $ parseProgram paretoProgram
@@ -182,64 +206,105 @@ evaluatePareto = do
           (cerulean, programMassCdf program [2, 3] range)
         ]
   plotProgramDensityCdfToFile "pareto_cdf.svg" dataCdf boundsCdf
+  writeStats "pareto_pdf_stats.csv" analyticalPdf dataPdf
+  writeStats "pareto_cdf_stats.csv" analyticalCdf dataCdf
+
+writeStats :: String -> [(a1, [(Double, Double)])] -> [(a2, [(Double, Double)])] -> IO ()
+writeStats filename analytical sampled = do
+  let pdfDiffs = zipWith (\ l1 l2 -> calculateDiff (snd l1) (snd l2)) analytical sampled
+  let diffTablePdf = generateDiffTable $ map calcStats pdfDiffs
+  putStrLn $ "Generate " ++ filename ++ " ..."
+  writeFile filename diffTablePdf
+  putStrLn diffTablePdf
 
 
-
-
-
-
-generateParetoPdf :: Double -> Double -> [Double] -> [Char]
-generateParetoPdf xm alpha listOfNumbers = intercalate "" (map ((\(x, y) -> "(" ++ show x ++ "," ++ showF y ++ ")") . (\x -> (x, dens x))) listOfNumbers)
+calculateDiff :: [(Double, Double)] -> [(Double, Double)] -> [Double]
+calculateDiff = zipWith (curry diff)
   where
-    dens x = alpha * (xm ** alpha) / (x ** (alpha + 1))
+    diff ((x0,y0), (x1, y1)) = assert (x0 == x1) (abs (y1 - y0))
 
-generateParetoCdf :: Double -> Double -> [Double] -> [Char]
-generateParetoCdf xm alpha listOfNumbers = intercalate "" (map ((\(x, y) -> "(" ++ show x ++ "," ++ showF y ++ ")") . (\x -> (x, prob x))) listOfNumbers)
+calcStats :: [Double] -> Stats
+calcStats diffs = Stats{samples, minD, maxD, meanD, medianD, stdD, varianceD, totalD}
   where
-    prob x = 1 - ((xm / x) ** alpha)
+    minD = minimum diffs
+    samples = length diffs
+    maxD = maximum diffs
+    (meanD, varianceD) = meanVarianceUnb $ Vector.fromList diffs
+    stdD = sqrt varianceD
+    medianD = median diffs
+    totalD = sum diffs
 
-printParetoPdf ::  Double -> Double ->String -> [Double] -> IO ()
-printParetoPdf xm alpha colorString listOfNumbers = do
-  putStrLn $ "PDF :: " ++ colorString ++ " :: Pareto " ++ show xm ++ " " ++ show alpha
-  putStrLn $ generateParetoPdf xm alpha listOfNumbers
+median :: (Ord a, Fractional a) => [a] -> a
+median xs =
+   if odd len
+     then sorted !! half
+     else ((sorted !! (half - 1)) + (sorted !! half)) * 0.5
+    where len = length xs
+          half = len `div` 2
+          sorted = sort xs
 
-printParetoCdf :: Double -> Double -> String -> [Double] -> IO ()
-printParetoCdf xm alpha colorString listOfNumbers = do
-  putStrLn $ "PCF :: " ++ colorString ++ " :: Pareto " ++ show xm ++ " " ++ show alpha
-  putStrLn $ generateParetoPdf xm alpha listOfNumbers
+data Stats = Stats {samples :: Int, minD :: Double, maxD :: Double, medianD :: Double, meanD :: Double, stdD :: Double, varianceD :: Double, totalD :: Double} deriving Show
 
+generateDiffTable :: [Stats] -> String
+generateDiffTable stats = content
+  where
+    header = "Samples, Min, Max, Median, Mean, Std, Total"
+    entry s = intercalate " & " $ map (\x -> "\\num{" ++ x ++ "}") $ show (samples s) : map show [minD s, maxD s, medianD s, meanD s, stdD s, totalD s]
+    content = unlines $ header : map entry stats
+
+
+data Pareto = Pareto {xm :: Double, alpha :: Double} deriving (Show)
+
+instance Distribution Pareto where
+  cumulative pareto x = if x > xm pareto then 1 - ((xm pareto / x) ** alpha pareto) else 0
+
+instance ContDistr Pareto where
+  density pareto x = if x > xm pareto then alpha pareto * (xm pareto ** alpha pareto) / (x ** (alpha pareto + 1)) else 0
+  quantile = undefined
 
 formatFloatN :: (RealFloat a) => a -> Int -> String
 formatFloatN floatNum numOfDecimals = showFFloat (Just numOfDecimals) floatNum ""
 
+formatFloatE :: (RealFloat a) => a -> Int -> String
+formatFloatE floatNum numOfDecimals = showEFloat (Just numOfDecimals) floatNum ""
+
 showF :: (RealFloat a) => a -> String
 showF float = formatFloatN float 10
 
-generatePmf :: (DiscreteDistr d) => d -> [Int] -> [Char]
-generatePmf distribution listOfNumbers = intercalate "" (map ((\(x, y) -> "(" ++ show x ++ "," ++ showF y ++ ")") . (\x -> (x, probability distribution x))) listOfNumbers)
+showE :: (RealFloat a) => a -> String
+showE float = formatFloatE float 4
 
-printPmf :: (Show d, DiscreteDistr d) => String -> d -> [Int] -> IO ()
-printPmf colorString distribution listOfNumbers = do
-  putStrLn $ "PMF :: " ++ colorString ++ " :: " ++ show distribution
-  putStrLn $ generatePmf distribution listOfNumbers
+generateAnalyticalPmf :: (Show d, DiscreteDistr d) => String -> d -> [Int] -> (String, [(Double, Double)])
+generateAnalyticalPmf colorName distr values = (indicator, generatePmf distr values)
+  where
+    indicator = "PMF :: " ++ colorName ++ " :: " ++ show distr
 
-generateCdf :: (Distribution d) => d -> [Double] -> [Char]
-generateCdf distribution listOfNumbers = intercalate "" (map ((\(x, y) -> "(" ++ show x ++ "," ++ showF y ++ ")") . (\x -> (x, cumulative distribution x))) listOfNumbers)
+generatePmf :: (DiscreteDistr d) => d -> [Int] -> [(Double, Double)]
+generatePmf distribution = map (\x -> (fromIntegral x, probability distribution x))
 
-printCdf :: (Show d, Distribution d) => String -> d -> [Double] -> IO ()
-printCdf colorString distribution listOfNumbers = do
-  putStrLn $ "CDF :: " ++ colorString ++ " :: " ++ show distribution
-  putStrLn $ generateCdf distribution listOfNumbers
+generateAnalyticalCdf :: (Show d, Distribution d) => String -> d -> [Double] -> (String, [(Double, Double)])
+generateAnalyticalCdf colorName distr values = (indicator, generateCdf distr values)
+  where
+    indicator = "CDF :: " ++ colorName ++ " :: " ++ show distr
 
+generateCdf :: (Distribution d) => d -> [Double] -> [(Double, Double)]
+generateCdf distribution = map (\x -> (x, cumulative distribution x))
 
-generatePdf :: (ContDistr d) => d -> [Double] -> [Char]
-generatePdf distribution listOfNumbers = intercalate "" (map ((\(x, y) -> "(" ++ show x ++ "," ++ showF y ++ ")") . (\x -> (x, density distribution x))) listOfNumbers)
+generatePdf :: (ContDistr d) => d -> [Double] -> [(Double, Double)]
+generatePdf distribution = map (\x -> (x, density distribution x))
 
+generateAnalyticalPdf :: (Show d, ContDistr d) => String -> d -> [Double] -> (String, [(Double, Double)])
+generateAnalyticalPdf colorName distr values = (indicator, generatePdf distr values)
+  where
+    indicator = "PDF :: " ++ colorName ++ " :: " ++ show distr
 
-printPdf :: (Show d, ContDistr d) => String -> d -> [Double] -> IO ()
-printPdf colorString distribution listOfNumbers = do
-  putStrLn $ "PDF :: " ++ colorString ++ " :: " ++ show distribution
-  putStrLn $ generatePdf distribution listOfNumbers
+printAnalyticalCords :: [(String, [(Double, Double)])] -> IO ()
+printAnalyticalCords = mapM_ printPmf
+
+printPmf :: (String, [(Double, Double)]) -> IO ()
+printPmf (indicator, cords) = do
+  putStrLn indicator
+  putStrLn $ intercalate "" $ map (\(x, y) -> "(" ++ showF x ++ "," ++ showF y ++ ")") cords
 
 programPmf :: Program -> [Double] -> [Double] -> [(Double, Probability)]
 programPmf program doubleArgs = map (\x -> (x, prob x))
@@ -252,6 +317,7 @@ programMassCdf program doubleArgs = map (\x -> (x, prob x))
   where
     prob x = snd $ unwrapEither $ qInferProgramArgs program args (QLe NormalMode x)
     args = map (Representation.Const . VFloat) doubleArgs
+
 dandelion :: Colour Double
 dandelion = sRGB24 250 180 44
 
@@ -261,12 +327,13 @@ forestGreen = sRGB24 20 152 80
 cerulean :: Colour Double
 cerulean = sRGB24 20 163 230
 
-data BoundsRect = BoundsRect {
-  xMin :: Double,
-  xMax :: Double,
-  yMin :: Double,
-  yMax :: Double
-} deriving (Show)
+data BoundsRect = BoundsRect
+  { xMin :: Double,
+    xMax :: Double,
+    yMin :: Double,
+    yMax :: Double
+  }
+  deriving (Show)
 
 plotProgramPmfToFile :: String -> [(Colour Double, [(Double, Double)])] -> BoundsRect -> IO ()
 plotProgramPmfToFile filename plotData rect = do
@@ -283,7 +350,6 @@ plotProgramPmfToFile filename plotData rect = do
     setShapes $ repeat PointShapeCircle
     mapM_ ((plot . pointsWithSize "" 2) . snd) plotData
 
-
 plotProgramMassCdfToFile :: String -> [(Colour Double, [(Double, Double)])] -> BoundsRect -> IO ()
 plotProgramMassCdfToFile filename plotData rect = do
   let fileOptions = FileOptions (160, 126) SVG loadSansSerifFonts
@@ -298,7 +364,6 @@ plotProgramMassCdfToFile filename plotData rect = do
     setColors $ map (opaque . fst) plotData
     setShapes $ repeat PointShapeCircle
     mapM_ ((plot . pointsWithSize "" 2) . snd) plotData
-
 
 plotProgramPdfToFile :: String -> [(Colour Double, [(Double, Double)])] -> BoundsRect -> IO ()
 plotProgramPdfToFile filename plotData rect = do
@@ -315,7 +380,6 @@ plotProgramPdfToFile filename plotData rect = do
     let cords = map snd plotData
     mapM_ (plot . plotLine "" . (: [])) cords
 
-
 plotProgramDensityCdfToFile :: String -> [(Colour Double, [(Double, Double)])] -> BoundsRect -> IO ()
 plotProgramDensityCdfToFile filename plotData rect = do
   let fileOptions = FileOptions (160, 126) SVG loadSansSerifFonts
@@ -328,7 +392,7 @@ plotProgramDensityCdfToFile filename plotData rect = do
     layout_x_axis . laxis_style . axis_label_gap .= 1
     layout_x_axis . laxis_title .= "x"
     setColors $ map (opaque . fst) plotData
-    mapM_ ((plot . plotLine "") . (: []). snd) plotData
+    mapM_ ((plot . plotLine "") . (: []) . snd) plotData
 
 pointsWithSize :: String -> Double -> [(x, y)] -> EC l (PlotPoints x y)
 pointsWithSize title size values = liftEC $ do
@@ -342,12 +406,12 @@ pointsWithSize title size values = liftEC $ do
   plot_points_style . point_border_color .= opaque black
   plot_points_style . point_border_width .= 0.2
 
-plotLine :: String -> [[(x,y)]]  -> EC l (PlotLines x y)
+plotLine :: String -> [[(x, y)]] -> EC l (PlotLines x y)
 plotLine title values = liftEC $ do
-    color <- takeColor
-    plot_lines_title .= title
-    plot_lines_values .= values
-    plot_lines_style . line_color .= color
+  color <- takeColor
+  plot_lines_title .= title
+  plot_lines_values .= values
+  plot_lines_style . line_color .= color
 
 playground :: IO ()
 playground = do
@@ -385,10 +449,10 @@ playground = do
   print optProb
 
   print "------MMAP Unopt"
-  --let maxSample = mmap program query
+  -- let maxSample = mmap program query
   -- print maxSample
   print "------MMAP Optimize"
-  --let maxSampleOpt = mmap optProgram query
+  -- let maxSampleOpt = mmap optProgram query
   -- print maxSampleOpt
   let spacing = LinearSpacing {start = -10, end = 10, stepWidth = 0.01}
   let numberOfSamples = 100000

@@ -53,6 +53,7 @@ executable compiler
                       containers, 
                       random, 
                       statistics, 
+                      vector,
                       MonadRandom, 
                       Chart,
                       colour,

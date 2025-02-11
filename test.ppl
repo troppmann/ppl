@@ -158,5 +158,7 @@ pareto xm alpha = xm * ((1 - Uniform) ** (-1 / alpha))
 
 
 //main = if (0.1) ** (Normal) > -0.2 then Uniform else Uniform + 3
-main = binomial 0.5 15
+//main = (3.1 / -(Uniform + 0.01))
+//main = -1 / Normal
+main = pareto 2 0.01
 
