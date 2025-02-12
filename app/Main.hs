@@ -5,6 +5,7 @@ module Main where
 
 import ApproximateIntegration
 import Chart
+import Control.Exception (assert)
 import Control.Monad.Random.Class
 import Data.Colour.SRGB
 import Data.List
@@ -14,6 +15,7 @@ import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Backend.Diagrams
 import Graphics.Rendering.Chart.Easy
 import Infer
+import MaximumAPosteriori (mmap)
 import Numeric
 import Optimizer
 import Parser
@@ -25,21 +27,21 @@ import Statistics.Distribution.Binomial
 import Statistics.Distribution.Geometric
 import Statistics.Distribution.Lognormal
 import Statistics.Distribution.StudentT (studentT)
-import Text.RawString.QQ
-import Control.Exception (assert)
 import Statistics.Sample
-import MaximumAPosteriori (mmap)
+import Text.RawString.QQ
 
 main :: IO ()
 main = do
-  -- evaluateBinomial
+  evaluateBinomial
   evaluateSelectivityBinomial
-  -- evaluateGeometric
-  -- evaluateLogNormal
-  -- evaluatePareto
-  -- evaluateIndianGpaProblem
-  -- playground
+  evaluateGeometric
+  evaluateLognormal
+  evaluatePareto
+  evaluateIndianGpaProblem
+-- playground
 
+-- generates the analytical solution, program plots,
+-- quantitative comparison statistics for the Binomial Distribution
 evaluateBinomial :: IO ()
 evaluateBinomial = do
   putStrLn "--- Evaluate binomial distribution ---"
@@ -118,6 +120,8 @@ main p n = binomialSelective p n|]
   writeStats "binomial_selective_pmf_stats.csv" analyticalPmf dataPmfS
   writeStats "binomial_selective_cdf_stats.csv" analyticalCdf dataCdfS
 
+-- generates the analytical solution, program plots,
+-- quantitative comparison statistics for the Geometric Distribution
 evaluateGeometric :: IO ()
 evaluateGeometric = do
   putStrLn "--- Evaluate geometric distribution ---"
@@ -160,8 +164,10 @@ evaluateGeometric = do
   writeStats "geometric_pmf_stats.csv" analyticalPmf dataPmf
   writeStats "geometric_cdf_stats.csv" analyticalCdf dataCdf
 
-evaluateLogNormal :: IO ()
-evaluateLogNormal = do
+-- generates the analytical solution, program plots,
+-- quantitative comparison statistics for the Lognormal Distribution
+evaluateLognormal :: IO ()
+evaluateLognormal = do
   let valueRange = 0.0001 : [0.05, 0.10 .. 10]
   putStrLn "--- Evaluate lognormalDistr distribution ---"
   let analyticalPdf =
@@ -203,6 +209,8 @@ evaluateLogNormal = do
   writeStats "lognormal_pdf_stats.csv" analyticalPdf dataPdf
   writeStats "lognormal_cdf_stats.csv" analyticalCdf dataCdf
 
+-- generates the analytical solution, program plots,
+-- quantitative comparison statistics for the Pareto Distribution
 evaluatePareto :: IO ()
 evaluatePareto = do
   let valueRange = 0.0001 : [0.05, 0.10 .. 10.0]
@@ -244,7 +252,7 @@ evaluatePareto = do
   writeStats "pareto_pdf_stats.csv" analyticalPdf dataPdf
   writeStats "pareto_cdf_stats.csv" analyticalCdf dataCdf
 
-
+-- evaluates different queries for the Indian GPA problem
 evaluateIndianGpaProblem :: IO ()
 evaluateIndianGpaProblem = do
   let programIndianGPA =
@@ -265,7 +273,9 @@ evaluateIndianGpaProblem = do
   checkQuery program "(1, |3.5)" conUseScore3_5 (1, 0.2)
   let mapScore4 = QTuple QAny (QFloat NormalMode 4.0)
   checkMap program "(Q_Query, 4.0)" mapScore4 (0, 0.1) (VTuple (VFloat 1.0) (VFloat 4.0))
-  let programScoreIndianGPA = [r|
+  let programScoreIndianGPA =
+        [r|
+
  bernoulli p = Uniform < p;
  india = (0, if bernoulli 0.1 then (True, 10) else (False, Uniform * 10));
  usa = (1, if bernoulli 0.2 then (True, 4) else (False, Uniform * 4));
@@ -275,13 +285,15 @@ evaluateIndianGpaProblem = do
   let perfectScore = QTuple QMar (QTuple (QBool NormalMode True) QMar)
   checkQuery secondProgram "(Q_MAR, True, Q_MAR)" perfectScore (0, 0.15)
   let mapPerfectScore = QTuple QMar (QTuple QAny QMar)
-  checkMap secondProgram "(Q_MAR, Q_Query, Q_MAR)" mapPerfectScore  (0, 0.45) (VBool False)
+  checkMap secondProgram "(Q_MAR, Q_Query, Q_MAR)" mapPerfectScore (0, 0.45) (VBool False)
 
-
+-- evaluates selective and non-selective Binomial distribution programs with MAP queries
 evaluateSelectivityBinomial :: IO ()
 evaluateSelectivityBinomial = do
   putStrLn "Selectivity"
-  let binomialProgram  = [r|
+  let binomialProgram =
+        [r|
+
   binomial p n = if n <= 0 then
         0
                 else (
@@ -313,38 +325,37 @@ main = binomialSelective 0.7 20
   let selectiveProgram = unwrapEither $ parseProgram binomialSelectiveProgram
   checkMap selectiveProgram "(Q_Query)" QAny (0, 0.191638) (VFloat 14)
 
-
-
-
+--
 -- Helper functions
+--
+
 checkQuery :: Program -> String -> QueryType -> (Dimension, Probability) -> IO ()
 checkQuery program queryString query expected = do
   putStrLn $ "assert Query " ++ queryString ++ " == " ++ show expected ++ " => " ++ show (assert result result)
   where
-      dimProb = dbg $ unwrapEither $ qInferProgram program query
-      result = checkEqDimProb dimProb expected
+    dimProb = dbg $ unwrapEither $ qInferProgram program query
+    result = checkEqDimProb dimProb expected
 
 checkMap :: Program -> String -> QueryType -> (Dimension, Probability) -> Value -> IO ()
 checkMap program queryString query expected expValue = do
   putStrLn $ "assert Map Query " ++ queryString ++ " == " ++ show expected ++ " => " ++ show (assert resultDimProb resultDimProb)
   putStrLn $ "       with expected value " ++ show expValue ++ " == " ++ show trimmed ++ " => " ++ show (assert resultValue resultValue)
   where
-      (dimProb, value) = unwrapEither $ mmap program query
-      resultDimProb = checkEqDimProb dimProb expected
-      trimmed = removeVmar value
-      resultValue = trimmed == expValue
-
+    (dimProb, value) = unwrapEither $ mmap program query
+    resultDimProb = checkEqDimProb dimProb expected
+    trimmed = removeVmar value
+    resultValue = trimmed == expValue
 
 removeVmar :: Value -> Value
 removeVmar (VTuple v1 v2@(VFloat f2)) = if isNaN f2 then removeVmar v1 else VTuple (removeVmar v1) v2
-removeVmar (VTuple v1@(VFloat f1) v2) =  if isNaN f1 then removeVmar v2 else VTuple v1 (removeVmar v2)
-removeVmar (VTuple v1 v2) =  VTuple (removeVmar v1) (removeVmar v2)
+removeVmar (VTuple v1@(VFloat f1) v2) = if isNaN f1 then removeVmar v2 else VTuple v1 (removeVmar v2)
+removeVmar (VTuple v1 v2) = VTuple (removeVmar v1) (removeVmar v2)
 removeVmar v = v
-
 
 defaultErrorMargin :: Double
 defaultErrorMargin = 0.00001
-checkEqDimProb :: (Dimension,Probability) -> (Dimension,Probability) -> Bool
+
+checkEqDimProb :: (Dimension, Probability) -> (Dimension, Probability) -> Bool
 checkEqDimProb (dimValue, probValue) (dimExpected, probExpected)
   | dimValue /= dimExpected = False
   | abs (probExpected - probValue) > defaultErrorMargin = False
@@ -352,20 +363,19 @@ checkEqDimProb (dimValue, probValue) (dimExpected, probExpected)
 
 writeStats :: String -> [(a1, [(Double, Double)])] -> [(a2, [(Double, Double)])] -> IO ()
 writeStats filename analytical sampled = do
-  let pdfDiffs = zipWith (\ l1 l2 -> calculateDiff (snd l1) (snd l2)) analytical sampled
+  let pdfDiffs = zipWith (\l1 l2 -> calculateDiff (snd l1) (snd l2)) analytical sampled
   let diffTablePdf = generateDiffTable $ map calcStats pdfDiffs
   putStrLn $ "Generate " ++ filename ++ " ..."
   writeFile filename diffTablePdf
   putStrLn diffTablePdf
 
-
 calculateDiff :: [(Double, Double)] -> [(Double, Double)] -> [Double]
 calculateDiff = zipWith (curry diff)
   where
-    diff ((x0,y0), (x1, y1)) = assert (x0 == x1) (abs (y1 - y0))
+    diff ((x0, y0), (x1, y1)) = assert (x0 == x1) (abs (y1 - y0))
 
 calcStats :: [Double] -> Stats
-calcStats diffs = Stats{samples, minD, maxD, meanD, medianD, stdD, varianceD, totalD}
+calcStats diffs = Stats {samples, minD, maxD, meanD, medianD, stdD, varianceD, totalD}
   where
     minD = minimum diffs
     samples = length diffs
@@ -377,14 +387,15 @@ calcStats diffs = Stats{samples, minD, maxD, meanD, medianD, stdD, varianceD, to
 
 median :: (Ord a, Fractional a) => [a] -> a
 median xs =
-   if odd len
-     then sorted !! half
-     else ((sorted !! (half - 1)) + (sorted !! half)) * 0.5
-    where len = length xs
-          half = len `div` 2
-          sorted = sort xs
+  if odd len
+    then sorted !! half
+    else ((sorted !! (half - 1)) + (sorted !! half)) * 0.5
+  where
+    len = length xs
+    half = len `div` 2
+    sorted = sort xs
 
-data Stats = Stats {samples :: Int, minD :: Double, maxD :: Double, medianD :: Double, meanD :: Double, stdD :: Double, varianceD :: Double, totalD :: Double} deriving Show
+data Stats = Stats {samples :: Int, minD :: Double, maxD :: Double, medianD :: Double, meanD :: Double, stdD :: Double, varianceD :: Double, totalD :: Double} deriving (Show)
 
 generateDiffTable :: [Stats] -> String
 generateDiffTable stats = content
@@ -392,7 +403,6 @@ generateDiffTable stats = content
     header = "Samples, Min, Max, Median, Mean, Std, Total"
     entry s = intercalate " & " $ map (\x -> "\\num{" ++ x ++ "}") $ show (samples s) : map show [minD s, maxD s, medianD s, meanD s, stdD s, totalD s]
     content = unlines $ header : map entry stats
-
 
 data Pareto = Pareto {xm :: Double, alpha :: Double} deriving (Show)
 
@@ -459,6 +469,9 @@ programMassCdf program doubleArgs = map (\x -> (x, prob x))
     prob x = snd $ unwrapEither $ qInferProgramArgs program args (QLe NormalMode x)
     args = map (Representation.Const . VFloat) doubleArgs
 
+--
+-- Plot Generation
+--
 dandelion :: Colour Double
 dandelion = sRGB24 250 180 44
 
@@ -554,6 +567,8 @@ plotLine title values = liftEC $ do
   plot_lines_values .= values
   plot_lines_style . line_color .= color
 
+-- This is a little playground to test the framework.
+-- Remember to have fun.
 playground :: IO ()
 playground = do
   s <- readFile "test.ppl"
