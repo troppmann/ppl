@@ -28,13 +28,16 @@ import Statistics.Distribution.StudentT (studentT)
 import Text.RawString.QQ
 import Control.Exception (assert)
 import Statistics.Sample
+import MaximumAPosteriori (mmap)
 
 main :: IO ()
 main = do
   -- evaluateBinomial
+  evaluateSelectivityBinomial
   -- evaluateGeometric
-  evaluateLogNormal
+  -- evaluateLogNormal
   -- evaluatePareto
+  -- evaluateIndianGpaProblem
   -- playground
 
 evaluateBinomial :: IO ()
@@ -159,18 +162,18 @@ evaluateGeometric = do
 
 evaluateLogNormal :: IO ()
 evaluateLogNormal = do
-  let range = 0.0001 : [0.05, 0.10 .. 10]
+  let valueRange = 0.0001 : [0.05, 0.10 .. 10]
   putStrLn "--- Evaluate lognormalDistr distribution ---"
   let analyticalPdf =
-        [ generateAnalyticalPdf "Dandelion" (lognormalDistr 0 1) range,
-          generateAnalyticalPdf "ForestGreen" (lognormalDistr 0 0.4) range,
-          generateAnalyticalPdf "Cerulean" (lognormalDistr 1.5 1) range
+        [ generateAnalyticalPdf "Dandelion" (lognormalDistr 0 1) valueRange,
+          generateAnalyticalPdf "ForestGreen" (lognormalDistr 0 0.4) valueRange,
+          generateAnalyticalPdf "Cerulean" (lognormalDistr 1.5 1) valueRange
         ]
   printAnalyticalCords analyticalPdf
   let analyticalCdf =
-        [ generateAnalyticalCdf "Dandelion" (lognormalDistr 0 1) range,
-          generateAnalyticalCdf "ForestGreen" (lognormalDistr 0 0.4) range,
-          generateAnalyticalCdf "Cerulean" (lognormalDistr 1.5 1) range
+        [ generateAnalyticalCdf "Dandelion" (lognormalDistr 0 1) valueRange,
+          generateAnalyticalCdf "ForestGreen" (lognormalDistr 0 0.4) valueRange,
+          generateAnalyticalCdf "Cerulean" (lognormalDistr 1.5 1) valueRange
         ]
   printAnalyticalCords analyticalCdf
   let lognormalProgram =
@@ -184,17 +187,17 @@ evaluateLogNormal = do
   putStrLn "Generate lognormal_pdf.svg ..."
   let boundsPdf = BoundsRect 0 10.0 0 1.25
   let dataPdf =
-        [ (dandelion, programPmf program [0, 1] range),
-          (forestGreen, programPmf program [0, 0.4] range),
-          (cerulean, programPmf program [1.5, 1] range)
+        [ (dandelion, programPmf program [0, 1] valueRange),
+          (forestGreen, programPmf program [0, 0.4] valueRange),
+          (cerulean, programPmf program [1.5, 1] valueRange)
         ]
   putStrLn "Generate lognormal_cdf.svg ..."
   plotProgramPdfToFile "lognormal_pdf.svg" dataPdf boundsPdf
   let boundsCdf = BoundsRect 0 10.0 0 1.0
   let dataCdf =
-        [ (dandelion, programMassCdf program [0, 1] range),
-          (forestGreen, programMassCdf program [0, 0.4] range),
-          (cerulean, programMassCdf program [1.5, 1] range)
+        [ (dandelion, programMassCdf program [0, 1] valueRange),
+          (forestGreen, programMassCdf program [0, 0.4] valueRange),
+          (cerulean, programMassCdf program [1.5, 1] valueRange)
         ]
   plotProgramDensityCdfToFile "lognormal_cdf.svg" dataCdf boundsCdf
   writeStats "lognormal_pdf_stats.csv" analyticalPdf dataPdf
@@ -202,44 +205,150 @@ evaluateLogNormal = do
 
 evaluatePareto :: IO ()
 evaluatePareto = do
-  let range = 0.0001 : [0.05, 0.10 .. 10.0]
+  let valueRange = 0.0001 : [0.05, 0.10 .. 10.0]
   putStrLn "--- Evaluate lognormalDistr distribution ---"
   let analyticalPdf =
-        [ generateAnalyticalPdf "Dandelion" (Pareto 2 1) range,
-          generateAnalyticalPdf "ForestGreen" (Pareto 2 2) range,
-          generateAnalyticalPdf "Cerulean" (Pareto 2 3) range
+        [ generateAnalyticalPdf "Dandelion" (Pareto 2 1) valueRange,
+          generateAnalyticalPdf "ForestGreen" (Pareto 2 2) valueRange,
+          generateAnalyticalPdf "Cerulean" (Pareto 2 3) valueRange
         ]
   printAnalyticalCords analyticalPdf
   let analyticalCdf =
-        [ generateAnalyticalCdf "Dandelion" (Pareto 2 1) range,
-          generateAnalyticalCdf "ForestGreen" (Pareto 2 2) range,
-          generateAnalyticalCdf "Cerulean" (Pareto 2 3) range
+        [ generateAnalyticalCdf "Dandelion" (Pareto 2 1) valueRange,
+          generateAnalyticalCdf "ForestGreen" (Pareto 2 2) valueRange,
+          generateAnalyticalCdf "Cerulean" (Pareto 2 3) valueRange
         ]
   printAnalyticalCords analyticalCdf
   let paretoProgram =
         [r|
-  pareto xm alpha = xm * (Uniform ** (-1 / alpha));
+  pareto xm alpha = xm * ((1 - Uniform) ** (-1 / alpha));
   main xm alpha = pareto xm alpha
 |]
   let program = unwrapEither $ parseProgram paretoProgram
   putStrLn "Generate pareto_pdf.svg ..."
   let boundsPdf = BoundsRect 0 10.0 0 1.5
   let dataPdf =
-        [ (dandelion, programPmf program [2, 1] range),
-          (forestGreen, programPmf program [2, 2] range),
-          (cerulean, programPmf program [2, 3] range)
+        [ (dandelion, programPmf program [2, 1] valueRange),
+          (forestGreen, programPmf program [2, 2] valueRange),
+          (cerulean, programPmf program [2, 3] valueRange)
         ]
   putStrLn "Generate pareto_cdf.svg ..."
   plotProgramPdfToFile "pareto_pdf.svg" dataPdf boundsPdf
   let boundsCdf = BoundsRect 0 10.0 0 1.0
   let dataCdf =
-        [ (dandelion, programMassCdf program [2, 1] range),
-          (forestGreen, programMassCdf program [2, 2] range),
-          (cerulean, programMassCdf program [2, 3] range)
+        [ (dandelion, programMassCdf program [2, 1] valueRange),
+          (forestGreen, programMassCdf program [2, 2] valueRange),
+          (cerulean, programMassCdf program [2, 3] valueRange)
         ]
   plotProgramDensityCdfToFile "pareto_cdf.svg" dataCdf boundsCdf
   writeStats "pareto_pdf_stats.csv" analyticalPdf dataPdf
   writeStats "pareto_cdf_stats.csv" analyticalCdf dataCdf
+
+
+evaluateIndianGpaProblem :: IO ()
+evaluateIndianGpaProblem = do
+  let programIndianGPA =
+        [r|
+ bernoulli p = Uniform < p;
+ india = (0, if bernoulli 0.1 then 10 else Uniform * 10);
+ usa = (1, if bernoulli 0.2 then 4 else Uniform * 4);
+ main = if bernoulli 0.5 then india else usa
+  |]
+  putStrLn "IndianGpaProblem"
+  putStrLn programIndianGPA
+  let program = unwrapEither $ parseProgram programIndianGPA
+  let useScore3_5 = QTuple (QFloat NormalMode 1.0) (QFloat NormalMode 3.5)
+  checkQuery program "(1.0, 3.5)" useScore3_5 (1, 0.1)
+  let marScore3_5 = QTuple QMar (QFloat NormalMode 3.5)
+  checkQuery program "(Q_MAR, 3.5)" marScore3_5 (1, 0.145)
+  let conUseScore3_5 = QTuple (QFloat Given 1.0) (QFloat NormalMode 3.5)
+  checkQuery program "(1, |3.5)" conUseScore3_5 (1, 0.2)
+  let mapScore4 = QTuple QAny (QFloat NormalMode 4.0)
+  checkMap program "(Q_Query, 4.0)" mapScore4 (0, 0.1) (VTuple (VFloat 1.0) (VFloat 4.0))
+  let programScoreIndianGPA = [r|
+ bernoulli p = Uniform < p;
+ india = (0, if bernoulli 0.1 then (True, 10) else (False, Uniform * 10));
+ usa = (1, if bernoulli 0.2 then (True, 4) else (False, Uniform * 4));
+ main = if bernoulli 0.5 then india else usa
+  |]
+  let secondProgram = unwrapEither $ parseProgram programScoreIndianGPA
+  let perfectScore = QTuple QMar (QTuple (QBool NormalMode True) QMar)
+  checkQuery secondProgram "(Q_MAR, True, Q_MAR)" perfectScore (0, 0.15)
+  let mapPerfectScore = QTuple QMar (QTuple QAny QMar)
+  checkMap secondProgram "(Q_MAR, Q_Query, Q_MAR)" mapPerfectScore  (0, 0.45) (VBool False)
+
+
+evaluateSelectivityBinomial :: IO ()
+evaluateSelectivityBinomial = do
+  putStrLn "Selectivity"
+  let binomialProgram  = [r|
+  binomial p n = if n <= 0 then
+        0
+                else (
+        if Uniform < p then
+            1 + binomial p (n-1)
+        else
+            binomial p (n-1)
+    );
+    main = binomial 0.7 20 
+    ;|]
+  let nonSelectiveProgram = unwrapEither $ parseProgram binomialProgram
+  checkMap nonSelectiveProgram "(Q_Query)" QAny (0, 0.7 ** 20) (VFloat 20)
+  let binomialSelectiveProgram =
+        [r|
+factorial n = if n <= 1 then 1 else n * factorial (n-1);
+binomialCoefficient n k = (factorial n)/((factorial k) * (factorial (n-k)));
+binomialPmf p n k = (binomialCoefficient n k) * (p ** k) * ((1 - p) ** (n - k));
+bernoulli p = Uniform < p;
+binomialIntern p n k mass = if k <= 0 then 
+	0 
+else 
+	( if bernoulli ((binomialPmf p n k )/mass) then 
+		k
+	else 
+		binomialIntern p n (k-1)  (mass - ((binomialPmf p n k))));
+binomialSelective p n = binomialIntern p n n 1.0;
+main = binomialSelective 0.7 20
+|]
+  let selectiveProgram = unwrapEither $ parseProgram binomialSelectiveProgram
+  checkMap selectiveProgram "(Q_Query)" QAny (0, 0.191638) (VFloat 14)
+
+
+
+
+-- Helper functions
+checkQuery :: Program -> String -> QueryType -> (Dimension, Probability) -> IO ()
+checkQuery program queryString query expected = do
+  putStrLn $ "assert Query " ++ queryString ++ " == " ++ show expected ++ " => " ++ show (assert result result)
+  where
+      dimProb = dbg $ unwrapEither $ qInferProgram program query
+      result = checkEqDimProb dimProb expected
+
+checkMap :: Program -> String -> QueryType -> (Dimension, Probability) -> Value -> IO ()
+checkMap program queryString query expected expValue = do
+  putStrLn $ "assert Map Query " ++ queryString ++ " == " ++ show expected ++ " => " ++ show (assert resultDimProb resultDimProb)
+  putStrLn $ "       with expected value " ++ show expValue ++ " == " ++ show trimmed ++ " => " ++ show (assert resultValue resultValue)
+  where
+      (dimProb, value) = unwrapEither $ mmap program query
+      resultDimProb = checkEqDimProb dimProb expected
+      trimmed = removeVmar value
+      resultValue = trimmed == expValue
+
+
+removeVmar :: Value -> Value
+removeVmar (VTuple v1 v2@(VFloat f2)) = if isNaN f2 then removeVmar v1 else VTuple (removeVmar v1) v2
+removeVmar (VTuple v1@(VFloat f1) v2) =  if isNaN f1 then removeVmar v2 else VTuple v1 (removeVmar v2)
+removeVmar (VTuple v1 v2) =  VTuple (removeVmar v1) (removeVmar v2)
+removeVmar v = v
+
+
+defaultErrorMargin :: Double
+defaultErrorMargin = 0.00001
+checkEqDimProb :: (Dimension,Probability) -> (Dimension,Probability) -> Bool
+checkEqDimProb (dimValue, probValue) (dimExpected, probExpected)
+  | dimValue /= dimExpected = False
+  | abs (probExpected - probValue) > defaultErrorMargin = False
+  | otherwise = True
 
 writeStats :: String -> [(a1, [(Double, Double)])] -> [(a2, [(Double, Double)])] -> IO ()
 writeStats filename analytical sampled = do

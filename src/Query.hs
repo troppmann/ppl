@@ -51,17 +51,17 @@ qInfer :: Runtime -> Expr -> QueryMode -> QueryType -> Either ErrorString Dimens
 -- assumes only normalized distributions
 qInfer _ _ _ QAny = return (0, 1.0)
 qInfer _ _ _ QMar = return (0, 1.0)
-qInfer rt expr Given (QBool NormalMode bool) = return (0, 1.0)
+qInfer _rt _expr Given (QBool NormalMode _bool) = return (0, 1.0)
 qInfer rt expr _ (QBool _ bool) = infer rt expr (VBool bool)
-qInfer rt expr Given (QFloat NormalMode float) = return (0, 1.0)
+qInfer _rt _expr Given (QFloat NormalMode _float) = return (0, 1.0)
 qInfer rt expr _ (QFloat _ float) = infer rt expr (VFloat float)
-qInfer rt expr Given (QLt NormalMode float) = return (0, 1.0)
+qInfer _rt _expr Given (QLt NormalMode _float) = return (0, 1.0)
 qInfer rt expr _ (QLt _ float) = infer rt (LessThan expr (Const $ VFloat float)) (VBool True)
-qInfer rt expr Given (QLe NormalMode float) = return (0, 1.0)
+qInfer _rt _expr Given (QLe NormalMode _float) = return (0, 1.0)
 qInfer rt expr _ (QLe _ float) = infer rt (LessThanOrEqual expr (Const $ VFloat float)) (VBool True)
-qInfer rt expr Given (QGt NormalMode float) = return (0, 1.0)
+qInfer _rt _expr Given (QGt NormalMode _float) = return (0, 1.0)
 qInfer rt expr _ (QGt _ float) = infer rt (GreaterThan expr (Const $ VFloat float)) (VBool True)
-qInfer rt expr Given (QGe NormalMode float) = return (0, 1.0)
+qInfer _rt _expr Given (QGe NormalMode _float) = return (0, 1.0)
 qInfer rt expr _ (QGe _ float) = infer rt (GreaterThanOrEqual expr (Const $ VFloat float)) (VBool True)
 qInfer rt (CreateTuple e1 e2) mode (QTuple q1 q2) = do
   dimProb1 <- qInfer rt e1 mode q1

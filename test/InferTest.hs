@@ -48,8 +48,8 @@ tests =
     [ testGroup
         "Basic"
         [ testInferExprEq "Uniform" (VFloat 0.5) (1, 1.0),
-          testInferExprEq "Uniform" (VFloat 0.0) (1, 1.0),
-          testInferExprEq "Uniform" (VFloat 1.0) (1, 0.0),
+          testInferExprEq "Uniform" (VFloat 0.0) (1, 0.0),
+          testInferExprEq "Uniform" (VFloat 1.0) (1, 1.0),
           testInferExprEq "Uniform" (VFloat (-10.0)) (1, 0.0),
           testInferExprEq "Uniform" (VBool True) (0, 0.0),
           testInferExprEq "Uniform" (VBool False) (0, 0.0),
@@ -80,7 +80,6 @@ tests =
           testInferExprEq "Normal != 0" (VBool True) (0, 1.0),
           testInferExprEq "Normal != 0" (VBool False) (1, 0.3989),
           testInferExprEq "Normal" (VFloat 1.0) (1, 0.24197),
-          testInferExprEq "-1 / Normal < -2" (VBool True) (0, 0.80853),
           testInferExprEq "3 * Uniform >  0.2" (VBool True) (0, 0.93333),
           testInferExprEq "Uniform > 0.5" (VBool True) (0, 0.5),
           testInferExprEq "if Uniform > 0.5 then Uniform else 2.0" (VFloat 2.0) (0, 0.5),

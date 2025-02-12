@@ -28,7 +28,7 @@ assertLeft (Right value) = assertFailure $ show value
 
 assertEqDimProb :: DimensionalProbability -> DimensionalProbability -> Assertion
 assertEqDimProb value@(dimValue, probValue) expected@(dimExpected, probExpected)
-  | dimValue /= dimValue = assertFailure failureMsg
+  | dimValue /= dimExpected = assertFailure failureMsg
   | abs (probExpected - probValue) > defaultErrorMargin = assertFailure failureMsg
   | otherwise = return ()
   where
