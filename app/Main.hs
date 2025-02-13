@@ -41,7 +41,7 @@ main = do
 -- playground
 
 -- generates the analytical solution, program plots,
--- quantitative comparison statistics for the Binomial Distribution
+-- quantitative comparison for the Binomial Distribution
 evaluateBinomial :: IO ()
 evaluateBinomial = do
   putStrLn "--- Evaluate binomial distribution ---"
@@ -121,7 +121,7 @@ main p n = binomialSelective p n|]
   writeStats "binomial_selective_cdf_stats.csv" analyticalCdf dataCdfS
 
 -- generates the analytical solution, program plots,
--- quantitative comparison statistics for the Geometric Distribution
+-- quantitative comparison for the Geometric Distribution
 evaluateGeometric :: IO ()
 evaluateGeometric = do
   putStrLn "--- Evaluate geometric distribution ---"
@@ -165,7 +165,7 @@ evaluateGeometric = do
   writeStats "geometric_cdf_stats.csv" analyticalCdf dataCdf
 
 -- generates the analytical solution, program plots,
--- quantitative comparison statistics for the Lognormal Distribution
+-- quantitative comparison for the Lognormal Distribution
 evaluateLognormal :: IO ()
 evaluateLognormal = do
   let valueRange = 0.0001 : [0.05, 0.10 .. 10]
@@ -210,7 +210,7 @@ evaluateLognormal = do
   writeStats "lognormal_cdf_stats.csv" analyticalCdf dataCdf
 
 -- generates the analytical solution, program plots,
--- quantitative comparison statistics for the Pareto Distribution
+-- quantitative comparison for the Pareto Distribution
 evaluatePareto :: IO ()
 evaluatePareto = do
   let valueRange = 0.0001 : [0.05, 0.10 .. 10.0]
