@@ -401,7 +401,7 @@ generateDiffTable :: [Stats] -> String
 generateDiffTable stats = content
   where
     header = "Samples, Min, Max, Median, Mean, Std, Total"
-    entry s = intercalate " & " $ map (\x -> "\\num{" ++ x ++ "}") $ show (samples s) : map show [minD s, maxD s, medianD s, meanD s, stdD s, totalD s]
+    entry s = intercalate ", " $ show (samples s) : map show [minD s, maxD s, medianD s, meanD s, stdD s, totalD s]
     content = unlines $ header : map entry stats
 
 data Pareto = Pareto {xm :: Double, alpha :: Double} deriving (Show)
