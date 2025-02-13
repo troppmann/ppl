@@ -115,6 +115,8 @@ toString (FnCall fnName expr) = do
   let args = unwords $ map toString expr
   "(" ++ fnName ++ " " ++ args ++ ")"
 toString (FnParameter index) = "Arg" ++ show index
+toString (Custom {}) = "Custom"
+toString (Abs e) = "|" ++ toString e ++ "|"
 
 middle :: String -> Expr -> Expr -> String
 middle s e1 e2 = "(" ++ toString e1 ++ " " ++ s ++ " " ++ toString e2 ++ ")"
