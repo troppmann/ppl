@@ -271,11 +271,10 @@ evaluateIndianGpaProblem = do
   checkQuery program "(Q_MAR, 3.5)" marScore3_5 (1, 0.145)
   let conUseScore3_5 = QTuple (QFloat Given 1.0) (QFloat NormalMode 3.5)
   checkQuery program "(1, |3.5)" conUseScore3_5 (1, 0.2)
-  let mapScore4 = QTuple QAny (QFloat NormalMode 4.0)
-  checkMap program "(Q_Query, 4.0)" mapScore4 (0, 0.1) (VTuple (VFloat 1.0) (VFloat 4.0))
+  let mapScore4 = QTuple QAny (QFloat Given 4.0)
+  checkMap program "(Q_Query, |4.0)" mapScore4 (0, 1.0) (VTuple (VFloat 1.0) (VFloat 4.0))
   let programScoreIndianGPA =
         [r|
-
  bernoulli p = Uniform < p;
  india = (0, if bernoulli 0.1 then (True, 10) else (False, Uniform * 10));
  usa = (1, if bernoulli 0.2 then (True, 4) else (False, Uniform * 4));
@@ -333,7 +332,7 @@ checkQuery :: Program -> String -> QueryType -> (Dimension, Probability) -> IO (
 checkQuery program queryString query expected = do
   putStrLn $ "assert Query " ++ queryString ++ " == " ++ show expected ++ " => " ++ show (assert result result)
   where
-    dimProb = dbg $ unwrapEither $ qInferProgram program query
+    dimProb = unwrapEither $ qInferProgram program query
     result = checkEqDimProb dimProb expected
 
 checkMap :: Program -> String -> QueryType -> (Dimension, Probability) -> Value -> IO ()
