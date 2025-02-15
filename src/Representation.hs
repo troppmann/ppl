@@ -50,6 +50,7 @@ type FnName = String
 data Value
   = VFloat Double
   | VBool Bool
+  | VMar
   | VTuple Value Value
   deriving (Show, Read, Eq)
 

@@ -48,6 +48,7 @@ convertToFloat :: Value -> Double
 convertToFloat (VFloat f) = f
 convertToFloat (VBool True) = 1.0
 convertToFloat (VBool False) = 0.0
+convertToFloat VMar = 0.0
 convertToFloat (VTuple _ _) = error "Expected Float got Tuple."
 
 type BucketIndex = Int

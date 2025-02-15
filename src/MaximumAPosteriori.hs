@@ -25,7 +25,7 @@ mmap program query = do
 
 
 maxAPost :: Runtime -> Expr -> QueryType -> Either ErrorString (DimensionalProbability, Value)
-maxAPost _ _ QMar = return ((0, 1.0), VFloat (0/0))
+maxAPost _ _ QMar = return ((0, 1.0), VMar)
 maxAPost _ (Const c) QAny = return ((0, 1.0), c)
 maxAPost _ Normal QAny = return ((1, 0.39894228040143265), VFloat 0.0)
 -- Any value between 0 and 1 is most likely, just picked the middle

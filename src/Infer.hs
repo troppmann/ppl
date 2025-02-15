@@ -32,6 +32,7 @@ inferProgramArgs program arguments value = do
   infer runTime mainExpr value
 
 infer :: Runtime -> Expr -> Value -> Either String DimensionalProbability
+infer _ _ VMar = return (0, 1.0)
 infer _ Uniform (VFloat v) = return (1, if 0.0 < v && v <= 1.0 then 1.0 else 0.0)
 infer _ Normal (VFloat v) = return (1, density distr v)
   where
@@ -419,6 +420,7 @@ compareFloatExpr _ (Custom _ (CumulativeFn cumulativeFn) _) (ord, value) = retur
 compareFloatExpr _ expr _ = case expr of
   (CreateTuple _ _) -> msgTuple
   (Const (VTuple _ _)) -> msgTuple
+  (Const VMar) -> msgTuple
   (And _ _) -> msgBool
   (Or _ _) -> msgBool
   (Not _) -> msgBool

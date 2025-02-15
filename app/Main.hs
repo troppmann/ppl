@@ -284,7 +284,7 @@ evaluateIndianGpaProblem = do
   let perfectScore = QTuple QMar (QTuple (QBool NormalMode True) QMar)
   checkQuery secondProgram "(Q_MAR, True, Q_MAR)" perfectScore (0, 0.15)
   let mapPerfectScore = QTuple QMar (QTuple QAny QMar)
-  checkMap secondProgram "(Q_MAR, Q_Query, Q_MAR)" mapPerfectScore (0, 0.45) (VBool False)
+  checkMap secondProgram "(Q_MAR, Q_Query, Q_MAR)" mapPerfectScore (0, 0.45) (VTuple VMar (VTuple (VBool False) VMar))
 
 -- evaluates selective and non-selective Binomial distribution programs with MAP queries
 evaluateSelectivityBinomial :: IO ()
@@ -338,18 +338,11 @@ checkQuery program queryString query expected = do
 checkMap :: Program -> String -> QueryType -> (Dimension, Probability) -> Value -> IO ()
 checkMap program queryString query expected expValue = do
   putStrLn $ "assert Map Query " ++ queryString ++ " == " ++ show expected ++ " => " ++ show (assert resultDimProb resultDimProb)
-  putStrLn $ "       with expected value " ++ show expValue ++ " == " ++ show trimmed ++ " => " ++ show (assert resultValue resultValue)
+  putStrLn $ "       with expected value " ++ show expValue ++ " == " ++ show value ++ " => " ++ show (assert resultValue resultValue)
   where
     (dimProb, value) = unwrapEither $ mmap program query
     resultDimProb = checkEqDimProb dimProb expected
-    trimmed = removeVmar value
-    resultValue = trimmed == expValue
-
-removeVmar :: Value -> Value
-removeVmar (VTuple v1 v2@(VFloat f2)) = if isNaN f2 then removeVmar v1 else VTuple (removeVmar v1) v2
-removeVmar (VTuple v1@(VFloat f1) v2) = if isNaN f1 then removeVmar v2 else VTuple v1 (removeVmar v2)
-removeVmar (VTuple v1 v2) = VTuple (removeVmar v1) (removeVmar v2)
-removeVmar v = v
+    resultValue = value == expValue
 
 defaultErrorMargin :: Double
 defaultErrorMargin = 0.00001

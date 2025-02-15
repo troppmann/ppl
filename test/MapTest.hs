@@ -81,7 +81,7 @@ tests =
       testGroup
         "MAP with evidence p(q,e)"
         [ testMapExpr "(Normal, 3)" "(_, 3)" (VTuple (VFloat 0) (VFloat 3)),
-          testMapExprFail "(Normal, 3)" "(_, 4)" (0, 0.0),
+          testMapExprFail "(Normal, 3)" "(_, 4)" (1, 0.0),
           testMapExprFail "(Uniform + 4, 3)" "(3.5, _)" (1, 0.0),
           testMapExprFail "Uniform" "(4)" (1, 0.0),
           testMapExpr "Uniform + 3.5" "(4)" (VFloat 4),
